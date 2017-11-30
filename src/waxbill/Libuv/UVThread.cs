@@ -3,16 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Libuv;
 
-namespace waxbill.demo
+namespace waxbill.Libuv
 {
-    class Program
+    public class UVThread
     {
-        static void Main(string[] args)
-        {
-            
 
-        }
     }
 }

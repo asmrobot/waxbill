@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Libuv;
 
-namespace waxbill.demo
+namespace waxbill.Exceptions
 {
-    class Program
+    public class WaxbillException:Exception
     {
-        static void Main(string[] args)
+        public WaxbillException(string msg):base(msg)
         {
-            
 
         }
     }
