@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2012/06/nuspec.xsd">
+  <metadata>
+    <id>Libuv</id>
+    <version>1.10.0</version>
+    <authors>Libuv</authors>
+    <owners>Libuv</owners>
+    <licenseUrl>https://raw.githubusercontent.com/aspnet/libuv-build/775a18ca77368a0f4ca753e82b2369f24707fb3e/build/License.txt</licenseUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Multi-platform support library with a focus on asynchronous I/O.</description>
+    <tags>libuv</tags>
+    <serviceable>true</serviceable>
+    <dependencies>
+      <group targetFramework=".NETStandard1.0">
+        <dependency id="Microsoft.NETCore.Platforms" version="[1.0.1, )" />
+      </group>
+    </dependencies>
+  </metadata>
+</package>
