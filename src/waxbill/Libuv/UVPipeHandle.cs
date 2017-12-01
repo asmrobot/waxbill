@@ -8,5 +8,9 @@ namespace waxbill.Libuv
 {
     public class UVPipeHandle : UVMemory
     {
+        protected override bool ReleaseHandle()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

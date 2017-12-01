@@ -8,5 +8,9 @@ namespace waxbill.Libuv
 {
     public class UVTimerHandle : UVMemory
     {
+        protected override bool ReleaseHandle()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

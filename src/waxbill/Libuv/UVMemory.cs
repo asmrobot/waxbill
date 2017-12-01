@@ -7,25 +7,47 @@ using System.Threading.Tasks;
 
 namespace waxbill.Libuv
 {
-    public class UVMemory : SafeHandle
+    unsafe public abstract class UVMemory : SafeHandle
     {
-        public UVMemory():base(IntPtr.Zero,true)
+        private GCHandleType mHandleType;
+        public UVMemory(GCHandleType type=GCHandleType.Weak):base(IntPtr.Zero,true)
         {
-
+            this.mHandleType = type;
         }
+        
+        public void CreateMemory(Int32 size)
+        {
+            //handle = Marshal.AllocHGlobal(size);
+            handle = Marshal.AllocCoTaskMem(size);
+            GCHandle gcHandlePtr = GCHandle.Alloc(this, this.mHandleType);
+            *(IntPtr*)handle = GCHandle.ToIntPtr(gcHandlePtr);
+        }
+
+        public static void DestroyMemory(IntPtr memory)
+        {
+            IntPtr gcHandlePtr = *(IntPtr*)memory;
+            DestroyMemory(memory, gcHandlePtr);
+        }
+
+        public static void DestroyMemory(IntPtr memory, IntPtr gcHandlePtr)
+        {
+            if (gcHandlePtr != IntPtr.Zero)
+            {
+                GCHandle gcHandle=GCHandle.FromIntPtr(gcHandlePtr);
+                gcHandle.Free();
+            }
+            Marshal.FreeHGlobal(memory);
+        }
+
+
         public override bool IsInvalid
         {
             get
             {
-                throw new NotImplementedException();
+                return this.handle == IntPtr.Zero;
             }
         }
-
-        protected override bool ReleaseHandle()
-        {
-            throw new NotImplementedException();
-        }
-
+        
         public void Validate(Boolean closed = false)
         {
 
@@ -34,6 +56,13 @@ namespace waxbill.Libuv
         public IntPtr InternalGetHandle()
         {
             return handle;
+        }
+
+
+        public static T FromIntPtr<T>(IntPtr memory)
+        {
+            GCHandle gcHandle=GCHandle.FromIntPtr(*(IntPtr*)memory);
+            return (T)gcHandle.Target;
         }
     }
 }

@@ -8,5 +8,9 @@ namespace waxbill.Libuv
 {
     public class UVRequest : UVMemory
     {
+        protected override bool ReleaseHandle()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

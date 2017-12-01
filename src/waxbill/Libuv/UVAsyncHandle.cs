@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace waxbill.Libuv
 {
-    public class UVAsyncHandle: UVMemory
+    public class UVAsyncHandle : UVMemory
     {
+        protected override bool ReleaseHandle()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

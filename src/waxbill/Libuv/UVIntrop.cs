@@ -96,6 +96,14 @@ namespace waxbill.Libuv
             SIGNAL,
         }
 
+
+        public enum UV_RUN_MODE:Int32
+        {
+            UV_RUN_DEFAULT = 0,
+            UV_RUN_ONCE,
+            UV_RUN_NOWAIT
+        }
+
         public struct uv_buf_t
         {
             // this type represents a WSABUF struct on Windows
@@ -197,26 +205,26 @@ namespace waxbill.Libuv
             ThrowIfErrored(uv_unsafe_async_send(handle));
         }
 
-        public static void tcp_init(UVLoopHandle loop, UVTcpHandle handle)
+        public static void tcp_init(UVLoopHandle loop, UVTCPHandle handle)
         {
             loop.Validate();
             handle.Validate();
             ThrowIfErrored(uv_tcp_init(loop, handle));
         }
 
-        public static void tcp_bind(UVTcpHandle handle, ref SockAddr addr, int flags)
+        public static void tcp_bind(UVTCPHandle handle, ref SockAddr addr, int flags)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_bind(handle, ref addr, flags));
         }
 
-        public static void tcp_open(UVTcpHandle handle, IntPtr hSocket)
+        public static void tcp_open(UVTCPHandle handle, IntPtr hSocket)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_open(handle, hSocket));
         }
 
-        public static void tcp_nodelay(UVTcpHandle handle, bool enable)
+        public static void tcp_nodelay(UVTCPHandle handle, bool enable)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_nodelay(handle, enable ? 1 : 0));
@@ -254,7 +262,7 @@ namespace waxbill.Libuv
             ThrowIfErrored(uv_accept(server, client));
         }
 
-        public static void pipe_connect(UvConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb)
+        public static void pipe_connect(UVConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb)
         {
             req.Validate();
             handle.Validate();
@@ -372,14 +380,14 @@ namespace waxbill.Libuv
         }
 
         
-        public static void tcp_getsockname(UVTcpHandle handle, out SockAddr addr, ref int namelen)
+        public static void tcp_getsockname(UVTCPHandle handle, out SockAddr addr, ref int namelen)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_getsockname(handle, out addr, ref namelen));
         }
 
         
-        public static void tcp_getpeername(UVTcpHandle handle, out SockAddr addr, ref int namelen)
+        public static void tcp_getpeername(UVTCPHandle handle, out SockAddr addr, ref int namelen)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_getpeername(handle, out addr, ref namelen));
@@ -456,16 +464,16 @@ namespace waxbill.Libuv
         public extern static int uv_unsafe_async_send(IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_init(UVLoopHandle loop, UVTcpHandle handle);
+        public static extern int uv_tcp_init(UVLoopHandle loop, UVTCPHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_bind(UVTcpHandle handle, ref SockAddr addr, int flags);
+        public static extern int uv_tcp_bind(UVTCPHandle handle, ref SockAddr addr, int flags);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_open(UVTcpHandle handle, IntPtr hSocket);
+        public static extern int uv_tcp_open(UVTCPHandle handle, IntPtr hSocket);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_nodelay(UVTcpHandle handle, int enable);
+        public static extern int uv_tcp_nodelay(UVTCPHandle handle, int enable);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_pipe_init(UVLoopHandle loop, UVPipeHandle handle, int ipc);
@@ -483,7 +491,7 @@ namespace waxbill.Libuv
         public static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern void uv_pipe_connect(UvConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb);
+        public static extern void uv_pipe_connect(UVConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public extern static int uv_pipe_pending_count(UVPipeHandle handle);
@@ -525,10 +533,10 @@ namespace waxbill.Libuv
         public static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_getsockname(UVTcpHandle handle, out SockAddr name, ref int namelen);
+        public static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_getpeername(UVTcpHandle handle, out SockAddr name, ref int namelen);
+        public static extern int uv_tcp_getpeername(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
