@@ -114,8 +114,8 @@ namespace waxbill.Libuv
             // names in this type don't have meaningful symbolic names. instead, they are
             // assigned in the correct order by the constructor at runtime
 
-            private readonly IntPtr _field0;
-            private readonly IntPtr _field1;
+            internal readonly IntPtr _field0;
+            internal readonly IntPtr _field1;
 
             public uv_buf_t(IntPtr memory, int len, bool IsWindows)
             {

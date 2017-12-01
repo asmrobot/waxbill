@@ -42,6 +42,8 @@ namespace waxbill.demo
                     stream.Accept(client);
 
                     Console.WriteLine("远程地址为："+client.RemoteEndPoint.ToString());
+
+                    client.ReadStart();
                 }
                 catch
                 {
@@ -49,6 +51,9 @@ namespace waxbill.demo
                     client.Dispose();
                 }
                 
+
+
+
                 
 
                 

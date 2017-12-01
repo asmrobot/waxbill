@@ -13,6 +13,9 @@ namespace waxbill.Libuv
     {
 
         private readonly static UVIntrop.uv_connection_cb mOnConnection = UVConnectionCb;
+        private readonly static UVIntrop.uv_read_cb mOnRead = UVReadCb;
+        private readonly static UVIntrop.uv_alloc_cb mOnAlloc = UVAllocCb;
+
         private GCHandle mStreamGCHandle;
         private Action<UVStreamHandle, Int32, UVException, Object> mConnectionCallback;
         private object mCallbackState;
@@ -49,16 +52,21 @@ namespace waxbill.Libuv
 
         public void ReadStart()
         {
-
+            UVIntrop.read_start(this, mOnAlloc, mOnRead);
         }
 
         public void ReadStop()
         {
-
+            UVIntrop.read_stop(this);
         }
 
 
-        public void WriteStart()
+        public void Write()
+        {
+            
+        }
+
+        public void TryWrite()
         {
 
         }
@@ -94,14 +102,35 @@ namespace waxbill.Libuv
         }
 
 
-        private static void UVAllowCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
+        private static void UVAllocCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
         {
-            buf = new UVIntrop.uv_buf_t();
+            IntPtr ptr = Marshal.AllocHGlobal(suggestedSize);
+            buf= UVIntrop.buf_init(ptr, suggestedSize);
+            Console.WriteLine("in");
         }
 
-        private static void UVReadCb(IntPtr handle, int status, ref UVIntrop.uv_buf_t buf)
+        unsafe private static void UVReadCb(IntPtr handle, int nread, ref UVIntrop.uv_buf_t buf)
         {
+            Console.WriteLine("out");
+            UVException ex;
+            UVIntrop.Check(nread, out ex);
+            if (ex != null)
+            {      
+                
+                Console.WriteLine("有错误");
+                return;
+            }
 
+            if (nread == 0)
+            {
+                Console.WriteLine("关闭鸟");
+                return;
+            }
+            else
+            {
+                //read
+                Console.WriteLine("读取字节数:" + nread.ToString()+","+((char*)buf._field1)[0]);
+            }
         }
         #endregion
     }

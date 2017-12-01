@@ -17,8 +17,8 @@ namespace waxbill.Libuv
         
         public void CreateMemory(Int32 size)
         {
-            //handle = Marshal.AllocHGlobal(size);
-            handle = Marshal.AllocCoTaskMem(size);
+            handle = Marshal.AllocHGlobal(size);
+            //handle = Marshal.AllocCoTaskMem(size);
             GCHandle gcHandlePtr = GCHandle.Alloc(this, this.mHandleType);
             *(IntPtr*)handle = GCHandle.ToIntPtr(gcHandlePtr);
         }
