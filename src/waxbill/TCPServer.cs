@@ -18,6 +18,7 @@ namespace waxbill
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
             Validate.ThrowIfNull(option, "服务配置参数不正确");
 
+            
             //转化ip
             if (string.IsNullOrEmpty(ip))
             {

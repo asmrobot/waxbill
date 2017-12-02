@@ -61,6 +61,15 @@ namespace waxbill.Libuv
         #endregion
 
         #region struct
+        [StructLayout(LayoutKind.Sequential)]
+        public struct uv_req_t
+        {
+            public IntPtr data;
+            public RequestType type;
+        }
+
+
+        public const Int32 UV_EOF = -4095;
         public enum RequestType
         {
             Unknown = 0,

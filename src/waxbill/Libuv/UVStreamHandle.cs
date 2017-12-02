@@ -100,36 +100,61 @@ namespace waxbill.Libuv
             }
             
         }
-
+        private IntPtr Content=IntPtr.Zero;
+        private Int32 Size = 0;
 
         private static void UVAllocCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
         {
-            IntPtr ptr = Marshal.AllocHGlobal(suggestedSize);
-            buf= UVIntrop.buf_init(ptr, suggestedSize);
-            Console.WriteLine("in");
+            UVStreamHandle target=FromIntPtr<UVStreamHandle>(handle);
+            if (target.Content == IntPtr.Zero)
+            {
+                target.Size = suggestedSize;
+                target.Content = Marshal.AllocHGlobal(suggestedSize);
+                buf = UVIntrop.buf_init(target.Content, target.Size);
+            }
+            buf= new UVIntrop.uv_buf_t(target.Content, target.Size, UVIntrop.IsWindows);
         }
 
         unsafe private static void UVReadCb(IntPtr handle, int nread, ref UVIntrop.uv_buf_t buf)
         {
-            Console.WriteLine("out");
             UVException ex;
             UVIntrop.Check(nread, out ex);
             if (ex != null)
-            {      
-                
+            {
+                if (nread == UVIntrop.UV_EOF)
+                {
+                    Console.WriteLine("关闭鸟");
+                    return;
+                }
                 Console.WriteLine("有错误");
                 return;
             }
 
             if (nread == 0)
             {
-                Console.WriteLine("关闭鸟");
+                Console.WriteLine("据说可以忽略");
                 return;
             }
             else
             {
                 //read
-                Console.WriteLine("读取字节数:" + nread.ToString()+","+((char*)buf._field1)[0]);
+                UVStreamHandle target = FromIntPtr<UVStreamHandle>(handle);
+                byte[] t = new byte[nread];
+                Marshal.Copy(target.Content, t, 0, nread);
+
+                Console.WriteLine("读取字节数:" + nread.ToString()+","+System.Text.Encoding.UTF8.GetString(t));
+
+                fixed (byte* p = t)
+                {
+                    IntPtr pointer = (IntPtr)p;
+                    UVIntrop.uv_buf_t[] mbuf = new UVIntrop.uv_buf_t[]{
+                        UVIntrop.buf_init(pointer, nread)
+                    };
+
+
+                    UVIntrop.uv_try_write(target, mbuf, 1);
+                }
+                
             }
         }
         #endregion

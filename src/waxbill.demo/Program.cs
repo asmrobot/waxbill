@@ -16,8 +16,23 @@ namespace waxbill.demo
         
         
         static UVLoopHandle loop;
-        static void Main(string[] args)
+        unsafe static void Main(string[] args)
         {
+
+
+            //byte[] b = new byte[1024];
+            //GCHandle handle = GCHandle.Alloc(b, GCHandleType.Pinned);
+            //IntPtr ptr = handle.AddrOfPinnedObject();
+
+            //byte[] data = System.Text.Encoding.UTF8.GetBytes("ABCabcdefghijklmnopq");
+            //Buffer.BlockCopy(data, 0, b, 0, data.Length);
+
+
+            //for (int i = 0; i < 15; i++)
+            //{
+            //    Console.WriteLine(*((byte*)ptr + i));
+            //}
+
             loop = new UVLoopHandle();
             loop.Init();
 
@@ -28,20 +43,21 @@ namespace waxbill.demo
             {
                 tcp.Bind("0.0.0.0", 12308);
             }
-            catch(UVException ex)
+            catch (UVException ex)
             {
                 throw ex;
             }
 
-            tcp.Listen(50,(stream,status,ex,state)=> {
+            tcp.Listen(50, (stream, status, ex, state) =>
+            {
                 UVTCPHandle client = new UVTCPHandle();
                 client.Init(loop);
-                
+
                 try
                 {
                     stream.Accept(client);
 
-                    Console.WriteLine("远程地址为："+client.RemoteEndPoint.ToString());
+                    Console.WriteLine("远程地址为：" + client.RemoteEndPoint.ToString());
 
                     client.ReadStart();
                 }
@@ -50,14 +66,9 @@ namespace waxbill.demo
                     Console.WriteLine("accept error");
                     client.Dispose();
                 }
-                
 
 
-
-                
-
-                
-            },loop);
+            }, loop);
 
 
 
