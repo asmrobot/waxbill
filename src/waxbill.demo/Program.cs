@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using waxbill.Exceptions;
 using waxbill.Libuv;
 using waxbill.Libuv.Collections;
+using waxbill.Protocols;
 
 namespace waxbill.demo
 {
@@ -15,8 +16,8 @@ namespace waxbill.demo
     {
         unsafe static void Main(string[] args)
         {
-
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>("0.0.0.0", 12308);
+            
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new TerminatorProtocol(),"0.0.0.0", 12308);
             server.Start();
             
             Console.WriteLine("close!~");

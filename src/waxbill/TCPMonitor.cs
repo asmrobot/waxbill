@@ -17,13 +17,16 @@ namespace waxbill
         public event OnConnectionEvent OnConnection;
         private long _ConnectionIncremer = 0;
         public ServerOption Option { get; private set; }
-
+        internal IProtocol Protocol { get; private set; }
         internal SendingPool SendingPool;
         internal BufferManager BufferManager;
 
-        public TCPMonitor(ServerOption option)
+
+        public TCPMonitor(IProtocol protocol,ServerOption option)
         {
+            Validate.ThrowIfNull(protocol, "协议为空");
             Validate.ThrowIfNull(option, "服务配置参数不正确");
+            this.Protocol = protocol;
             this.Option = option;
             this.SendingPool = new SendingPool();
             this.SendingPool.Initialize(this.Option.MinSendingPoolSize, this.Option.MaxSendingPoolSize, this.Option.SendQueueSize);

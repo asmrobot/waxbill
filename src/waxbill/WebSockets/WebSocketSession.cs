@@ -7,7 +7,6 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using ZTImage.Log;
 using waxbill.Utils;
 
 namespace waxbill.WebSockets
@@ -137,7 +136,7 @@ namespace waxbill.WebSockets
                     }
                     catch (Exception ex)
                     {
-                        Trace.Error("frame处理失败", ex);
+                        //todo:log Trace.Error("frame处理失败", ex);
                         continue;
                     }
                     
@@ -156,7 +155,7 @@ namespace waxbill.WebSockets
             }
             catch (Exception ex)
             {
-                Trace.Error("websocket ssion 中的未知错误", ex);
+                //todo:log Trace.Error("websocket ssion 中的未知错误", ex);
             }
             this.Close(CloseReason.Exception);
         }
@@ -222,14 +221,14 @@ namespace waxbill.WebSockets
 
             if (!header_dic.ContainsKey("Connection") || !header_dic.ContainsKey("Upgrade"))
             {
-                Trace.Error("据手不包含Connections");
+                //todo:log Trace.Error("据手不包含Connections");
                 this.Close(CloseReason.ProtocolError);
                 return false;
             }
 
             if (!header_dic.ContainsKey("Sec-WebSocket-Key"))
             {
-                Trace.Error("据手不包含KEY");
+                //todo:log Trace.Error("据手不包含KEY");
                 this.Close(CloseReason.ProtocolError);
                 return false;
             }
@@ -239,7 +238,8 @@ namespace waxbill.WebSockets
             byte[] StrRes = Encoding.Default.GetBytes(key);
             HashAlgorithm iSHA = new SHA1CryptoServiceProvider();
             byte[] edatas = iSHA.ComputeHash(StrRes);
-            string accept = ZTImage.Text.Coding.EncodeBase64(edatas);
+
+            string accept = GetBase64(edatas);
             string model = "HTTP/1.1 101 Switching Protocols\r\nUpgrade:websocket\r\nConnection:Upgrade\r\nSec-WebSocket-Accept:" + accept + "\r\n\r\n";
 
             byte[] sends = Encoding.UTF8.GetBytes(model);
@@ -248,6 +248,17 @@ namespace waxbill.WebSockets
             //Trace.Info("已处理握手");
             HandshakeCallback();
             return true;
+        }
+
+
+        private string GetBase64(byte[] data)
+        {
+            if (data == null || data.Length <= 0)
+            {
+                return string.Empty;
+            }
+
+            return Convert.ToBase64String(data);
         }
                 
         /// <summary>

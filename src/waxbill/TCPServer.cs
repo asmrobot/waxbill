@@ -12,10 +12,10 @@ namespace waxbill
 {
     public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new()
     {
-        public TCPServer(string ip,Int32 port):this(ip,port,ServerOption.Define)
+        public TCPServer(IProtocol protocol,string ip,Int32 port):this(protocol,ip,port,ServerOption.Define)
         {}
 
-        public TCPServer(string ip, Int32 port, ServerOption option):base(option)
+        public TCPServer(IProtocol protocol,string ip, Int32 port, ServerOption option):base(protocol,option)
         {
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
             

@@ -90,6 +90,7 @@
     <Compile Include="Protocols\ZTProtocol.cs" />
     <Compile Include="ServerOption.cs" />
     <Compile Include="SessionEvent.cs" />
+    <Compile Include="SessionState.cs" />
     <Compile Include="TCPClient.cs" />
     <Compile Include="TCPListener.cs" />
     <Compile Include="TCPMonitor.cs" />

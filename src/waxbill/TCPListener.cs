@@ -7,7 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Exceptions;
 using waxbill.Libuv;
-using waxbill.Tools;
+using waxbill.Utils;
 
 namespace waxbill
 {

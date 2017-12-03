@@ -10,17 +10,6 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    public class SessionState
-    {
-        public const Int32 Sending = 1;
-        public const Int32 Receiveing = 2;
-        public const Int32 Normal = 4;
-
-
-        public const Int32 Closeing = 64;
-        public const Int32 Closed = 128;
-    }
-
     public abstract class SocketSession
     {
         protected TCPMonitor Monitor;
@@ -30,7 +19,7 @@ namespace waxbill
         private Int32 m_state = 0;//会话状态
         private Packet m_Packet;//本包
         public long ConnectionID { get; private set; }//连接ID
-        private SendingQueue m_SendingQueue;
+        private SendingQueue mSendingQueue;
 
         internal void Init(UVTCPHandle handle, TCPMonitor monitor, ServerOption option)
         {
@@ -121,7 +110,6 @@ namespace waxbill
 
 
         #region send
-
         /// <summary>
         /// 加入到发送列表中
         /// </summary>
@@ -220,7 +208,7 @@ namespace waxbill
         private bool TrySend(ArraySegment<byte> data, out bool reTry)
         {
             reTry = false;
-            SendingQueue oldQueue = this.m_SendingQueue;
+            SendingQueue oldQueue = this.mSendingQueue;
             if (oldQueue == null)
             {
                 return false;
@@ -238,7 +226,7 @@ namespace waxbill
         private bool TrySend(IList<ArraySegment<byte>> datas, out bool reTry)
         {
             reTry = false;
-            SendingQueue oldQueue = this.m_SendingQueue;
+            SendingQueue oldQueue = this.mSendingQueue;
             if (oldQueue == null)
             {
                 //todo:是否关闭连接？
@@ -255,7 +243,7 @@ namespace waxbill
 
         private bool PreSend()
         {
-            SendingQueue oldQueue = this.m_SendingQueue;
+            SendingQueue oldQueue = this.mSendingQueue;
             if (oldQueue.Count <= 0)
             {
                 return true;
@@ -274,7 +262,7 @@ namespace waxbill
             }
 
             newQueue.StartQueue();
-            m_SendingQueue = newQueue;
+            mSendingQueue = newQueue;
             oldQueue.StopQueue();
 
             return InternalSend(oldQueue);
@@ -293,15 +281,15 @@ namespace waxbill
             {
                 if (queue.Count > 1)
                 {
-                    this._SendSAE.BufferList = queue;
+                    //todo:发送queueu this._SendSAE.BufferList = queue;
+                    //client.TryWrite(t);
                 }
                 else
                 {
                     ArraySegment<byte> buffer = queue[0];
-                    this._SendSAE.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
+                    //todo:发送buffer this._SendSAE.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
+                    //client.TryWrite(t);
                 }
-                this._SendSAE.UserToken = queue;
-                isAsync = this._Connector.SendAsync(this._SendSAE);
             }
             catch (Exception ex)
             {
@@ -309,8 +297,7 @@ namespace waxbill
                 SendEnd(queue, CloseReason.Exception);
                 return false;
             }
-
-            if (!isAsync) this.SAE_SendCompleted(this, this._SendSAE);
+            
             return true;
         }
 
@@ -319,28 +306,27 @@ namespace waxbill
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SAE_SendCompleted(object sender, SocketAsyncEventArgs e)
+        private void SAE_SendCompleted(SendingQueue queue,Int32 transCount)
         {
-            var queue = e.UserToken as SendingQueue;
             if (queue == null)
             {
-                ZTImage.Log.Trace.Error("未知错误help!~");
+                //todo:log ZTImage.Log.Trace.Error("未知错误help!~");
                 return;
             }
 
-            if (e.SocketError != SocketError.Success)
-            {
-                this.RaiseSended(queue, false);
-                SendEnd(queue, CloseReason.Exception);
-                return;
-            }
+            //if (e.SocketError != SocketError.Success)
+            //{
+            //    this.RaiseSended(queue, false);
+            //    SendEnd(queue, CloseReason.Exception);
+            //    return;
+            //}
 
             int sum = queue.Sum(b => b.Count);
-            if (sum <= e.BytesTransferred)
+            if (sum <= transCount)
             {
                 //发送下一包
-                e.SetBuffer(null, 0, 0);
-                e.BufferList = null;
+                //e.SetBuffer(null, 0, 0);
+                //e.BufferList = null;
                 this.RaiseSended(queue, true);
                 queue.Clear();
                 this.Monitor.SendingPool.Push(queue);
@@ -351,7 +337,7 @@ namespace waxbill
             else
             {
                 //发送剩余
-                queue.TrimByte(e.BytesTransferred);
+                queue.TrimByte(transCount);
                 InternalSend(queue);
             }
 
@@ -375,67 +361,28 @@ namespace waxbill
         #endregion
 
         #region receive
-        private void InternalReceive(SocketAsyncEventArgs e)
-        {
-            if (GetState(SessionState.Closed) || GetState(SessionState.Closeing) || (e == null)) return;
-
-            bool completedAsync = true;
-            try
-            {
-                completedAsync = this._Connector.ReceiveAsync(e);
-            }
-            catch (Exception ex)
-            {
-                ZTImage.Log.Trace.Error("接收消息时出现错误", ex);
-                ReceiveEnd(CloseReason.InernalError);
-            }
-
-            if (!completedAsync) this.SAE_ReceiveCompleted(this, e);
-        }
-
-        //todo:remove
-        byte[] datas = new byte[40960];
-        private void SAE_ReceiveCompleted(object sender, SocketAsyncEventArgs e)
-        {
-            if (e.SocketError != SocketError.Success)
-            {
-                ReceiveEnd(CloseReason.Exception);
-                return;
-            }
-            if (e.BytesTransferred < 1)
-            {
-                ReceiveEnd(CloseReason.RemoteClose);
-                return;
-            }
-
-            //todo:remove
-            Buffer.BlockCopy(e.Buffer, e.Offset, datas, 0, e.BytesTransferred);
-            this.InternalReceive(this._ReceiveSAE);
-            return;
-            if (m_Packet == null)
-            {
-                m_Packet = new Packet(this.Monitor.BufferManager);
-            }
-            this.ReceiveCompleted(new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
-        }
-
         /// <summary>
         /// 消息接收完成
         /// </summary>
         /// <param name="connector"></param>
         /// <param name="datas"></param>
         /// <param name="callback"></param>
-        private void ReceiveCompleted(ArraySegment<byte> datas)
+        private void ReceiveCompleted(IntPtr memory,Int32 offset,Int32 nread,Int32 totalCount,out Int32 readLen)
         {
+            if (m_Packet == null)
+            {
+                m_Packet = new Packet(this.Monitor.BufferManager);
+            }
+
             bool result = false;
             int readlen = 0;
             try
             {
-                result = this.Monitor._Protocol.TryToMessage(ref this.m_Packet, datas, out readlen);
+                result = this.Monitor.Protocol.TryToMessage(ref this.m_Packet, datas, out readlen);
             }
             catch (Exception ex)
             {
-                ZTImage.Log.Trace.Error("解析信息时发生错误", ex);
+                //todo:log ZTImage.Log.Trace.Error("解析信息时发生错误", ex);
                 ReceiveEnd(CloseReason.InernalError);
             }
 
@@ -452,7 +399,7 @@ namespace waxbill
                     }
                     catch (Exception ex)
                     {
-                        ZTImage.Log.Trace.Error("处理信息时出现错误", ex);
+                        //todo:log ZTImage.Log.Trace.Error("处理信息时出现错误", ex);
                         ReceiveEnd(CloseReason.Exception);
                         return;
                     }
@@ -478,11 +425,13 @@ namespace waxbill
         private void ReceiveCompletedLoop(ArraySegment<byte> datas, int readlen)
         {
             if (readlen < 0 || readlen > datas.Count)
+            {
                 throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
+            }
+            
 
             if (readlen == 0 || readlen == datas.Count)
             {
-                this.InternalReceive(this._ReceiveSAE);
                 return;
             }
 
@@ -493,16 +442,16 @@ namespace waxbill
         /// <summary>
         /// 消息接收中止
         /// </summary>
-        private void ReceiveEnd(CloseReason reason)
+        private void ReceiveEnd(CloseReason reason,Exception exception=null)
         {
             RemoveState(SessionState.Receiveing);
-            this.Close(reason);
+            this.Close(reason, exception);
         }
         #endregion
 
         #region control
 
-        public void Close(CloseReason reason)
+        public void Close(CloseReason reason,Exception exception=null)
         {
             lock (this)
             {
@@ -518,16 +467,8 @@ namespace waxbill
 
                 this.RaiseDisconnect(reason);
 
-                try
-                {
-                    this._Connector.Shutdown(SocketShutdown.Both);
-                    this._Connector.Close();
-                    this._Connector = null;
-                }
-                catch (Exception ex)
-                {
-                    Log.Trace.Error("关闭连接失败", ex);
-                }
+                //todo:关闭句柄
+                this.TcpHandle.Dispose();
 
                 this.FreeResource(reason);
             }
@@ -537,7 +478,6 @@ namespace waxbill
 
         private void FreeResource(CloseReason reason)
         {
-
             //清空接收缓存
             if (this.m_Packet != null)
             {
@@ -545,37 +485,25 @@ namespace waxbill
             }
 
             //清空发送缓存
-            if (this.m_SendingQueue != null)
+            if (this.mSendingQueue != null)
             {
-                if (this.m_SendingQueue.Count > 0)
+                if (this.mSendingQueue.Count > 0)
                 {
-                    this.RaiseSended(this.m_SendingQueue, false);
+                    this.RaiseSended(this.mSendingQueue, false);
                 }
-                this.m_SendingQueue.Clear();
-                this.Monitor.SendingPool.Push(this.m_SendingQueue);
+                this.mSendingQueue.Clear();
+                this.Monitor.SendingPool.Push(this.mSendingQueue);
 
             }
-
-            this._SendSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
-            this._SendSAE.UserToken = null;
-            this._SendSAE.SetBuffer(null, 0, 0);
-            this._SendSAE = null;
-
-
-            this._ReceiveSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
-            this._ReceiveSAE.UserToken = null;
-            this.Monitor.SocketEventArgsPool.RealseSocketAsyncEventArgs(this._ReceiveSAE);
-            this._ReceiveSAE = null;
-
-            this._Connector = null;
+            
             SetState(SessionState.Closed);
-
         }
         #endregion
 
 
         #region handle
-        IntPtr content = IntPtr.Zero;
+        private IntPtr mReadDatas = IntPtr.Zero;
+        private Int32 mReadOffset = 0;
         /// <summary>
         /// 分配内存
         /// </summary>
@@ -585,12 +513,13 @@ namespace waxbill
         /// <returns></returns>
         internal UVIntrop.uv_buf_t AllocMemoryCallback(UVStreamHandle handle, Int32 suggsize, object state)
         {
-            if (content == IntPtr.Zero)
+            Console.WriteLine("alloc");
+            if (mReadDatas == IntPtr.Zero)
             {
-                content = Marshal.AllocHGlobal(1024);
+                mReadDatas = Marshal.AllocHGlobal(this.Option.ReceiveBufferSize);
             }
             
-            return new UVIntrop.uv_buf_t(content, 1024, UVIntrop.IsWindows);
+            return new UVIntrop.uv_buf_t(mReadDatas+this.mReadOffset, this.Option.ReceiveBufferSize-this.mReadOffset, UVIntrop.IsWindows);
         }
 
         /// <summary>
@@ -607,27 +536,34 @@ namespace waxbill
             {
                 if (nread == UVIntrop.UV_EOF)
                 {
-                    this.RaiseDisconnect(CloseReason.RemoteClose);
-                    return;
+                    ReceiveEnd(CloseReason.RemoteClose);
                 }
-                Console.WriteLine("有错误");
+                else
+                {
+                    ReceiveEnd(CloseReason.Exception, exception);
+                }
                 return;
             }
 
             if (nread == 0)
             {
+                //todo:研究
+                //Close(CloseReason.RemoteClose, null);
                 Console.WriteLine("据说可以忽略");
                 return;
             }
             else
             {
-                //read
-
-                byte[] t = new byte[nread];
-                Marshal.Copy(content, t, 0, nread);
-                Console.WriteLine("读取字节数:" + nread.ToString() + "," + System.Text.Encoding.UTF8.GetString(t));
-
-                client.TryWrite(t);
+                Int32 readLen = 0;
+                this.ReceiveCompleted(this.mReadDatas,this.mReadOffset,nread, this.Option.ReceiveBufferSize,out readLen);
+                if (readLen > 0)
+                {
+                    //private IntPtr mReadDatas = IntPtr.Zero;
+                    //private Int32 mReadOffset = 0;
+                    //判断是否还有数据
+                    //有则移动
+                    //无则休整
+    }
             }
         }
         #endregion
@@ -666,36 +602,36 @@ namespace waxbill
 
         }
 
-        ///// <summary>
-        ///// 发送成功
-        ///// </summary>
-        ///// <param name="connector"></param>
-        ///// <param name="packet"></param>
-        ///// <param name="result"></param>
-        //private void RaiseSended(SendingQueue packet, bool result)
-        //{
-        //    try
-        //    {
-        //        SendedCallback(packet, result);
-        //        Monitor.RaiseOnSendedEvent(this, packet, result);
-        //    }
-        //    catch
-        //    { }
+        /// <summary>
+        /// 发送成功
+        /// </summary>
+        /// <param name="connector"></param>
+        /// <param name="packet"></param>
+        /// <param name="result"></param>
+        private void RaiseSended(SendingQueue packet, bool result)
+        {
+            try
+            {
+                SendedCallback(packet, result);
+                Monitor.RaiseOnSendedEvent(this, packet, result);
+            }
+            catch
+            { }
 
-        //}
+        }
 
-        //private void RaiseReceive(Packet packet)
-        //{
-        //    try
-        //    {
-        //        ReceiveCallback(packet);
-        //        Monitor.RaiseOnReceiveEvent(this, packet);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ZTImage.Log.Trace.Error(ex.Message, ex);
-        //    }
-        //}
+        private void RaiseReceive(Packet packet)
+        {
+            try
+            {
+                ReceiveCallback(packet);
+                Monitor.RaiseOnReceiveEvent(this, packet);
+            }
+            catch (Exception ex)
+            {
+                //todo:log ZTImage.Log.Trace.Error(ex.Message, ex);
+            }
+        }
         #endregion
 
         #region Callback
