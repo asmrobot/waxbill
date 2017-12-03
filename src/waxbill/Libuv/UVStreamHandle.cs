@@ -11,6 +11,9 @@ namespace waxbill.Libuv
 
     public class UVStreamHandle : UVHandle
     {
+        public delegate UVIntrop.uv_buf_t AllocCallback(UVStreamHandle handle, Int32 suggestedSize,object allocState);
+        public delegate void ReadCallback(UVStreamHandle handle, Int32 nread, UVException exception,ref UVIntrop.uv_buf_t buf, object readState);
+
 
         private readonly static UVIntrop.uv_connection_cb mOnConnection = UVConnectionCb;
         private readonly static UVIntrop.uv_read_cb mOnRead = UVReadCb;
@@ -20,8 +23,9 @@ namespace waxbill.Libuv
         private Action<UVStreamHandle, Int32, UVException, Object> mConnectionCallback;
         private object mConnectionCallbackState;
 
-        private Func<UVStreamHandle, Int32, UVIntrop.uv_buf_t> mAllocCallback;
-        private Action<UVStreamHandle, Int32, UVException, UVIntrop.uv_buf_t, Object> mReadCallback;
+        private AllocCallback mAllocCallback;
+        private object mallocCallbackState;
+        private ReadCallback mReadCallback;
         private object mReadCallbackState;
         
 
@@ -55,11 +59,13 @@ namespace waxbill.Libuv
             UVIntrop.accept(this, handle);
         }
 
-        public void ReadStart(Func<UVStreamHandle, Int32, UVIntrop.uv_buf_t> allocCallback, Action<UVStreamHandle,Int32,UVException, UVIntrop.uv_buf_t, Object> readCallback,object readState)
+        public void ReadStart(AllocCallback allocCallback, ReadCallback readCallback,object allocState,object readState)
         {
             //todo: 禁止重复调用
+            this.mAllocCallback = allocCallback;
             this.mReadCallback = readCallback;
             this.mReadCallbackState = readState;
+            this.mallocCallbackState = allocState;
             UVIntrop.read_start(this, mOnAlloc, mOnRead);
         }
 
@@ -85,11 +91,7 @@ namespace waxbill.Libuv
                 UVIntrop.try_write(this, mbuf, 1);
             }
         }
-
         
-
-
-
         protected override bool ReleaseHandle()
         {
             this.mConnectionCallbackState = null;
@@ -105,7 +107,6 @@ namespace waxbill.Libuv
         private static void UVConnectionCb(IntPtr server, Int32 status)
         {
             UVIntrop.Check(status, out var error);
-
             UVStreamHandle stream = UVMemory.FromIntPtr<UVStreamHandle>(server);
             try
             {
@@ -117,8 +118,7 @@ namespace waxbill.Libuv
             }
             
         }
-        private IntPtr Content=IntPtr.Zero;
-        private Int32 Size = 0;
+       
 
         private static void UVAllocCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
         {
@@ -130,22 +130,13 @@ namespace waxbill.Libuv
             }
             try
             {
-                buf = target.mAllocCallback(target, suggestedSize);
+                buf = target.mAllocCallback(target, suggestedSize,target.mallocCallbackState);
             }
             catch (Exception ex)
             {
                 //todo:清理操作
                 throw new WaxbillException("分配内存出错");
             }
-                
-            
-            //if (target.Content == IntPtr.Zero)
-            //{
-            //    target.Size = suggestedSize;
-            //    target.Content = Marshal.AllocHGlobal(suggestedSize);
-            //    buf = UVIntrop.buf_init(target.Content, target.Size);
-            //}
-            //buf= new UVIntrop.uv_buf_t(target.Content, target.Size, UVIntrop.IsWindows);
         }
 
         unsafe private static void UVReadCb(IntPtr handle, int nread, ref UVIntrop.uv_buf_t buf)
@@ -158,34 +149,7 @@ namespace waxbill.Libuv
             {
                 throw new WaxbillException("流已释放");
             }
-            target.mReadCallback(target, nread, ex,buf, target.mReadCallbackState);
-            //if (ex != null)
-            //{
-            //    if (nread == UVIntrop.UV_EOF)
-            //    {
-            //        Console.WriteLine("关闭鸟");
-            //        return;
-            //    }
-            //    Console.WriteLine("有错误");
-            //    return;
-            //}
-
-            //if (nread == 0)
-            //{
-            //    Console.WriteLine("据说可以忽略");
-            //    return;
-            //}
-            //else
-            //{
-            //    //read
-                
-            //    byte[] t = new byte[nread];
-            //    Marshal.Copy(target.Content, t, 0, nread);
-
-            //    Console.WriteLine("读取字节数:" + nread.ToString()+","+System.Text.Encoding.UTF8.GetString(t));
-
-            //    target.TryWrite(t);
-            //}
+            target.mReadCallback(target, nread, ex,ref buf, target.mReadCallbackState);
         }
         #endregion
     }

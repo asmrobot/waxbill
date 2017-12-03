@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CloseReason.cs" />
     <Compile Include="Exceptions\CanotRepeatException.cs" />
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
@@ -79,12 +80,32 @@
     <Compile Include="Libuv\UVTimerHandle.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Libuv\UVIntrop.cs" />
+    <Compile Include="Protocols\BeginEndMarkProtocol.cs" />
+    <Compile Include="Protocols\FixedHeaderProtocol.cs" />
+    <Compile Include="Protocols\FixedLengthProtocol.cs" />
+    <Compile Include="Protocols\IProtocol.cs" />
+    <Compile Include="Protocols\ProtocolBase.cs" />
+    <Compile Include="Protocols\RealProtocol.cs" />
+    <Compile Include="Protocols\TerminatorProtocol.cs" />
+    <Compile Include="Protocols\ZTProtocol.cs" />
     <Compile Include="ServerOption.cs" />
     <Compile Include="SessionEvent.cs" />
     <Compile Include="TCPClient.cs" />
     <Compile Include="TCPListener.cs" />
+    <Compile Include="TCPMonitor.cs" />
     <Compile Include="TCPServer.cs" />
-    <Compile Include="Tools\Validate.cs" />
+    <Compile Include="SocketSession.cs" />
+    <Compile Include="Utils\Validate.cs" />
+    <Compile Include="Utils\BufferManager.cs" />
+    <Compile Include="Utils\EventArgPool.cs" />
+    <Compile Include="Utils\NetworkBitConverter.cs" />
+    <Compile Include="Utils\Packet.cs" />
+    <Compile Include="Utils\PacketStream.cs" />
+    <Compile Include="Utils\SendingPool.cs" />
+    <Compile Include="Utils\SendingQueue.cs" />
+    <Compile Include="WebSockets\WaitHandleStream.cs" />
+    <Compile Include="WebSockets\WebSocketFrame.cs" />
+    <Compile Include="WebSockets\WebSocketSession.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Buffer\" />

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using waxbill.Exceptions;
 
-namespace waxbill.Tools
+namespace waxbill.Utils
 {
     public class Validate
     {

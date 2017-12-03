@@ -2,50 +2,57 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Tools;
+using waxbill.Libuv;
+using waxbill.Utils;
 
 namespace waxbill
 {
-    public class TCPServer
+    public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new()
     {
         public TCPServer(string ip,Int32 port):this(ip,port,ServerOption.Define)
         {}
 
-        public TCPServer(string ip, Int32 port, ServerOption option)
+        public TCPServer(string ip, Int32 port, ServerOption option):base(option)
         {
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
-            Validate.ThrowIfNull(option, "服务配置参数不正确");
-
             
-            //转化ip
+
+            this.LocalIP = ip;
             if (string.IsNullOrEmpty(ip))
             {
-                this.Local = IPAddress.Any;
-            }
-            else
-            {
-                IPAddress address;
-                if (IPAddress.TryParse(ip, out address))
-                {
-                    this.Local = address;
-                }
-                else
-                {
-                    throw new waxbill.Exceptions.FormatException("地址格式不正确");
-                }
+                this.LocalIP = "0.0.0.0";
             }
 
-            this.Listener = new TCPListener(new IPEndPoint(this.Local, this.Port));
+            this.LocalPort = port;
+            this.Listener = new TCPListener(this.LocalIP, this.LocalPort);
             this.Listener.OnStartSession += Listener_OnStartSession;
+            this.LoopHandle = new UVLoopHandle();
+            this.LoopHandle.Init();
+
+            this.ServerHandle = new UVTCPHandle();
+            this.ServerHandle.Init(this.LoopHandle);
         }
 
-        
+
+
+        public string LocalIP { get; private set; }
+
+        public Int32 LocalPort { get; private set; }
+
+        public TCPListener Listener { get; private set; }
+
+        public UVTCPHandle ServerHandle { get; private set; }
+
+        public UVLoopHandle LoopHandle { get; private set; }
+
 
         public void Start()
         {
-            this.Listener.Start();
+            this.Listener.Start(this.Option.ListenBacklog,this.ServerHandle,this.LoopHandle);
+            this.LoopHandle.Start();
         }
 
         public void Stop()
@@ -53,20 +60,12 @@ namespace waxbill
             this.Listener.Stop();
         }
         
-
-
-        public IPAddress Local { get; private set; }
-
-        public Int32 Port { get; private set; }
-
-        public TCPListener Listener { get; private set; }
-
-        private void Listener_OnStartSession(int sessionid)
+        private void Listener_OnStartSession(UVTCPHandle client)
         {
-            Console.WriteLine("connection ok");
+            SocketSession session = new TSession();
+            session.Init(client,this,this.Option);
+            session.RaiseAccept();
+            client.ReadStart(session.AllocMemoryCallback, session.ReadCallback, session,session);
         }
-
-
-
     }
 }
