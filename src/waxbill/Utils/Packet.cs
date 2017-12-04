@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,7 +142,38 @@ namespace waxbill.Utils
             }
             return canReadCount;
         }
-        
+
+        /// <summary>
+        /// 添加字节段
+        /// </summary>
+        /// <param name="bytes"></param>
+        internal void Write(IntPtr bytes,Int32 count)
+        {
+            if (bytes!=IntPtr.Zero&&count>0)
+            {
+                EnsureBuffer();
+                int idleCount = 0;
+                int copySize = 0;
+                int let = count;//剩余copy字节数
+                while (let > 0)
+                {
+                    idleCount = m_BufferManager.BufferSize - this.m_CurrentPosition;//当前缓存空闲
+                    copySize = Math.Min(let, idleCount);
+                    var temp = this.m_Datas[m_ListIndex];
+                    Marshal.Copy(bytes,  temp.Array, temp.Offset + this.m_CurrentPosition, copySize);
+                    bytes += copySize;
+                    this.m_CurrentPosition += copySize;
+                    let -= copySize;
+                    if (let <= 0)
+                    {
+                        break;
+                    }
+                    EnsureBuffer();
+                }
+                this.m_Count += count;
+            }
+        }
+
         /// <summary>
         /// 添加字节段
         /// </summary>

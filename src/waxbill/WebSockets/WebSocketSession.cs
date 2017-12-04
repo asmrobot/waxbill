@@ -136,7 +136,7 @@ namespace waxbill.WebSockets
                     }
                     catch (Exception ex)
                     {
-                        //todo:log Trace.Error("frame处理失败", ex);
+                        Trace.Error("frame处理失败", ex);
                         continue;
                     }
                     
@@ -155,7 +155,7 @@ namespace waxbill.WebSockets
             }
             catch (Exception ex)
             {
-                //todo:log Trace.Error("websocket ssion 中的未知错误", ex);
+                Trace.Error("websocket ssion 中的未知错误", ex);
             }
             this.Close(CloseReason.Exception);
         }
@@ -221,14 +221,14 @@ namespace waxbill.WebSockets
 
             if (!header_dic.ContainsKey("Connection") || !header_dic.ContainsKey("Upgrade"))
             {
-                //todo:log Trace.Error("据手不包含Connections");
+                Trace.Error("据手不包含Connections");
                 this.Close(CloseReason.ProtocolError);
                 return false;
             }
 
             if (!header_dic.ContainsKey("Sec-WebSocket-Key"))
             {
-                //todo:log Trace.Error("据手不包含KEY");
+                Trace.Error("据手不包含KEY");
                 this.Close(CloseReason.ProtocolError);
                 return false;
             }

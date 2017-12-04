@@ -17,7 +17,7 @@ namespace waxbill
         protected ServerOption Option;//服务器配置
 
         private Int32 m_state = 0;//会话状态
-        private Packet m_Packet;//本包
+        private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
         private SendingQueue mSendingQueue;
 
@@ -257,7 +257,7 @@ namespace waxbill
             if (!this.Monitor.SendingPool.TryGet(out newQueue))
             {
                 SendEnd(null, CloseReason.InernalError);
-                //todo:ZTImage.Log.Trace.Error("没有分配到发送queue", null);
+                Trace.Error("没有分配到发送queue", null);
                 return false;
             }
 
@@ -293,7 +293,7 @@ namespace waxbill
             }
             catch (Exception ex)
             {
-                //todo:ZTImage.Log.Trace.Error("发送出现错误", ex);
+                Trace.Error("发送出现错误", ex);
                 SendEnd(queue, CloseReason.Exception);
                 return false;
             }
@@ -310,7 +310,7 @@ namespace waxbill
         {
             if (queue == null)
             {
-                //todo:log ZTImage.Log.Trace.Error("未知错误help!~");
+                Trace.Error("未知错误help!~");
                 return;
             }
 
@@ -367,78 +367,62 @@ namespace waxbill
         /// <param name="connector"></param>
         /// <param name="datas"></param>
         /// <param name="callback"></param>
-        private void ReceiveCompleted(IntPtr memory,Int32 offset,Int32 nread,Int32 totalCount,out Int32 readLen)
+        private void ReceiveCompleted(IntPtr memory,Int32 nread,out Int32 giveupCount)
         {
-            if (m_Packet == null)
-            {
-                m_Packet = new Packet(this.Monitor.BufferManager);
-            }
-
             bool result = false;
-            int readlen = 0;
+            giveupCount = 0;
             try
             {
-                result = this.Monitor.Protocol.TryToMessage(ref this.m_Packet, datas, out readlen);
+                result = this.Monitor.Protocol.TryToPacket(ref this.mPacket, memory,nread, out giveupCount);
             }
             catch (Exception ex)
             {
-                //todo:log ZTImage.Log.Trace.Error("解析信息时发生错误", ex);
+                Trace.Error("解析信息时发生错误", ex);
                 ReceiveEnd(CloseReason.InernalError);
             }
 
-            if (result)
+            if (!result)
             {
-                Packet oldPacket = this.m_Packet;
-                this.m_Packet = new Packet(this.Monitor.BufferManager);
-                System.Threading.ThreadPool.QueueUserWorkItem((obj) =>
-                {
-                    try
-                    {
-                        this.RaiseReceive(oldPacket);
-                        ReceiveCompletedLoop(datas, readlen);
-                    }
-                    catch (Exception ex)
-                    {
-                        //todo:log ZTImage.Log.Trace.Error("处理信息时出现错误", ex);
-                        ReceiveEnd(CloseReason.Exception);
-                        return;
-                    }
-                    finally
-                    {
-                        oldPacket.Clear();
-                    }
-                });
                 return;
             }
-            else
-            {
-                ReceiveCompletedLoop(datas, readlen);
-            }
-        }
 
-        /// <summary>
-        /// message process callback
-        /// </summary>
-        /// <param name="datas"></param>
-        /// <param name="readlen"></param>
-        /// <exception cref="ArgumentOutOfRangeException">readlength less than 0 or greater than payload.Count.</exception>
-        private void ReceiveCompletedLoop(ArraySegment<byte> datas, int readlen)
-        {
-            if (readlen < 0 || readlen > datas.Count)
+
+            if (giveupCount < 0 || giveupCount > nread)
             {
                 throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
             }
             
+            memory = IntPtr.Add(memory, giveupCount);
+            int readCount = 0;
 
-            if (readlen == 0 || readlen == datas.Count)
+            
+
+            Packet oldPacket = this.mPacket;
+            this.mPacket = new Packet(this.Monitor.BufferManager);
+            try
+            {
+                this.RaiseReceive(oldPacket);
+            }
+            catch (Exception ex)
+            {
+                Trace.Error("处理信息时出现错误", ex);
+                ReceiveEnd(CloseReason.Exception);
+                return;
+            }
+            finally
+            {
+                oldPacket.Clear();
+            }
+
+            if (giveupCount == nread)
             {
                 return;
             }
-
-            //粘包处理
-            this.ReceiveCompleted(new ArraySegment<byte>(datas.Array, datas.Offset + readlen, datas.Count - readlen));
+            readCount = 0;
+            ReceiveCompleted(memory, nread - giveupCount, out readCount);
+            giveupCount += readCount;
         }
-
+        
         /// <summary>
         /// 消息接收中止
         /// </summary>
@@ -467,21 +451,24 @@ namespace waxbill
 
                 this.RaiseDisconnect(reason);
 
+                if (this.mReadDatas != IntPtr.Zero)
+                {
+                    Marshal.FreeHGlobal(this.mReadDatas);
+                }
                 //todo:关闭句柄
                 this.TcpHandle.Dispose();
 
                 this.FreeResource(reason);
             }
-
         }
 
 
         private void FreeResource(CloseReason reason)
         {
             //清空接收缓存
-            if (this.m_Packet != null)
+            if (this.mPacket != null)
             {
-                this.m_Packet.Clear();
+                this.mPacket.Clear();
             }
 
             //清空发送缓存
@@ -493,17 +480,15 @@ namespace waxbill
                 }
                 this.mSendingQueue.Clear();
                 this.Monitor.SendingPool.Push(this.mSendingQueue);
-
             }
-            
             SetState(SessionState.Closed);
         }
         #endregion
-
-
+        
         #region handle
         private IntPtr mReadDatas = IntPtr.Zero;
         private Int32 mReadOffset = 0;
+
         /// <summary>
         /// 分配内存
         /// </summary>
@@ -513,13 +498,12 @@ namespace waxbill
         /// <returns></returns>
         internal UVIntrop.uv_buf_t AllocMemoryCallback(UVStreamHandle handle, Int32 suggsize, object state)
         {
-            Console.WriteLine("alloc");
             if (mReadDatas == IntPtr.Zero)
             {
                 mReadDatas = Marshal.AllocHGlobal(this.Option.ReceiveBufferSize);
             }
             
-            return new UVIntrop.uv_buf_t(mReadDatas+this.mReadOffset, this.Option.ReceiveBufferSize-this.mReadOffset, UVIntrop.IsWindows);
+            return new UVIntrop.uv_buf_t(mReadDatas+mReadOffset, this.Option.ReceiveBufferSize-this.mReadOffset, UVIntrop.IsWindows);
         }
 
         /// <summary>
@@ -554,22 +538,48 @@ namespace waxbill
             }
             else
             {
-                Int32 readLen = 0;
-                this.ReceiveCompleted(this.mReadDatas,this.mReadOffset,nread, this.Option.ReceiveBufferSize,out readLen);
-                if (readLen > 0)
+                if (mPacket == null)
                 {
-                    //private IntPtr mReadDatas = IntPtr.Zero;
-                    //private Int32 mReadOffset = 0;
-                    //判断是否还有数据
-                    //有则移动
-                    //无则休整
-    }
+                    mPacket = new Packet(this.Monitor.BufferManager);
+                }
+
+                Int32 giveupCount = 0;
+                this.mReadOffset += nread;
+
+                this.ReceiveCompleted(this.mReadDatas,this.mReadOffset,out giveupCount);
+                if (giveupCount > 0)
+                {
+                    if (giveupCount < this.mReadOffset)
+                    {
+                        //没读完
+                       this.mReadOffset = this.mReadOffset - giveupCount;
+                        Marshal.Copy(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset);
+                    }
+                    else
+                    {
+                        //读完
+                        this.mReadOffset = 0;
+                    }
+                }
+                //if (readLen > 0)
+                //{
+                //    //this.mReadStartOffset += readLen;
+
+                //}
+
+                //todo:优化
+                //if (this.mReadStartOffset == this.mReadEndOffset)
+                //{
+                //    this.mReadStartOffset = this.mReadEndOffset = 0;
+                //}
+                
+                //判断是否还有数据
+                //有则移动
+                //无则休整
             }
         }
         #endregion
-
-
-
+        
         #region Events Raise
         /// <summary>
         /// 连接
@@ -629,7 +639,7 @@ namespace waxbill
             }
             catch (Exception ex)
             {
-                //todo:log ZTImage.Log.Trace.Error(ex.Message, ex);
+                Trace.Error(ex.Message, ex);
             }
         }
         #endregion

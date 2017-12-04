@@ -65,6 +65,7 @@
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
     <Compile Include="Exceptions\WaxbillException.cs" />
+    <Compile Include="ITraceListener.cs" />
     <Compile Include="Libuv\Collections\SockAddr.cs" />
     <Compile Include="Libuv\UVAsyncHandle.cs" />
     <Compile Include="Libuv\UVConnectRequest.cs" />
@@ -108,8 +109,6 @@
     <Compile Include="WebSockets\WebSocketFrame.cs" />
     <Compile Include="WebSockets\WebSocketSession.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Buffer\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

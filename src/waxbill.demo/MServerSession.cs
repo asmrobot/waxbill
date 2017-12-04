@@ -21,7 +21,9 @@ namespace waxbill.demo
 
         protected override void ReceiveCallback(Packet packet)
         {
-            Console.WriteLine("receive");
+            byte[] b=packet.Read();
+
+            Console.WriteLine("receive:" + System.Text.Encoding.UTF8.GetString(b));
         }
 
         protected override void SendedCallback(SendingQueue packet, bool result)

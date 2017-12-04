@@ -10,12 +10,13 @@ namespace waxbill
     public interface IProtocol
     {
         /// <summary>
-        /// 读取数据转化信息
+        /// 数据转化协议数据包
         /// </summary>
         /// <param name="packet">之前的数据</param>
         /// <param name="datas">本次数据</param>
-        /// <param name="readlen">本次读取长度</param>
+        /// <param name="nread">本次可以最长读取的长度</param>
+        /// <param name="giveupCount">本次读取长度,</param>
         /// <returns>是否读完一条信息</returns>
-        bool TryToMessage(ref Packet packet,ArraySegment<byte> datas, out int readlen);
+        bool TryToPacket(ref Packet packet,IntPtr datas,Int32 count, out int giveupCount);
     }
 }
