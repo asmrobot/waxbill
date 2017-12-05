@@ -552,8 +552,9 @@ namespace waxbill
                     if (giveupCount < this.mReadOffset)
                     {
                         //没读完
-                       this.mReadOffset = this.mReadOffset - giveupCount;
-                        Marshal.Copy(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset);
+                        //todo:优化，以后尽量不移动数据
+                        this.mReadOffset = this.mReadOffset - giveupCount;
+                        UVIntrop.memorymove(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset, UVIntrop.IsWindows);
                     }
                     else
                     {
@@ -561,25 +562,15 @@ namespace waxbill
                         this.mReadOffset = 0;
                     }
                 }
-                //if (readLen > 0)
-                //{
-                //    //this.mReadStartOffset += readLen;
-
-                //}
-
-                //todo:优化
-                //if (this.mReadStartOffset == this.mReadEndOffset)
-                //{
-                //    this.mReadStartOffset = this.mReadEndOffset = 0;
-                //}
-                
-                //判断是否还有数据
-                //有则移动
-                //无则休整
             }
         }
-        #endregion
+
+
         
+
+
+        #endregion
+
         #region Events Raise
         /// <summary>
         /// 连接

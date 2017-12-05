@@ -406,6 +406,27 @@ namespace waxbill.Libuv
         {
             return new uv_buf_t(memory, len, IsWindows);
         }
+
+
+        /// <summary>
+        /// 内存数据移动
+        /// </summary>
+        /// <param name="dest"></param>
+        /// <param name="src"></param>
+        /// <param name="size"></param>
+        /// <param name="isWindows"></param>
+        public static void memorymove( IntPtr src, IntPtr dest, Int32 size, bool isWindows)
+        {
+            if (isWindows)
+            {
+                MoveMemory(dest, src, (uint)size);
+            }
+            else
+            {
+                memmove(dest, src, (uint)size);
+            }
+        }
+
         #endregion
 
 
@@ -577,6 +598,17 @@ namespace waxbill.Libuv
 
         [DllImport("WS2_32.dll", CallingConvention = CallingConvention.Winapi)]
         public static extern int WSAGetLastError();
+
+
+
+        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory", CharSet = CharSet.Ansi)]
+        public extern static long MoveMemory(IntPtr dest, IntPtr src, uint size);
+
+
+        [DllImport("libm.so")]
+        public static extern void memmove(IntPtr dest, IntPtr src, uint length);
+
+
         #endregion
 
 
