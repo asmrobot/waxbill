@@ -163,7 +163,6 @@ namespace waxbill
                     continue;
                 }
             }
-
         }
 
         public void Send(IList<ArraySegment<byte>> datas)
@@ -281,8 +280,9 @@ namespace waxbill
             {
                 if (queue.Count > 1)
                 {
+                    
                     //todo:发送queueu this._SendSAE.BufferList = queue;
-                    //client.TryWrite(t);
+                    //this.TcpHandle.TryWrite()
                 }
                 else
                 {

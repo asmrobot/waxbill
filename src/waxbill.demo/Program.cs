@@ -16,7 +16,6 @@ namespace waxbill.demo
     {
         unsafe static void Main(string[] args)
         {
-            
             TCPServer<MServerSession> server = new TCPServer<MServerSession>(new TerminatorProtocol(),"0.0.0.0", 12308);
             server.Start();
             

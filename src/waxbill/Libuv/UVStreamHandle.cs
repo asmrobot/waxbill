@@ -61,6 +61,7 @@ namespace waxbill.Libuv
 
         public void ReadStart(AllocCallback allocCallback, ReadCallback readCallback,object allocState,object readState)
         {
+            
             //todo: 禁止重复调用
             this.mAllocCallback = allocCallback;
             this.mReadCallback = readCallback;
@@ -73,10 +74,20 @@ namespace waxbill.Libuv
         {
             UVIntrop.read_stop(this);
         }
+
+        public void RegisterWriteCallback()
+        {
+
+        }
+
+        public void Write()
+        {
+            
+        }
         
         public void TryWrite(byte[] datas)
         {
-            TryWrite(datas, datas.Length);
+            TryWrite(new ArraySegment<byte>(datas,0, datas.Length));
         }
 
         unsafe public void TryWrite(byte[] datas, Int32 count)
@@ -90,6 +101,17 @@ namespace waxbill.Libuv
                 
                 UVIntrop.try_write(this, mbuf, 1);
             }
+        }
+
+
+        unsafe public void TryWrite(ArraySegment<byte> datas)
+        {
+
+        }
+
+        unsafe public void TryWrite(IList<ArraySegment<byte>> datas)
+        {
+
         }
         
         protected override bool ReleaseHandle()
