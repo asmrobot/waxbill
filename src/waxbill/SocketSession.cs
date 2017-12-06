@@ -275,21 +275,25 @@ namespace waxbill
                 return false;
             }
 
-            var isAsync = true;
+            //var isAsync = true;
             try
             {
-                if (queue.Count > 1)
-                {
+                UVRequest request = new UVRequest();
+                request.Init();
+                request.Write(this.TcpHandle, new ArraySegment<ArraySegment<byte>>(queue.ToArray(), 0, queue.Count), SendCompleted, null);
+                request.Close();
+                //if (queue.Count > 1)
+                //{
                     
-                    //todo:发送queueu this._SendSAE.BufferList = queue;
-                    //this.TcpHandle.TryWrite()
-                }
-                else
-                {
-                    ArraySegment<byte> buffer = queue[0];
-                    //todo:发送buffer this._SendSAE.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
-                    //client.TryWrite(t);
-                }
+                //    //todo:发送queueu this._SendSAE.BufferList = queue;
+                //    //this.TcpHandle.TryWrite()
+                //}
+                //else
+                //{
+                //    ArraySegment<byte> buffer = queue[0];
+                //    //todo:发送buffer this._SendSAE.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
+                //    //client.TryWrite(t);
+                //}
             }
             catch (Exception ex)
             {
@@ -306,40 +310,40 @@ namespace waxbill
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SAE_SendCompleted(SendingQueue queue,Int32 transCount)
+        private void SendCompleted(UVRequest req, Int32  statue, UVException ex, object state)
         {
-            if (queue == null)
-            {
-                Trace.Error("未知错误help!~");
-                return;
-            }
-
-            //if (e.SocketError != SocketError.Success)
+            //if (queue == null)
             //{
-            //    this.RaiseSended(queue, false);
-            //    SendEnd(queue, CloseReason.Exception);
+            //    Trace.Error("未知错误help!~");
             //    return;
             //}
 
-            int sum = queue.Sum(b => b.Count);
-            if (sum <= transCount)
-            {
-                //发送下一包
-                //e.SetBuffer(null, 0, 0);
-                //e.BufferList = null;
-                this.RaiseSended(queue, true);
-                queue.Clear();
-                this.Monitor.SendingPool.Push(queue);
+            ////if (e.SocketError != SocketError.Success)
+            ////{
+            ////    this.RaiseSended(queue, false);
+            ////    SendEnd(queue, CloseReason.Exception);
+            ////    return;
+            ////}
 
-                RemoveState(SessionState.Sending);
-                PreSend();
-            }
-            else
-            {
-                //发送剩余
-                queue.TrimByte(transCount);
-                InternalSend(queue);
-            }
+            //int sum = queue.Sum(b => b.Count);
+            //if (sum <= transCount)
+            //{
+            //    //发送下一包
+            //    //e.SetBuffer(null, 0, 0);
+            //    //e.BufferList = null;
+            //    this.RaiseSended(queue, true);
+            //    queue.Clear();
+            //    this.Monitor.SendingPool.Push(queue);
+
+            //    RemoveState(SessionState.Sending);
+            //    PreSend();
+            //}
+            //else
+            //{
+            //    //发送剩余
+            //    queue.TrimByte(transCount);
+            //    InternalSend(queue);
+            //}
 
         }
 
