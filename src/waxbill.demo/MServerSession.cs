@@ -24,8 +24,7 @@ namespace waxbill.demo
         {
             byte[] b=packet.Read();
             Console.WriteLine("receive:" + System.Text.Encoding.UTF8.GetString(b));
-
-
+            
             this.Send(b);
         }
 

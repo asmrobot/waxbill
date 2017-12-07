@@ -1,76 +1,187 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Utils;
 
 namespace waxbill.Libuv
 {
-    public class UVRequest : UVMemory
+    public unsafe class UVRequest : UVMemory,IList<UVIntrop.uv_buf_t>
     {
         private static UVIntrop.uv_write_cb mWritecb = WriteCallback;
-        private const Int32 BUFFER_COUNT = 4;
-        private IntPtr mBufs;
+        private Int32 mMaxQueueSize;
+        private UVIntrop.uv_buf_t* mBufs;
         private object mState;
         private Action<UVRequest, Int32, UVException, object> mCallback;
-        private List<GCHandle> _pins = new List<GCHandle>(BUFFER_COUNT + 1);
+        private GCHandle[] mPins;
 
-        public UVRequest() : base(GCHandleType.Normal)
+        private bool m_IsReadOnly = false;
+        private int m_Updateing = 0;//进入队列数
+        private int mCurrentQueueSize;
+        
+
+        public UVRequest(Int32 queueSize) : base(GCHandleType.Normal)
         {
+            waxbill.Utils.Validate.ThrowIfZeroOrMinus(queueSize, "发送队列要大于0");
+            this.mMaxQueueSize = queueSize;
             Init();
         }
         
-        private void Init()
+        private unsafe void Init()
         {
             Int32 requestSize = UVIntrop.req_size(UVIntrop.RequestType.WRITE);
-            var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * BUFFER_COUNT;
+            var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * this.mMaxQueueSize;
+            this.mPins=new GCHandle[this.mMaxQueueSize];
             CreateMemory(requestSize + bufferSize);
-            this.mBufs = this.handle + requestSize;
+            this.mBufs = (UVIntrop.uv_buf_t*)(this.handle + requestSize);
         }
 
+        public void StartQueue()
+        {
+            m_IsReadOnly = false;
+        }
+
+        public void StopQueue()
+        {
+            if (m_IsReadOnly)
+            {
+                return;
+            }
+
+            m_IsReadOnly = true;
+            if (m_Updateing < 0)
+            {
+                return;
+            }
+
+            SpinWait wait = new SpinWait();
+            wait.SpinOnce();
+            while (m_Updateing > 0)
+            {
+                wait.SpinOnce();
+            }
+        }
+
+
+
+        public bool EnQueue(ArraySegment<byte> item)
+        {
+            if (m_IsReadOnly)
+            {
+                return false;
+            }
+
+            Interlocked.Increment(ref m_Updateing);
+            while (!m_IsReadOnly)
+            {
+                bool conflict = false;
+                if (TryEnQueue(item, out conflict))
+                {
+                    Interlocked.Decrement(ref m_Updateing);
+                    return true;
+                }
+
+                if (!conflict)
+                {
+                    break;
+                }
+            }
+            Interlocked.Decrement(ref m_Updateing);
+            return false;
+        }
+
+        unsafe private bool TryEnQueue(ArraySegment<byte> item, out bool conflict)
+        {
+            conflict = false;
+            int currentCount = mCurrentQueueSize;
+            if (currentCount >= this.mMaxQueueSize)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref mCurrentQueueSize, currentCount + 1, currentCount) != currentCount)
+            {
+                conflict = true;
+                return false;
+            }
+
+            //添加
+            var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
+            mPins[currentCount]=gcHandle;
+            this.mBufs[currentCount] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+
+            return true;
+        }
+
+        public bool EnQueue(IList<ArraySegment<byte>> items)
+        {
+            if (m_IsReadOnly)
+            {
+                return false;
+            }
+
+            Interlocked.Increment(ref m_Updateing);
+            while (!m_IsReadOnly)
+            {
+                bool conflict = false;
+                if (TryEnQueue(items, out conflict))
+                {
+                    Interlocked.Decrement(ref m_Updateing);
+                    return true;
+                }
+
+                if (!conflict)
+                {
+                    break;
+                }
+            }
+            Interlocked.Decrement(ref m_Updateing);
+            return false;
+        }
+
+        private bool TryEnQueue(IList<ArraySegment<byte>> items, out bool conflict)
+        {
+            conflict = false;
+            int oldCurrent = mCurrentQueueSize;
+            if (oldCurrent + items.Count >= this.mMaxQueueSize)
+            {
+                return false;
+            }
+
+            if (Interlocked.CompareExchange(ref mCurrentQueueSize, oldCurrent + items.Count, oldCurrent) != oldCurrent)
+            {
+                conflict = true;
+                return false;
+            }
+
+            for (int i = 0; i < items.Count; i++)
+            {
+                ArraySegment<byte> item = items[i];
+                var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
+                mPins[oldCurrent+i] = gcHandle;
+                this.mBufs[oldCurrent+i] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+            }
+            return true;
+        }
+        
         protected override bool ReleaseHandle()
         {
             DestroyMemory(handle);
             handle = IntPtr.Zero;
             return true;
         }
-
-
-        public void Write(UVStreamHandle handle, ArraySegment<ArraySegment<byte>> bufs, Action<UVRequest, Int32, UVException, object> callback, object state)
-        {
-            WriteArraySegmentInternal(handle, bufs, callback, state);
-        }
-
-        unsafe public void WriteArraySegmentInternal(UVStreamHandle stream,ArraySegment<ArraySegment<byte>> bufs,Action<UVRequest,Int32,UVException,object> callback,object state)
+        
+        public unsafe void Send(UVStreamHandle stream,Action<UVRequest,Int32,UVException,object> callback,object state)
         {
             try
             {
-                UVIntrop.uv_buf_t* pBuffers = (UVIntrop.uv_buf_t*)mBufs;
-                Int32 nBuffers = bufs.Count;
-
-                if (nBuffers > BUFFER_COUNT)
-                {
-                    // create and pin buffer array when it's larger than the pre-allocated one
-                    var bufArray = new UVIntrop.uv_buf_t[nBuffers];
-                    var gcHandle = GCHandle.Alloc(bufArray, GCHandleType.Pinned);
-                    _pins.Add(gcHandle);
-                    pBuffers = (UVIntrop.uv_buf_t*)gcHandle.AddrOfPinnedObject();
-                }
-
-                for (var index = 0; index < nBuffers; index++)
-                {
-                    // create and pin each segment being written
-                    var buf = bufs.Array[bufs.Offset + index];
-
-                    var gcHandle = GCHandle.Alloc(buf.Array, GCHandleType.Pinned);
-                    _pins.Add(gcHandle);
-                    pBuffers[index] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + buf.Offset,buf.Count);
-                }
-
                 this.mCallback = callback;
                 this.mState = state;
-                UVIntrop.write(this, stream, pBuffers, nBuffers, mWritecb);
+                UVIntrop.write(this, stream, this.mBufs, this.mCurrentQueueSize, mWritecb);
                 
             }
             catch
@@ -82,32 +193,29 @@ namespace waxbill.Libuv
             }
         }
 
+        
+
+
 
 
         // Safe handle has instance method called Unpin
         // so using UnpinGcHandles to avoid conflict
         private void UnpinGCHandles()
-        {
-            var pinList = _pins;
-            var count = pinList.Count;
-            for (var i = 0; i < count; i++)
+        {            
+            for (var i = 0; i < this.mCurrentQueueSize; i++)
             {
-                pinList[i].Free();
+                this.mPins[i].Free();
+                this.mPins[i] = default(GCHandle);
             }
-            pinList.Clear();
         }
         
         private static void WriteCallback(IntPtr reqHandle, Int32 status)
         {
             var req = FromIntPtr<UVRequest>(reqHandle);
-            req.UnpinGCHandles();
-
             var callback = req.mCallback;
-            req.mCallback = null;
-
             var state = req.mState;
-            req.mState = null;
 
+            
             UVException error = null;
             if (status < 0)
             {
@@ -124,5 +232,110 @@ namespace waxbill.Libuv
                 throw;
             }
         }
+
+
+        #region IList
+
+        public UVIntrop.uv_buf_t this[int index]
+        {
+            get
+            {
+                if (index < 0)
+                {
+                    throw new ArgumentOutOfRangeException("index 小于0");
+                }
+                
+                var value = this.mBufs[index];
+                return value;
+            }
+            set
+            {
+                throw new NotSupportedException();
+            }
+        }
+
+        public int IndexOf(UVIntrop.uv_buf_t item)
+        {
+            throw new NotSupportedException();
+        }
+
+        public void Insert(int index, UVIntrop.uv_buf_t item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void RemoveAt(int index)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Count
+        {
+            get
+            {
+                return this.mCurrentQueueSize;
+            }
+        }
+
+        public bool IsReadOnly
+        {
+            get
+            {
+                return this.m_IsReadOnly;
+            }
+        }
+
+
+        public void Add(UVIntrop.uv_buf_t item)
+        {
+            throw new NotSupportedException();
+        }
+
+
+
+        public void Clear()
+        {
+            this.UnpinGCHandles();
+            this.mCallback = null;
+            this.mState = null;
+
+            this.mCurrentQueueSize = 0;
+
+        }
+
+        public bool Contains(UVIntrop.uv_buf_t item)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void CopyTo(UVIntrop.uv_buf_t[] array, int arrayIndex)
+        {
+            for (int i = 0; i < Count; i++)
+            {
+                array[arrayIndex + i] = this[i];
+            }
+        }
+
+        public bool Remove(UVIntrop.uv_buf_t item)
+        {
+            throw new NotImplementedException();
+        }
+
+
+        public unsafe IEnumerator<UVIntrop.uv_buf_t> GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+
+
+        #endregion
+
+
     }
 }

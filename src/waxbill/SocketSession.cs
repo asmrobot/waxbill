@@ -115,8 +115,7 @@ namespace waxbill
             get { return m_state >= SessionState.Closed; }
         }
         #endregion
-
-
+        
         #region send
         /// <summary>
         /// 加入到发送列表中
@@ -286,7 +285,7 @@ namespace waxbill
             
             try
             {
-                this.mSendQueue.Send(this.TcpHandle, SendCompleted, null);
+                queue.Send(this.TcpHandle, SendCompleted, null);
             }
             catch (Exception ex)
             {
@@ -308,8 +307,8 @@ namespace waxbill
 
             if (ex != null)
             {
-                this.RaiseSended(null, false);
-                SendEnd(null, CloseReason.Exception);
+                this.RaiseSended(req, false);
+                SendEnd(req, CloseReason.Exception);
                 return;
             }
 

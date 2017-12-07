@@ -75,7 +75,7 @@
     <Compile Include="Libuv\UVLoopHandle.cs" />
     <Compile Include="Libuv\UVMemory.cs" />
     <Compile Include="Libuv\UVPipeHandle.cs" />
-    <Compile Include="Libuv\UVRequestQueue.cs" />
+    <Compile Include="Libuv\UVRequest.cs" />
     <Compile Include="Libuv\UVStreamHandle.cs" />
     <Compile Include="Libuv\UVTCPHandle.cs" />
     <Compile Include="Libuv\UVThread.cs" />
@@ -109,6 +109,8 @@
     <Compile Include="WebSockets\WebSocketFrame.cs" />
     <Compile Include="WebSockets\WebSocketSession.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="Libuv\UVRequest.cs.remove" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
