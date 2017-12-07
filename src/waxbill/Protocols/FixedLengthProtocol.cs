@@ -34,7 +34,7 @@ namespace waxbill.Protocols
         /// <param name="datas"></param>
         /// <param name="readlen"></param>
         /// <returns></returns>
-        public override bool ParseStart(Packet packet, ArraySegment<byte> datas, out bool reset)
+        public override bool ParseStart(Packet packet, IntPtr datas, int count, out bool reset)
         {
             reset = false;
             packet.ForecastSize = this.m_Length;
@@ -49,12 +49,12 @@ namespace waxbill.Protocols
         /// <param name="datas"></param>
         /// <param name="readlen"></param>
         /// <returns></returns>
-        public override Int32 IndexOfProtocolEnd(Packet packet, ArraySegment<byte> datas, out bool reset)
+        public override int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)
         {
             reset = false;
-            if (packet.Count + datas.Count >= this.m_Length)
+            if (packet.Count + count >= this.m_Length)
             {
-                return  this.m_Length - packet.Count;
+                return this.m_Length - packet.Count;
             }
             return -1;
         }

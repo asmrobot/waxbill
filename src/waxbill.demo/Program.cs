@@ -19,7 +19,7 @@ namespace waxbill.demo
         private static SegPool pool = new SegPool();
         unsafe static void Main(string[] args)
         {
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new TerminatorProtocol(), "0.0.0.0", 12308);
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealProtocol(), "0.0.0.0", 12308);
             server.Start();
 
             Console.WriteLine("close!~");
