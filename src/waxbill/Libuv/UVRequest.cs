@@ -17,12 +17,11 @@ namespace waxbill.Libuv
         private List<GCHandle> _pins = new List<GCHandle>(BUFFER_COUNT + 1);
 
         public UVRequest() : base(GCHandleType.Normal)
-        { }
-
-
-
-
-        public void Init()
+        {
+            Init();
+        }
+        
+        private void Init()
         {
             Int32 requestSize = UVIntrop.req_size(UVIntrop.RequestType.WRITE);
             var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * BUFFER_COUNT;
@@ -40,20 +39,16 @@ namespace waxbill.Libuv
 
         public void Write(UVStreamHandle handle, ArraySegment<ArraySegment<byte>> bufs, Action<UVRequest, Int32, UVException, object> callback, object state)
         {
-            WriteArraySegmentInternal(handle, bufs, null, callback, state);
+            WriteArraySegmentInternal(handle, bufs, callback, state);
         }
 
-        unsafe public void WriteArraySegmentInternal(
-            UVStreamHandle handle,
-            ArraySegment<ArraySegment<byte>> bufs,
-            UVStreamHandle sendHandle,
-            Action<UVRequest,Int32,UVException,object> callback,
-            object state)
+        unsafe public void WriteArraySegmentInternal(UVStreamHandle stream,ArraySegment<ArraySegment<byte>> bufs,Action<UVRequest,Int32,UVException,object> callback,object state)
         {
             try
             {
-                var pBuffers = (UVIntrop.uv_buf_t*)mBufs;
+                UVIntrop.uv_buf_t* pBuffers = (UVIntrop.uv_buf_t*)mBufs;
                 Int32 nBuffers = bufs.Count;
+
                 if (nBuffers > BUFFER_COUNT)
                 {
                     // create and pin buffer array when it's larger than the pre-allocated one
@@ -70,28 +65,19 @@ namespace waxbill.Libuv
 
                     var gcHandle = GCHandle.Alloc(buf.Array, GCHandleType.Pinned);
                     _pins.Add(gcHandle);
-                    pBuffers[index] = UVIntrop.buf_init(
-                        gcHandle.AddrOfPinnedObject() + buf.Offset,
-                        buf.Count);
+                    pBuffers[index] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + buf.Offset,buf.Count);
                 }
 
                 this.mCallback = callback;
                 this.mState = state;
-
-                if (sendHandle == null)
-                {
-                    UVIntrop.write(this, handle, pBuffers, nBuffers, mWritecb);
-                }
-                else
-                {
-                    UVIntrop.write2(this, handle, pBuffers, nBuffers, sendHandle, mWritecb);
-                }
+                UVIntrop.write(this, stream, pBuffers, nBuffers, mWritecb);
+                
             }
             catch
             {
                 this.mCallback = null;
                 this.mState = null;
-                UnpinGcHandles();
+                UnpinGCHandles();
                 throw;
             }
         }
@@ -100,7 +86,7 @@ namespace waxbill.Libuv
 
         // Safe handle has instance method called Unpin
         // so using UnpinGcHandles to avoid conflict
-        private void UnpinGcHandles()
+        private void UnpinGCHandles()
         {
             var pinList = _pins;
             var count = pinList.Count;
@@ -110,15 +96,11 @@ namespace waxbill.Libuv
             }
             pinList.Clear();
         }
-
-
-
-
-
+        
         private static void WriteCallback(IntPtr reqHandle, Int32 status)
         {
             var req = FromIntPtr<UVRequest>(reqHandle);
-            req.UnpinGcHandles();
+            req.UnpinGCHandles();
 
             var callback = req.mCallback;
             req.mCallback = null;

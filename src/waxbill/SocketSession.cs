@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Exceptions;
 using waxbill.Libuv;
 using waxbill.Utils;
 
@@ -19,7 +20,8 @@ namespace waxbill
         private Int32 m_state = 0;//会话状态
         private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
-        private SendingQueue mSendingQueue;
+        
+        private UVRequest mSendQueue;//发送队列
 
         internal void Init(UVTCPHandle handle, TCPMonitor monitor, ServerOption option)
         {
@@ -27,6 +29,12 @@ namespace waxbill
             this.Monitor = monitor;
             this.Option = option;
             this.ConnectionID = monitor.GetNextConnectionID();
+
+            if (!this.Monitor.SendPool.TryGet(out mSendQueue))
+            {
+                this.Close(CloseReason.Exception);
+                Trace.Error("没有分配到发送queue", null);
+            }
         }
         
 
@@ -207,7 +215,7 @@ namespace waxbill
         private bool TrySend(ArraySegment<byte> data, out bool reTry)
         {
             reTry = false;
-            SendingQueue oldQueue = this.mSendingQueue;
+            UVRequest oldQueue = this.mSendQueue;
             if (oldQueue == null)
             {
                 return false;
@@ -225,7 +233,7 @@ namespace waxbill
         private bool TrySend(IList<ArraySegment<byte>> datas, out bool reTry)
         {
             reTry = false;
-            SendingQueue oldQueue = this.mSendingQueue;
+            UVRequest oldQueue = this.mSendQueue;
             if (oldQueue == null)
             {
                 //todo:是否关闭连接？
@@ -242,7 +250,7 @@ namespace waxbill
 
         private bool PreSend()
         {
-            SendingQueue oldQueue = this.mSendingQueue;
+            UVRequest oldQueue = this.mSendQueue;
             if (oldQueue.Count <= 0)
             {
                 return true;
@@ -252,48 +260,33 @@ namespace waxbill
                 return true;
             }
 
-            SendingQueue newQueue;
-            if (!this.Monitor.SendingPool.TryGet(out newQueue))
+            UVRequest newQueue;
+            
+            if (!this.Monitor.SendPool.TryGet(out newQueue))
             {
-                SendEnd(null, CloseReason.InernalError);
+                SendEnd(oldQueue, CloseReason.InernalError);
                 Trace.Error("没有分配到发送queue", null);
                 return false;
             }
-
+            
             newQueue.StartQueue();
-            mSendingQueue = newQueue;
+            this.mSendQueue = newQueue;
             oldQueue.StopQueue();
 
             return InternalSend(oldQueue);
         }
 
-        private bool InternalSend(SendingQueue queue)
+        private bool InternalSend(UVRequest queue)
         {
             if (IsClosingOrClosed)
             {
                 SendEnd(queue, CloseReason.Closeing);
                 return false;
             }
-
-            //var isAsync = true;
+            
             try
             {
-                UVRequest request = new UVRequest();
-                request.Init();
-                request.Write(this.TcpHandle, new ArraySegment<ArraySegment<byte>>(queue.ToArray(), 0, queue.Count), SendCompleted, null);
-                request.Close();
-                //if (queue.Count > 1)
-                //{
-                    
-                //    //todo:发送queueu this._SendSAE.BufferList = queue;
-                //    //this.TcpHandle.TryWrite()
-                //}
-                //else
-                //{
-                //    ArraySegment<byte> buffer = queue[0];
-                //    //todo:发送buffer this._SendSAE.SetBuffer(buffer.Array, buffer.Offset, buffer.Count);
-                //    //client.TryWrite(t);
-                //}
+                this.mSendQueue.Send(this.TcpHandle, SendCompleted, null);
             }
             catch (Exception ex)
             {
@@ -312,39 +305,22 @@ namespace waxbill
         /// <param name="e"></param>
         private void SendCompleted(UVRequest req, Int32  statue, UVException ex, object state)
         {
-            //if (queue == null)
-            //{
-            //    Trace.Error("未知错误help!~");
-            //    return;
-            //}
 
-            ////if (e.SocketError != SocketError.Success)
-            ////{
-            ////    this.RaiseSended(queue, false);
-            ////    SendEnd(queue, CloseReason.Exception);
-            ////    return;
-            ////}
+            if (ex != null)
+            {
+                this.RaiseSended(null, false);
+                SendEnd(null, CloseReason.Exception);
+                return;
+            }
 
-            //int sum = queue.Sum(b => b.Count);
-            //if (sum <= transCount)
-            //{
-            //    //发送下一包
-            //    //e.SetBuffer(null, 0, 0);
-            //    //e.BufferList = null;
-            //    this.RaiseSended(queue, true);
-            //    queue.Clear();
-            //    this.Monitor.SendingPool.Push(queue);
+            //发送下一包
+            
+            this.RaiseSended(req, true);
+            req.Clear();
+            this.Monitor.SendPool.Release(req);
 
-            //    RemoveState(SessionState.Sending);
-            //    PreSend();
-            //}
-            //else
-            //{
-            //    //发送剩余
-            //    queue.TrimByte(transCount);
-            //    InternalSend(queue);
-            //}
-
+            RemoveState(SessionState.Sending);
+            PreSend();
         }
 
         /// <summary>
@@ -352,12 +328,12 @@ namespace waxbill
         /// </summary>
         /// <param name="queue"></param>
         /// <param name="reason"></param>
-        private void SendEnd(SendingQueue queue, CloseReason reason)
+        private void SendEnd(UVRequest queue, CloseReason reason)
         {
             if (queue != null)
             {
                 queue.Clear();
-                this.Monitor.SendingPool.Push(queue);
+                this.Monitor.SendPool.Release(queue);
             }
             RemoveState(SessionState.Sending);
             this.Close(reason);
@@ -476,14 +452,14 @@ namespace waxbill
             }
 
             //清空发送缓存
-            if (this.mSendingQueue != null)
+            if (this.mSendQueue != null)
             {
-                if (this.mSendingQueue.Count > 0)
+                if (this.mSendQueue.Count > 0)
                 {
-                    this.RaiseSended(this.mSendingQueue, false);
+                    this.RaiseSended(this.mSendQueue, false);
                 }
-                this.mSendingQueue.Clear();
-                this.Monitor.SendingPool.Push(this.mSendingQueue);
+                this.mSendQueue.Clear();
+                this.Monitor.SendPool.Release(this.mSendQueue);
             }
             SetState(SessionState.Closed);
         }
@@ -613,7 +589,7 @@ namespace waxbill
         /// <param name="connector"></param>
         /// <param name="packet"></param>
         /// <param name="result"></param>
-        private void RaiseSended(SendingQueue packet, bool result)
+        private void RaiseSended(IList<UVIntrop.uv_buf_t> packet, bool result)
         {
             try
             {
@@ -644,7 +620,7 @@ namespace waxbill
 
         protected abstract void DisconnectedCallback(CloseReason reason);
 
-        protected abstract void SendedCallback(SendingQueue packet, bool result);
+        protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
 
         protected abstract void ReceiveCallback(Packet packet);
         #endregion

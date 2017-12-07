@@ -73,45 +73,23 @@ namespace waxbill.Libuv
         public void ReadStop()
         {
             UVIntrop.read_stop(this);
-        }
+        } 
 
-        public void RegisterWriteCallback()
+        public void Write(byte[] datas)
         {
-
+            Write(datas,0, datas.Length);
         }
 
-        public void Write()
-        {
-            
-        }
-        
-        public void TryWrite(byte[] datas)
-        {
-            TryWrite(new ArraySegment<byte>(datas,0, datas.Length));
-        }
-
-        unsafe public void TryWrite(byte[] datas, Int32 count)
+        unsafe public void Write(byte[] datas,Int32 offset, Int32 count)
         {
             fixed (byte* p = datas)
             {
-                //TODO:mbuf fixed
                 UVIntrop.uv_buf_t[] mbuf = new UVIntrop.uv_buf_t[]{
-                    UVIntrop.buf_init((IntPtr)p, count)
+                    UVIntrop.buf_init((IntPtr)(p+offset), count)
                 };
                 
                 UVIntrop.try_write(this, mbuf, 1);
             }
-        }
-
-
-        unsafe public void TryWrite(ArraySegment<byte> datas)
-        {
-
-        }
-
-        unsafe public void TryWrite(IList<ArraySegment<byte>> datas)
-        {
-
         }
         
         protected override bool ReleaseHandle()
@@ -138,10 +116,8 @@ namespace waxbill.Libuv
             {
                 throw;
             }
-            
         }
        
-
         private static void UVAllocCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
         {
             UVStreamHandle target=FromIntPtr<UVStreamHandle>(handle);

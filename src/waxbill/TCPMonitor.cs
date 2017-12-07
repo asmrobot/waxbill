@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Libuv;
 using waxbill.Utils;
 
 namespace waxbill
@@ -18,7 +19,7 @@ namespace waxbill
         private long _ConnectionIncremer = 0;
         public ServerOption Option { get; private set; }
         internal IProtocol Protocol { get; private set; }
-        internal SendingPool SendingPool;
+        internal SendPool SendPool;
         internal BufferManager BufferManager;
 
 
@@ -28,8 +29,8 @@ namespace waxbill
             Validate.ThrowIfNull(option, "服务配置参数不正确");
             this.Protocol = protocol;
             this.Option = option;
-            this.SendingPool = new SendingPool();
-            this.SendingPool.Initialize(this.Option.MinSendingPoolSize, this.Option.MaxSendingPoolSize, this.Option.SendQueueSize);
+            this.SendPool = new SendPool();
+            //this.SendingPool.Initialize(this.Option.MinSendingPoolSize, this.Option.MaxSendingPoolSize, this.Option.SendQueueSize);
             this.BufferManager = new BufferManager(this.Option.BufferSize, this.Option.BufferIncemerCount);
         }
 
@@ -64,7 +65,7 @@ namespace waxbill
         /// 发送事件
         /// </summary>
         public event OnSendedEvent OnSended;
-        internal void RaiseOnSendedEvent(SocketSession session, SendingQueue packet, bool result)
+        internal void RaiseOnSendedEvent(SocketSession session, IList<UVIntrop.uv_buf_t> packet, bool result)
         {
             if (this.OnSended != null)
             {

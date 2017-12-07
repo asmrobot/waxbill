@@ -7,6 +7,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
+using waxbill.Libuv;
 using waxbill.Utils;
 
 namespace waxbill.WebSockets
@@ -57,7 +58,7 @@ namespace waxbill.WebSockets
         protected override void ConnectedCallback()
         { }
 
-        protected override void SendedCallback(SendingQueue packet, bool result)
+        protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
         { }
         
         protected override void ReceiveCallback(Packet packet)

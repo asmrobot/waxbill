@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using waxbill.Libuv;
 using waxbill.Utils;
 
 namespace waxbill.demo
@@ -28,7 +29,7 @@ namespace waxbill.demo
             this.Send(b);
         }
 
-        protected override void SendedCallback(SendingQueue packet, bool result)
+        protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
         {
             Console.WriteLine("sended");
         }

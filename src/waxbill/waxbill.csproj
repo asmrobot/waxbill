@@ -61,6 +61,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CloseReason.cs" />
+    <Compile Include="Exceptions\BufferException.cs" />
     <Compile Include="Exceptions\CanotRepeatException.cs" />
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
@@ -74,7 +75,7 @@
     <Compile Include="Libuv\UVLoopHandle.cs" />
     <Compile Include="Libuv\UVMemory.cs" />
     <Compile Include="Libuv\UVPipeHandle.cs" />
-    <Compile Include="Libuv\UVRequest.cs" />
+    <Compile Include="Libuv\UVRequestQueue.cs" />
     <Compile Include="Libuv\UVStreamHandle.cs" />
     <Compile Include="Libuv\UVTCPHandle.cs" />
     <Compile Include="Libuv\UVThread.cs" />
@@ -94,6 +95,8 @@
     <Compile Include="TCPMonitor.cs" />
     <Compile Include="TCPServer.cs" />
     <Compile Include="SocketSession.cs" />
+    <Compile Include="Utils\PoolBase.cs" />
+    <Compile Include="Utils\SendPool.cs" />
     <Compile Include="Utils\Validate.cs" />
     <Compile Include="Utils\BufferManager.cs" />
     <Compile Include="Utils\EventArgPool.cs" />
