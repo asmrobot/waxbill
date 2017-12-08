@@ -24,13 +24,11 @@ namespace waxbill.demo
         {
             byte[] b=packet.Read();
             //Trace.Debug("receive:" + System.Text.Encoding.UTF8.GetString(b));
-            
-            //this.Send(b);
+
+            this.Send(b);
         }
 
         protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
-        {
-            Trace.Debug("sended");
-        }
+        {}
     }
 }

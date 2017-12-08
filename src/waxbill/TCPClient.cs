@@ -86,6 +86,7 @@ namespace waxbill
                 this.mConnect.Close();
                 this.mServerHandle.Close();
                 this.mLoopHandle.Stop();
+                this.mLoopHandle.Stop();
                 this.mLoopHandle.Close();
                 mIsDispose = true;
             }
