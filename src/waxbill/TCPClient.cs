@@ -8,6 +8,5 @@ namespace waxbill
 {
     public class TCPClient
     {
-        
     }
 }

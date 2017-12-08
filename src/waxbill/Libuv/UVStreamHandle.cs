@@ -96,6 +96,7 @@ namespace waxbill.Libuv
         {
             this.mConnectionCallbackState = null;
             this.mConnectionCallback = null;
+            
             if (this.mStreamGCHandle.IsAllocated)
             {
                 this.mStreamGCHandle.Free();

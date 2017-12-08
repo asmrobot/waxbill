@@ -12,12 +12,7 @@ namespace waxbill.Libuv
     public class UVTCPHandle : UVStreamHandle
     {
 
-        public UVTCPHandle()
-        {
-
-        }
-
-        public void Init(UVLoopHandle loop)
+        public UVTCPHandle(UVLoopHandle loop)
         {
             CreateHandle(UVIntrop.HandleType.TCP);
             UVIntrop.tcp_init(loop, this);
@@ -35,7 +30,7 @@ namespace waxbill.Libuv
 
             UVIntrop.tcp_bind(this, ref addr, 0);
         }
-
+        
 
         public IPEndPoint LocalIPEndPoint
         {
@@ -73,5 +68,10 @@ namespace waxbill.Libuv
             }
         }
 
+
+        public void NoDelay(bool enable)
+        {
+            UVIntrop.tcp_nodelay(this, enable);
+        }
     }
 }

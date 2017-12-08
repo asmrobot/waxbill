@@ -197,17 +197,7 @@ namespace waxbill.Libuv
             uv_close(handle, close_cb);
         }
 
-        public static void async_init(UVLoopHandle loop, UVAsyncHandle handle, uv_async_cb cb)
-        {
-            loop.Validate();
-            handle.Validate();
-            ThrowIfErrored(uv_async_init(loop, handle, cb));
-        }
 
-        public static void async_send(UVAsyncHandle handle)
-        {
-            ThrowIfErrored(uv_async_send(handle));
-        }
 
         public static void unsafe_async_send(IntPtr handle)
         {
@@ -238,26 +228,7 @@ namespace waxbill.Libuv
             handle.Validate();
             ThrowIfErrored(uv_tcp_nodelay(handle, enable ? 1 : 0));
         }
-
-        public static void pipe_init(UVLoopHandle loop, UVPipeHandle handle, bool ipc)
-        {
-            loop.Validate();
-            handle.Validate();
-            ThrowIfErrored(uv_pipe_init(loop, handle, ipc ? -1 : 0));
-        }
-
-        public static void pipe_bind(UVPipeHandle handle, string name)
-        {
-            handle.Validate();
-            ThrowIfErrored(uv_pipe_bind(handle, name));
-        }
-
-        public static void pipe_open(UVPipeHandle handle, IntPtr hSocket)
-        {
-            handle.Validate();
-            ThrowIfErrored(uv_pipe_open(handle, hSocket));
-        }
-
+        
         public static void listen(UVStreamHandle handle, int backlog, uv_connection_cb cb)
         {
             handle.Validate();
@@ -270,19 +241,7 @@ namespace waxbill.Libuv
             client.Validate();
             ThrowIfErrored(uv_accept(server, client));
         }
-
-        public static void pipe_connect(UVConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb)
-        {
-            req.Validate();
-            handle.Validate();
-            uv_pipe_connect(req, handle, name, cb);
-        }
-
-        public static int pipe_pending_count(UVPipeHandle handle)
-        {
-            handle.Validate();
-            return uv_pipe_pending_count(handle);
-        }
+        
 
         public static void read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
         {
@@ -359,27 +318,6 @@ namespace waxbill.Libuv
         {
             loop.Validate();
             uv_walk(loop, walk_cb, arg);
-        }
-
-        unsafe public static void timer_init(UVLoopHandle loop, UVTimerHandle handle)
-        {
-            loop.Validate();
-            handle.Validate();
-            ThrowIfErrored(uv_timer_init(loop, handle));
-        }
-
-        
-        unsafe public static void timer_start(UVTimerHandle handle, uv_timer_cb cb, long timeout, long repeat)
-        {
-            handle.Validate();
-            ThrowIfErrored(uv_timer_start(handle, cb, timeout, repeat));
-        }
-
-        
-        unsafe public static void timer_stop(UVTimerHandle handle)
-        {
-            handle.Validate();
-            ThrowIfErrored(uv_timer_stop(handle));
         }
         
         unsafe public static long now(UVLoopHandle loop)
@@ -483,13 +421,7 @@ namespace waxbill.Libuv
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern void uv_close(IntPtr handle, uv_close_cb close_cb);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_async_init(UVLoopHandle loop, UVAsyncHandle handle, uv_async_cb cb);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public extern static int uv_async_send(UVAsyncHandle handle);
-
+        
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uv_async_send")]
         public extern static int uv_unsafe_async_send(IntPtr handle);
 
@@ -505,26 +437,14 @@ namespace waxbill.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_tcp_nodelay(UVTCPHandle handle, int enable);
 
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_pipe_init(UVLoopHandle loop, UVPipeHandle handle, int ipc);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_pipe_bind(UVPipeHandle loop, string name);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_pipe_open(UVPipeHandle handle, IntPtr hSocket);
+        
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_listen(UVStreamHandle handle, int backlog, uv_connection_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        public static extern void uv_pipe_connect(UVConnectRequest req, UVPipeHandle handle, string name, uv_connect_cb cb);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public extern static int uv_pipe_pending_count(UVPipeHandle handle);
+        
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public extern static int uv_read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
@@ -570,16 +490,7 @@ namespace waxbill.Libuv
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_timer_init(UVLoopHandle loop, UVTimerHandle handle);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_timer_start(UVTimerHandle handle, uv_timer_cb cb, long timeout, long repeat);
-
-        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_timer_stop(UVTimerHandle handle);
-
+        
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         unsafe public static extern long uv_now(UVLoopHandle loop);
 

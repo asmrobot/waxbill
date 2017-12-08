@@ -35,13 +35,22 @@ namespace waxbill
 
     public static class Trace
     {
+        private static ITraceListener mTrace;
+        public static void SetTrace(ITraceListener listener)
+        {
+            mTrace = listener;
+        }
         /// <summary>
         /// debug
         /// </summary>
         /// <param name="message"></param>
         public static void Debug(string message)
         {
-
+            if (mTrace != null)
+            {
+                mTrace.Debug(message);
+            }
+            
         }
 
         /// <summary>
@@ -50,7 +59,10 @@ namespace waxbill
         /// <param name="message"></param>
         public static void Error(string message)
         {
-
+            if (mTrace != null)
+            {
+                mTrace.Error(message);
+            }
         }
 
         /// <summary>
@@ -60,7 +72,10 @@ namespace waxbill
         /// <param name="ex"></param>
         public static void Error(string message, Exception ex)
         {
-
+            if (mTrace != null)
+            {
+                mTrace.Error(message,ex);
+            }
         }
         /// <summary>
         /// info
@@ -68,7 +83,10 @@ namespace waxbill
         /// <param name="message"></param>
         public static void Info(string message)
         {
-
+            if (mTrace != null)
+            {
+                mTrace.Info(message);
+            }
         }
     }
 }

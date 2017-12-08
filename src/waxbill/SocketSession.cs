@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -14,7 +15,7 @@ namespace waxbill
     public abstract class SocketSession
     {
         protected TCPMonitor Monitor;
-        protected UVTCPHandle TcpHandle;//客户端socket
+        internal UVTCPHandle TcpHandle;//客户端socket
         protected ServerOption Option;//服务器配置
 
         private Int32 m_state = 0;//会话状态
@@ -22,13 +23,26 @@ namespace waxbill
         public long ConnectionID { get; private set; }//连接ID
         
         private UVRequest mSendQueue;//发送队列
+        private IPEndPoint mRemoteEndPoint;
 
-        internal void Init(UVTCPHandle handle, TCPMonitor monitor, ServerOption option)
+        /// <summary>
+        /// 远程地址
+        /// </summary>
+        public IPEndPoint RemoteEndPoint
+        {
+            get
+            {
+                return mRemoteEndPoint;
+            }
+        }
+
+        internal void Init(Int64 connectionID,UVTCPHandle handle, TCPMonitor monitor, ServerOption option)
         {
             this.TcpHandle = handle;
+            this.mRemoteEndPoint = handle.RemoteEndPoint;
             this.Monitor = monitor;
             this.Option = option;
-            this.ConnectionID = monitor.GetNextConnectionID();
+            this.ConnectionID = connectionID;
 
             if (!this.Monitor.SendPool.TryGet(out mSendQueue))
             {
@@ -434,9 +448,8 @@ namespace waxbill
                 {
                     Marshal.FreeHGlobal(this.mReadDatas);
                 }
-                //todo:关闭句柄
+                
                 this.TcpHandle.Dispose();
-
                 this.FreeResource(reason);
             }
         }

@@ -12,25 +12,25 @@ namespace waxbill.demo
     {
         protected override void ConnectedCallback()
         {
-            Console.WriteLine("connection!远程地址为：" + this.TcpHandle.RemoteEndPoint.ToString());
+            Trace.Debug("connection!远程地址为：" + this.RemoteEndPoint.ToString());
         }
 
         protected override void DisconnectedCallback(CloseReason reason)
         {
-            Console.WriteLine("disconnection");
+            Trace.Debug("disconnection");
         }
 
         protected override void ReceiveCallback(Packet packet)
         {
             byte[] b=packet.Read();
-            Console.WriteLine("receive:" + System.Text.Encoding.UTF8.GetString(b));
+            Trace.Debug("receive:" + System.Text.Encoding.UTF8.GetString(b));
             
-            this.Send(b);
+            //this.Send(b);
         }
 
         protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
         {
-            Console.WriteLine("sended");
+            Trace.Debug("sended");
         }
     }
 }

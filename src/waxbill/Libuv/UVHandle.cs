@@ -25,7 +25,7 @@ namespace waxbill.Libuv
             IntPtr memory = handle;
             if (memory != IntPtr.Zero)
             {
-                UVIntrop.close(handle, mDestroyMemory);
+                UVIntrop.close(memory, mDestroyMemory);
                 handle = IntPtr.Zero;
             }
             

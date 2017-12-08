@@ -3,27 +3,50 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 namespace waxbill.Libuv
 {
-    public class UVLoopHandle : UVHandle
+    public class UVLoopHandle : UVMemory
     {
         public UVLoopHandle()
         {
-
-        }
-
-        public void Init()
-        {
-            CreateHandle(UVIntrop.loop_size());
+            CreateMemory(UVIntrop.loop_size());
             UVIntrop.loop_init(this);
         }
 
         public void Start()
         {
-            UVIntrop.uv_run(this, (Int32)UVIntrop.UV_RUN_MODE.UV_RUN_DEFAULT);
+            UVIntrop.run(this, (Int32)UVIntrop.UV_RUN_MODE.UV_RUN_DEFAULT);
         }
 
+        public void AsyncStart()
+        {
+            Thread thread = new Thread(StartThread);
+            thread.IsBackground = true;
+            thread.Start();
+        }
 
+        private void StartThread(object state)
+        {
+            UVIntrop.run(this, (Int32)UVIntrop.UV_RUN_MODE.UV_RUN_DEFAULT);
+        }
+
+        public void Stop()
+        {
+            UVIntrop.stop(this);
+        }
+
+        protected unsafe override bool ReleaseHandle()
+        {
+            if (handle != IntPtr.Zero)
+            {
+                UVIntrop.loop_close(this);
+                DestroyMemory(handle);
+                handle = IntPtr.Zero;
+            }
+
+            return true;
+        }
     }
 }

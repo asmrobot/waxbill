@@ -16,7 +16,6 @@ namespace waxbill
         /// 连接事件
         /// </summary>
         public event OnConnectionEvent OnConnection;
-        private long _ConnectionIncremer = 0;
         public ServerOption Option { get; private set; }
         internal IProtocol Protocol { get; private set; }
         internal SendPool SendPool;
@@ -34,10 +33,7 @@ namespace waxbill
             this.BufferManager = new BufferManager(this.Option.BufferSize, this.Option.BufferIncemerCount);
         }
 
-        internal long GetNextConnectionID()
-        {
-            return Interlocked.Increment(ref this._ConnectionIncremer);
-        }
+        
 
         #region Events
         internal void RaiseOnConnectionEvent(SocketSession session)

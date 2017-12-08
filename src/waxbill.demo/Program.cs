@@ -13,54 +13,41 @@ using System.Diagnostics;
 
 namespace waxbill.demo
 {
-    
+    public class MListener : ITraceListener
+    {
+        public void Debug(string message)
+        {
+            Console.WriteLine(message);
+        }
+
+        public void Error(string message)
+        {
+            Console.WriteLine(message);
+        }
+
+        public void Error(string message, Exception ex)
+        {
+            Console.WriteLine(message);
+        }
+
+        public void Info(string message)
+        {
+            Console.WriteLine(message);
+        }
+    }
     class Program
     {
         private static SegPool pool = new SegPool();
         unsafe static void Main(string[] args)
         {
+            Trace.SetTrace(new MListener());
             TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealProtocol(), "0.0.0.0", 12308);
             server.Start();
 
-            Console.WriteLine("close!~");
-            Console.ReadKey();
-
-            //Thread[] all = new Thread[20];
-            //for (int i = 0; i < 20; i++)
-            //{
-            //    Thread t = new Thread(Inc);
-            //    t.Start(null);
-            //    all[i] = t;
-            //}
-
-            
-            //Console.Read();
+            Console.WriteLine("server is start");
             return;
         }
-
-        public static void Inc(object state)
-        {
-            Stopwatch watch = new Stopwatch();
-            watch.Start();
-
-            for (int i = 0; i < 100000; i++)
-            {
-                ArraySegment<byte> data;
-                if (pool.TryGet(out data))
-                {
-                    //Console.WriteLine("success:" + pool.IdleCount);
-                    pool.Release(data);
-                }
-            }
-
-            watch.Stop();
-
-            Console.WriteLine("time:" + watch.ElapsedMilliseconds+",idle:"+pool.IdleCount);
-            
-
-
-
-        }
+        
 
     }
 }
