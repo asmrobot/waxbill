@@ -23,7 +23,7 @@ namespace waxbill.demo
         protected override void ReceiveCallback(Packet packet)
         {
             byte[] b=packet.Read();
-            Trace.Debug("receive:" + System.Text.Encoding.UTF8.GetString(b));
+            //Trace.Debug("receive:" + System.Text.Encoding.UTF8.GetString(b));
             
             //this.Send(b);
         }

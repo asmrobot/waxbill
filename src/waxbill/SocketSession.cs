@@ -51,7 +51,6 @@ namespace waxbill
             }
         }
         
-
         #region state
         /// <summary>
         /// 

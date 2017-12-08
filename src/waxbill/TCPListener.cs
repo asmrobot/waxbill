@@ -18,7 +18,6 @@ namespace waxbill
     {
         private string mIP;
         private Int32 mPort;
-        private Int32 mState = 0;
         private UVTCPHandle mServerHandle = null;
         private UVLoopHandle mLoopHandle = null;
 
@@ -61,7 +60,6 @@ namespace waxbill
             }
             catch (Exception ex)
             {
-                this.mState = 0;
                 throw ex;
             }
             
@@ -73,6 +71,7 @@ namespace waxbill
         {
             this.mServerHandle.Close();                
             this.mLoopHandle.Stop();
+            this.mLoopHandle.Close();
         }
 
         private void OnConnection(UVStreamHandle stream, Int32 status, UVException ex, object state)

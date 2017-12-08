@@ -45,7 +45,7 @@ namespace waxbill.demo
             server.Start();
 
             Console.WriteLine("server is start");
-            return;
+            Console.ReadKey();
         }
         
 

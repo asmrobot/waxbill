@@ -61,8 +61,6 @@ namespace waxbill.Libuv
 
         public void ReadStart(AllocCallback allocCallback, ReadCallback readCallback,object allocState,object readState)
         {
-            
-            //todo: 禁止重复调用
             this.mAllocCallback = allocCallback;
             this.mReadCallback = readCallback;
             this.mReadCallbackState = readState;

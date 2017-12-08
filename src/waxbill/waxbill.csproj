@@ -72,6 +72,7 @@
     <Compile Include="Libuv\UVHandle.cs" />
     <Compile Include="Libuv\UVLoopHandle.cs" />
     <Compile Include="Libuv\UVMemory.cs" />
+    <Compile Include="Libuv\UVConnect.cs" />
     <Compile Include="Libuv\UVRequest.cs" />
     <Compile Include="Libuv\UVStreamHandle.cs" />
     <Compile Include="Libuv\UVTCPHandle.cs" />

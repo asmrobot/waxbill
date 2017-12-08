@@ -223,6 +223,12 @@ namespace waxbill.Libuv
             ThrowIfErrored(uv_tcp_open(handle, hSocket));
         }
 
+        public static void tcp_connect(UVConnect handle, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb)
+        {
+            handle.Validate();
+            ThrowIfErrored(uv_tcp_connect(handle, socket, ref addr, cb));
+        }
+
         public static void tcp_nodelay(UVTCPHandle handle, bool enable)
         {
             handle.Validate();
@@ -483,6 +489,9 @@ namespace waxbill.Libuv
         public static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int uv_tcp_connect(UVConnect connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
+
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
@@ -518,6 +527,9 @@ namespace waxbill.Libuv
 
         [DllImport("libm.so")]
         public static extern void memmove(IntPtr dest, IntPtr src, uint length);
+
+
+
 
 
         #endregion
