@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using waxbill.Libuv.Collections;
+using waxbill.Libuv.Native;
 
 namespace waxbill.Libuv
 {
@@ -22,7 +24,26 @@ namespace waxbill.Libuv
         static UVIntrop()
         {
             IsWindows = System.Environment.OSVersion.Platform == PlatformID.Win32NT;
+            Initialize();
         }
+        #region load dll
+        private static void Initialize()
+        {
+            string dir = AppDomain.CurrentDomain.BaseDirectory;
+            string filename = string.Empty;
+            if (IntPtr.Size == 4)
+            {
+                filename = Path.Combine(dir, "win-x86", "libuv.dll");
+            }
+            else
+            {
+                filename = Path.Combine(dir, "win-x64", "libuv.dll");
+            }
+
+            NativeLibraryHelper.LoadLibrary(filename);
+        }
+        #endregion
+
 
         #region tools
         public static void ThrowIfErrored(int statusCode)

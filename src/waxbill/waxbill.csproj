@@ -68,6 +68,9 @@
     <Compile Include="Exceptions\WaxbillException.cs" />
     <Compile Include="ITraceListener.cs" />
     <Compile Include="Libuv\Collections\SockAddr.cs" />
+    <Compile Include="Libuv\Native\NativeLibraryHelper.cs" />
+    <Compile Include="Libuv\Native\UnsafeNativeMethodsPosix.cs" />
+    <Compile Include="Libuv\Native\UnsafeNativeMethodsWin32.cs" />
     <Compile Include="Libuv\UVException.cs" />
     <Compile Include="Libuv\UVHandle.cs" />
     <Compile Include="Libuv\UVLoopHandle.cs" />
@@ -89,7 +92,7 @@
     <Compile Include="ServerOption.cs" />
     <Compile Include="SessionEvent.cs" />
     <Compile Include="SessionState.cs" />
-    <Compile Include="TCPClient.cs" />
+    <None Include="TCPClient.cs_remove" />
     <Compile Include="TCPListener.cs" />
     <Compile Include="TCPMonitor.cs" />
     <Compile Include="TCPServer.cs" />
