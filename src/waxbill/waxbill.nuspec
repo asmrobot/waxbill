@@ -12,4 +12,7 @@
     <description>$description$</description>
     <copyright>Copyright 2017</copyright>
   </metadata>
+  <files>
+      <file src="..\..\libs\libuv\**" target="build\net45" />
+  </files>
 </package>
