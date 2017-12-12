@@ -64,7 +64,7 @@ namespace waxbill
             }
             
             this.mServerHandle.Listen(backlog, OnConnection, this);
-            this.mLoopHandle.AsyncStart();
+            this.mLoopHandle.AsyncStart();            
         }
 
         public void Stop()

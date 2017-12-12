@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Diagnostics.Contracts;
 
-namespace waxbill.Utils
+namespace waxbill.Packets
 {
     public class PacketStream:Stream
     {

@@ -8,6 +8,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using waxbill.Libuv;
+using waxbill.Packets;
 using waxbill.Utils;
 
 namespace waxbill.WebSockets

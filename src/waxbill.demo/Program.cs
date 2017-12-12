@@ -37,11 +37,11 @@ namespace waxbill.demo
     }
     class Program
     {
-        private static SegPool pool = new SegPool();
-        unsafe static void Main(string[] args)
+        
+        static void Main(string[] args)
         {
             Trace.SetTrace(new MListener());
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealProtocol(), "0.0.0.0", 12308);
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealProtocol(), "0.0.0.0", 2233);
             server.Start();
 
             Console.WriteLine("server is start");

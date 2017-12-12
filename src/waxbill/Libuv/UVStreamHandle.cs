@@ -105,7 +105,8 @@ namespace waxbill.Libuv
         #region cb
         private static void UVConnectionCb(IntPtr server, Int32 status)
         {
-            UVIntrop.Check(status, out var error);
+            UVException error;
+            UVIntrop.Check(status, out error);
             UVStreamHandle stream = UVMemory.FromIntPtr<UVStreamHandle>(server);
             try
             {

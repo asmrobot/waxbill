@@ -22,7 +22,7 @@ namespace waxbill.Libuv
         {
             UVException exception;
             SockAddr addr;
-            UVIntrop.ip4_addr("0.0.0.0", 12308, out addr, out exception);
+            UVIntrop.ip4_addr(ip, port, out addr, out exception);
             if (exception != null)
             {
                 throw exception;

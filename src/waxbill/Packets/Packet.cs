@@ -5,22 +5,25 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Utils;
 
-namespace waxbill.Utils
+namespace waxbill.Packets
 {
     /// <summary>
     /// 缓存集合
     /// </summary>
     public class Packet:IDisposable
     {
+        
         private List<ArraySegment<byte>> m_Datas;//内部数据存储        
         private BufferManager m_BufferManager;//缓存管理器        
         private int m_ListIndex;//当前列表索引
         private int m_CurrentPosition;//最后一项的位置
         private bool m_IsStart;
         private Int32 m_Count;
+
         private Int32 m_ForecastSize = 0;
-        
+
         /// <summary>
         /// 是否开始
         /// </summary>
@@ -36,7 +39,7 @@ namespace waxbill.Utils
             }
         }
 
-        
+
         /// <summary>
         /// 总数据大小
         /// </summary>
@@ -49,7 +52,7 @@ namespace waxbill.Utils
         }
 
 
-        
+
         /// <summary>
         /// 预测包大小
         /// </summary>
@@ -66,17 +69,17 @@ namespace waxbill.Utils
         }
 
 
-        /// <summary>
-        /// 字节段个数
-        /// </summary>
-        public Int32 ItemCount
-        {
-            get
-            {
-                return this.m_Datas.Count;
-            }
-        }
-        
+        ///// <summary>
+        ///// 字节段个数
+        ///// </summary>
+        //public Int32 ItemCount
+        //{
+        //    get
+        //    {
+        //        return this.m_Datas.Count;
+        //    }
+        //}
+
 
         internal Packet(BufferManager bufferManager)
         {
@@ -223,19 +226,19 @@ namespace waxbill.Utils
             }
         }
 
-        /// <summary>
-        /// 得到字节段
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        internal ArraySegment<byte> GetItem(Int32 index)
-        {
-            if (index >= this.m_Datas.Count)
-            {
-                throw new ArgumentOutOfRangeException("index");
-            }
-            return this.m_Datas[index];
-        }
+        ///// <summary>
+        ///// 得到字节段
+        ///// </summary>
+        ///// <param name="index"></param>
+        ///// <returns></returns>
+        //internal ArraySegment<byte> GetItem(Int32 index)
+        //{
+        //    if (index >= this.m_Datas.Count)
+        //    {
+        //        throw new ArgumentOutOfRangeException("index");
+        //    }
+        //    return this.m_Datas[index];
+        //}
         
         /// <summary>
         /// 索引字节
@@ -270,32 +273,56 @@ namespace waxbill.Utils
 
             }
         }
-        
+
         #region Dispose
-        //private int m_IsFree = 0;
+        private Int32 mIsFree = 0;
         /// <summary>
         /// 清空包
         /// </summary>
+        private void Dispose(bool isFinilize)
+        {
+            if (Interlocked.CompareExchange(ref mIsFree, 1, 0) == 0)
+            {
+                //释放
+                for (int i = 0; i < this.m_Datas.Count; i++)
+                {
+                    this.m_BufferManager.FreeBuffer(this.m_Datas[i]);
+                }
+
+                this.m_Datas.Clear();
+                //this.m_ForecastSize = 0;
+                this.m_Count = 0;
+                //this.m_IsStart = false;
+                this.m_ListIndex = -1;
+                this.m_CurrentPosition = 0;
+
+                if (!isFinilize)
+                {
+                    GC.SuppressFinalize(this);
+                }
+            }
+            
+            
+        }
+
         public void Clear()
         {
-            //释放
-            for (int i = 0; i < this.m_Datas.Count; i++)
-            {
-                this.m_BufferManager.FreeBuffer(this.m_Datas[i]);
-            }
-
-            this.m_Datas.Clear();
-            this.m_ForecastSize = 0;
-            this.m_Count = 0;
-            this.m_IsStart = false;
-            this.m_ListIndex = -1;
-            this.m_CurrentPosition = 0;
-            
+            Dispose(false);
         }
 
         public void Dispose()
         {
-            Clear();
+            Dispose(false);
+        }
+
+        public void Close()
+        {
+            Dispose(false);
+        }
+
+        ~Packet()
+        {
+            Dispose(true);
         }
         #endregion
     }

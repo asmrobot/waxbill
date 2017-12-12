@@ -21,7 +21,6 @@ namespace waxbill
         {
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
             
-
             this.LocalIP = ip;
             if (string.IsNullOrEmpty(ip))
             {
@@ -31,8 +30,6 @@ namespace waxbill
             this.LocalPort = port;
             this.Listener = new TCPListener(this.LocalIP, this.LocalPort);
             this.Listener.OnStartSession += Listener_OnStartSession;
-            
-           
         }
         
         public string LocalIP { get; private set; }

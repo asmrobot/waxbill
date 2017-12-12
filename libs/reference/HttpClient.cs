@@ -125,6 +125,8 @@ public sealed class HttpClient : Client {
 			Dispose();
 		}
 	}
+
+
 	///<summary>Checks whether a specified string is a valid HTTP query string.</summary>
 	///<param name="Query">The query to check.</param>
 	///<returns>True if the specified string is a valid HTTP query, false otherwise.</returns>
@@ -146,6 +148,8 @@ public sealed class HttpClient : Client {
 			return true;
 		}
 	}
+
+
 	///<summary>Processes a specified query and connects to the requested HTTP web server.</summary>
 	///<param name="Query">A string containing the query to process.</param>
 	///<remarks>If there's an error while processing the HTTP request or when connecting to the remote server, the Proxy sends a "400 - Bad Request" error to the client.</remarks>
@@ -209,6 +213,9 @@ public sealed class HttpClient : Client {
 			return;
 		}
 	}
+
+
+
 	///<summary>Parses a specified HTTP query into its header fields.</summary>
 	///<param name="Query">The HTTP query string to parse.</param>
 	///<returns>A StringDictionary object containing all the header fields with their data.</returns>
@@ -276,6 +283,32 @@ public sealed class HttpClient : Client {
 		}
 		return ret;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	///<summary>Returns text information about this HttpClient object.</summary>
 	///<returns>A string representing this HttpClient object.</returns>
 	public override string ToString() {
@@ -328,6 +361,7 @@ public sealed class HttpClient : Client {
 			}
 		}
 	}
+
 	///<summary>Called when the Bad Request error has been sent to the client.</summary>
 	///<param name="ar">The result of the asynchronous operation.</param>
 	private void OnErrorSent(IAsyncResult ar) {
@@ -336,6 +370,7 @@ public sealed class HttpClient : Client {
 		} catch {}
 		Dispose();
 	}
+
 	///<summary>Called when we're connected to the requested remote host.</summary>
 	///<param name="ar">The result of the asynchronous operation.</param>
 	private void OnConnected(IAsyncResult ar) {
@@ -353,6 +388,9 @@ public sealed class HttpClient : Client {
 			Dispose();
 		}
 	}
+
+
+
 	///<summary>Called when the HTTP query has been sent to the remote host.</summary>
 	///<param name="ar">The result of the asynchronous operation.</param>
 	private void OnQuerySent(IAsyncResult ar) {
