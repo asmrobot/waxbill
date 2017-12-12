@@ -11,8 +11,8 @@ namespace waxbill.Packets
     public class PacketStream:Stream
     {
         private Int32 m_Position;
-        private Packet m_Packet;
-        public Packet Packet
+        private IPacket m_Packet;
+        public IPacket Packet
         {
             get
             {
@@ -25,7 +25,7 @@ namespace waxbill.Packets
         }
 
 
-        public PacketStream(Packet packet)
+        public PacketStream(IPacket packet)
         {
             this.m_Packet = packet;
             m_Position = 0;
@@ -112,7 +112,7 @@ namespace waxbill.Packets
                     }
                 case SeekOrigin.End:
                     {
-                        int tempPosition = unchecked(this.m_Packet.Count + (int)offset);
+                        int tempPosition = unchecked((Int32)(this.m_Packet.Count + offset));
                         if (tempPosition < 0 || tempPosition >= this.m_Packet.Count)
                             throw new IOException("seek不在范围内");
                         this.m_Position = tempPosition;

@@ -15,5 +15,5 @@ namespace waxbill
 
     public delegate void OnSendedEvent(SocketSession session, IList<UVIntrop.uv_buf_t> packet, bool result);
 
-    public delegate void OnReceiveEvent(SocketSession session, Packet collection);
+    public delegate void OnReceiveEvent(SocketSession session, IPacket collection);
 }

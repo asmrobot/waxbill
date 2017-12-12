@@ -20,7 +20,7 @@ namespace waxbill
         protected ServerOption Option;//服务器配置
 
         private Int32 m_state = 0;//会话状态
-        private Packet mPacket;//本包
+        private IPacket mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
         
         private UVRequest mSendQueue;//发送队列
@@ -388,10 +388,10 @@ namespace waxbill
             memory = IntPtr.Add(memory, giveupCount);
             int readCount = 0;
 
-            
 
-            Packet oldPacket = this.mPacket;
-            this.mPacket = new Packet(this.Monitor.BufferManager);
+
+            IPacket oldPacket = this.mPacket;
+            this.mPacket = this.Monitor.Protocol.CreatePacket();
             try
             {
                 this.RaiseReceive(oldPacket);
@@ -404,7 +404,7 @@ namespace waxbill
             }
             finally
             {
-                oldPacket.Clear();
+                oldPacket.Dispose();
             }
 
             if (giveupCount == nread)
@@ -460,7 +460,7 @@ namespace waxbill
             //清空接收缓存
             if (this.mPacket != null)
             {
-                this.mPacket.Clear();
+                this.mPacket.Dispose();
             }
 
             //清空发送缓存
@@ -532,7 +532,7 @@ namespace waxbill
             {
                 if (mPacket == null)
                 {
-                    mPacket = new Packet(this.Monitor.BufferManager);
+                    mPacket = this.Monitor.Protocol.CreatePacket();
                 }
 
                 Int32 giveupCount = 0;
@@ -613,7 +613,7 @@ namespace waxbill
 
         }
 
-        private void RaiseReceive(Packet packet)
+        private void RaiseReceive(IPacket packet)
         {
             try
             {
@@ -634,7 +634,7 @@ namespace waxbill
 
         protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
 
-        protected abstract void ReceiveCallback(Packet packet);
+        protected abstract void ReceiveCallback(IPacket packet);
         #endregion
     }
 }

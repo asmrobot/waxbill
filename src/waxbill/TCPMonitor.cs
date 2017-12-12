@@ -75,7 +75,7 @@ namespace waxbill
         /// 接收事件
         /// </summary>
         public event OnReceiveEvent OnReceive;
-        internal void RaiseOnReceiveEvent(SocketSession session, Packet collection)
+        internal void RaiseOnReceiveEvent(SocketSession session, IPacket collection)
         {
             if (OnReceive != null)
             {

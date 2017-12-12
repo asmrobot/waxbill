@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace waxbill.Packets
 {
-    public interface IPacket
+    public interface IPacket:IDisposable
     {
         Int64 Count { get; }
 
