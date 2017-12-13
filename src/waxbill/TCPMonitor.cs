@@ -30,7 +30,6 @@ namespace waxbill
             this.Protocol = protocol;
             this.Option = option;
             this.SendPool = new SendPool();
-            //this.SendingPool.Initialize(this.Option.MinSendingPoolSize, this.Option.MaxSendingPoolSize, this.Option.SendQueueSize);
             this.BufferManager = new BufferManager(this.Option.BufferSize, this.Option.BufferIncemerCount);
         }
 
@@ -75,7 +74,7 @@ namespace waxbill
         /// 接收事件
         /// </summary>
         public event OnReceiveEvent OnReceive;
-        internal void RaiseOnReceiveEvent(SocketSession session, IPacket collection)
+        internal void RaiseOnReceiveEvent(SocketSession session, Packet collection)
         {
             if (OnReceive != null)
             {

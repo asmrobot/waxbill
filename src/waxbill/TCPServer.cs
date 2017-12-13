@@ -14,21 +14,12 @@ namespace waxbill
 {
     public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new()
     {
-        public TCPServer(IProtocol protocol,string ip,Int32 port):this(protocol,ip,port,ServerOption.Define)
+        public TCPServer(IProtocol protocol):this(protocol,ServerOption.Define)
         {}
 
-        public TCPServer(IProtocol protocol,string ip, Int32 port, ServerOption option):base(protocol,option)
+        public TCPServer(IProtocol protocol,ServerOption option):base(protocol,option)
         {
-            Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
-            
-            this.LocalIP = ip;
-            if (string.IsNullOrEmpty(ip))
-            {
-                this.LocalIP = "0.0.0.0";
-            }
-
-            this.LocalPort = port;
-            this.Listener = new TCPListener(this.LocalIP, this.LocalPort);
+            this.Listener = new TCPListener();
             this.Listener.OnStartSession += Listener_OnStartSession;
         }
         
@@ -44,11 +35,20 @@ namespace waxbill
 
         private Int32 IsRunning = 0;
 
-        public void Start()
+        public void Start(string ip, Int32 port)
         {
             if (Interlocked.CompareExchange(ref this.IsRunning, 1, 0) == 0)
             {
-                this.Listener.Start(this.Option.ListenBacklog);
+                Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
+
+                this.LocalIP = ip;
+                if (string.IsNullOrEmpty(ip))
+                {
+                    this.LocalIP = "0.0.0.0";
+                }
+                this.LocalPort = port;
+
+                this.Listener.Start(this.LocalIP, this.LocalPort,this.Option.ListenBacklog);
                 //开始自动回收
                 if (Option.AutoRecycleSession)
                 {

@@ -26,8 +26,7 @@ namespace waxbill.Protocols
         {
             this.m_HeaderSize = headerSize;
         }
-
-
+        
         public bool TryToPacket(ref Packet packet, IntPtr memory, int len, out int readlen)
         {
             bool reset = false;
@@ -80,8 +79,7 @@ namespace waxbill.Protocols
         /// <param name="readlen"></param>
         /// <returns></returns>
         public abstract bool ParseStart(Packet packet, IntPtr datas,Int32 count, out bool reset);
-
-
+        
         /// <summary>
         /// 解析结束
         /// </summary>
@@ -90,7 +88,6 @@ namespace waxbill.Protocols
         /// <param name="reset"></param>
         /// <returns>没有查找到结束，则返回-1</returns>
         public abstract Int32 IndexOfProtocolEnd(Packet packet, IntPtr datas,Int32 count, out bool reset);
-
         
     }
 }

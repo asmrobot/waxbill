@@ -55,7 +55,7 @@ namespace waxbill.Protocols
             reset = false;
             if (packet.Count + count >= this.m_Length)
             {
-                return this.m_Length - packet.Count;
+                return this.m_Length - (Int32)packet.Count;
             }
             return -1;
         }

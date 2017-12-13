@@ -43,7 +43,7 @@ namespace waxbill.Packets
         /// <summary>
         /// 总数据大小
         /// </summary>
-        public Int32 Count
+        public Int64 Count
         {
             get
             {
@@ -67,20 +67,7 @@ namespace waxbill.Packets
                 m_ForecastSize = value;
             }
         }
-
-
-        ///// <summary>
-        ///// 字节段个数
-        ///// </summary>
-        //public Int32 ItemCount
-        //{
-        //    get
-        //    {
-        //        return this.m_Datas.Count;
-        //    }
-        //}
-
-
+        
         internal Packet(BufferManager bufferManager)
         {
             this.m_Count = 0;
@@ -225,20 +212,6 @@ namespace waxbill.Packets
                 this.m_CurrentPosition = 0;
             }
         }
-
-        ///// <summary>
-        ///// 得到字节段
-        ///// </summary>
-        ///// <param name="index"></param>
-        ///// <returns></returns>
-        //internal ArraySegment<byte> GetItem(Int32 index)
-        //{
-        //    if (index >= this.m_Datas.Count)
-        //    {
-        //        throw new ArgumentOutOfRangeException("index");
-        //    }
-        //    return this.m_Datas[index];
-        //}
         
         /// <summary>
         /// 索引字节
@@ -283,19 +256,7 @@ namespace waxbill.Packets
         {
             if (Interlocked.CompareExchange(ref mIsFree, 1, 0) == 0)
             {
-                //释放
-                for (int i = 0; i < this.m_Datas.Count; i++)
-                {
-                    this.m_BufferManager.FreeBuffer(this.m_Datas[i]);
-                }
-
-                this.m_Datas.Clear();
-                //this.m_ForecastSize = 0;
-                this.m_Count = 0;
-                //this.m_IsStart = false;
-                this.m_ListIndex = -1;
-                this.m_CurrentPosition = 0;
-
+                Clear();
                 if (!isFinilize)
                 {
                     GC.SuppressFinalize(this);
@@ -307,15 +268,21 @@ namespace waxbill.Packets
 
         public void Clear()
         {
-            Dispose(false);
+            //重置
+            for (int i = 0; i < this.m_Datas.Count; i++)
+            {
+                this.m_BufferManager.FreeBuffer(this.m_Datas[i]);
+            }
+
+            this.m_Datas.Clear();
+            this.m_ForecastSize = 0;
+            this.m_Count = 0;
+            this.m_IsStart = false;
+            this.m_ListIndex = -1;
+            this.m_CurrentPosition = 0;
         }
 
         public void Dispose()
-        {
-            Dispose(false);
-        }
-
-        public void Close()
         {
             Dispose(false);
         }

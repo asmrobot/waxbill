@@ -41,8 +41,8 @@ namespace waxbill.demo
         static void Main(string[] args)
         {
             Trace.SetTrace(new MListener());
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol(), "0.0.0.0", 2233);
-            server.Start();
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol());
+            server.Start("0.0.0.0", 2233);
 
             Console.WriteLine("server is start");
             Console.ReadKey();

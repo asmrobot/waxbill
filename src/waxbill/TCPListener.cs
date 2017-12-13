@@ -37,23 +37,22 @@ namespace waxbill
             }
         }
         
-        public TCPListener(string localIP,Int32 localPort)
+        public TCPListener()
         {
-            Validate.ThrowIfNull(localIP, "endpoint不能为空");
-            Validate.ThrowIfZeroOrMinus(localPort, "端口号不正确");
-
-
-            this.mIP = localIP;
-            this.mPort = localPort;
-
-
             this.mLoopHandle = new UVLoopHandle();
             this.mServerHandle = new UVTCPHandle(this.mLoopHandle);
         }
 
 
-        public void Start(Int32 backlog)
+        public void Start(string ip, Int32 port,Int32 backlog)
         {
+            Validate.ThrowIfNull(ip, "endpoint不能为空");
+            Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
+
+
+            this.mIP = ip;
+            this.mPort = port;
+
             try
             {
                 this.mServerHandle.Bind(this.mIP, this.mPort);

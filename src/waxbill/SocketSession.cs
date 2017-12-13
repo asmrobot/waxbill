@@ -20,7 +20,7 @@ namespace waxbill
         protected ServerOption Option;//服务器配置
 
         private Int32 m_state = 0;//会话状态
-        private IPacket mPacket;//本包
+        private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
         
         private UVRequest mSendQueue;//发送队列
@@ -378,8 +378,7 @@ namespace waxbill
             {
                 return;
             }
-
-
+            
             if (giveupCount < 0 || giveupCount > nread)
             {
                 throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
@@ -387,24 +386,21 @@ namespace waxbill
             
             memory = IntPtr.Add(memory, giveupCount);
             int readCount = 0;
-
-
-
-            IPacket oldPacket = this.mPacket;
-            this.mPacket = this.Monitor.Protocol.CreatePacket();
+            
+            //Packet oldPacket = this.mPacket;
+            //this.mPacket = new Packet(this.Monitor.BufferManager);
             try
             {
-                this.RaiseReceive(oldPacket);
+                this.RaiseReceive(this.mPacket);
+                this.mPacket.Clear();
+
             }
             catch (Exception ex)
             {
+                this.mPacket.Dispose();
                 Trace.Error("处理信息时出现错误", ex);
                 ReceiveEnd(CloseReason.Exception);
                 return;
-            }
-            finally
-            {
-                oldPacket.Dispose();
             }
 
             if (giveupCount == nread)
@@ -521,46 +517,31 @@ namespace waxbill
                 return;
             }
 
-            if (nread == 0)
+            if (mPacket == null)
             {
-                //todo:研究
-                //Close(CloseReason.RemoteClose, null);
-                Console.WriteLine("据说可以忽略");
-                return;
+                mPacket = new Packet(this.Monitor.BufferManager);
             }
-            else
+
+            Int32 giveupCount = 0;
+            this.mReadOffset += nread;
+
+            this.ReceiveCompleted(this.mReadDatas, this.mReadOffset, out giveupCount);
+            if (giveupCount > 0)
             {
-                if (mPacket == null)
+                if (giveupCount < this.mReadOffset)
                 {
-                    mPacket = this.Monitor.Protocol.CreatePacket();
+                    //没读完
+                    this.mReadOffset = this.mReadOffset - giveupCount;
+                    UVIntrop.memorymove(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset, UVIntrop.IsWindows);
                 }
-
-                Int32 giveupCount = 0;
-                this.mReadOffset += nread;
-
-                this.ReceiveCompleted(this.mReadDatas,this.mReadOffset,out giveupCount);
-                if (giveupCount > 0)
+                else
                 {
-                    if (giveupCount < this.mReadOffset)
-                    {
-                        //没读完
-                        //todo:优化，以后尽量不移动数据
-                        this.mReadOffset = this.mReadOffset - giveupCount;
-                        UVIntrop.memorymove(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset, UVIntrop.IsWindows);
-                    }
-                    else
-                    {
-                        //读完
-                        this.mReadOffset = 0;
-                    }
+                    //读完
+                    this.mReadOffset = 0;
                 }
             }
         }
-
-
         
-
-
         #endregion
 
         #region Events Raise
@@ -613,7 +594,7 @@ namespace waxbill
 
         }
 
-        private void RaiseReceive(IPacket packet)
+        private void RaiseReceive(Packet packet)
         {
             try
             {
@@ -634,7 +615,7 @@ namespace waxbill
 
         protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
 
-        protected abstract void ReceiveCallback(IPacket packet);
+        protected abstract void ReceiveCallback(Packet packet);
         #endregion
     }
 }
