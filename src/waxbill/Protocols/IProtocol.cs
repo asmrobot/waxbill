@@ -8,7 +8,7 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    public interface IProtocol
+    public interface IProtocol<TPacket> where TPacket:IPacket
     {
         /// <summary>
         /// 数据转化协议数据包
@@ -18,9 +18,9 @@ namespace waxbill
         /// <param name="nread">本次可以最长读取的长度</param>
         /// <param name="giveupCount">本次读取长度,</param>
         /// <returns>是否读完一条信息</returns>
-        bool TryToPacket(ref IPacket packet,IntPtr datas,Int32 count, out int giveupCount);
+        bool TryToPacket(ref TPacket packet,IntPtr datas,Int32 count, out int giveupCount);
 
 
-        IPacket CreatePacket();
+        TPacket CreatePacket();
     }
 }
