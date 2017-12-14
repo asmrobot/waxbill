@@ -13,19 +13,13 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    public class TCPServer<TSession,TPacket>:TCPMonitor where TSession:SocketSession,new() where TPacket:IPacket
+    public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new() 
     {
-<<<<<<< HEAD
-        public TCPServer(IProtocol<TPacket> protocol,string ip,Int32 port):this(protocol,ip,port,ServerOption.Define)
-        {}
 
-        public TCPServer(IProtocol<TPacket> protocol,string ip, Int32 port, ServerOption option):base(protocol,option)
-=======
         public TCPServer(IProtocol protocol):this(protocol,ServerOption.Define)
         {}
 
         public TCPServer(IProtocol protocol,ServerOption option):base(protocol,option)
->>>>>>> bfe9a53a4a62764b0cdf9a172a02d14e0b768aed
         {
             this.Listener = new TCPListener();
             this.Listener.OnStartSession += Listener_OnStartSession;
