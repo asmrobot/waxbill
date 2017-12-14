@@ -35,7 +35,7 @@ namespace waxbill.Protocols
             if (packet.Count > 0)
             {
                 //合并
-                int min = Math.Min(this.HeaderSize, packet.Count);
+                int min = Math.Min(this.HeaderSize, (Int32)packet.Count);
                 for (int i = 0; i < min; i++)
                 {
                     temp[i] = packet[i];
@@ -150,7 +150,7 @@ namespace waxbill.Protocols
             reset = false;
             if (packet.Count + count >= packet.ForecastSize)
             {
-                return packet.ForecastSize - packet.Count;
+                return packet.ForecastSize - (Int32)packet.Count;
             }
             return -1;
 

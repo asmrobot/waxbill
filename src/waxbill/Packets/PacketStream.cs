@@ -11,8 +11,8 @@ namespace waxbill.Packets
     public class PacketStream:Stream
     {
         private Int32 m_Position;
-        private IPacket m_Packet;
-        public IPacket Packet
+        private Packet m_Packet;
+        public Packet Packet
         {
             get
             {
@@ -25,7 +25,7 @@ namespace waxbill.Packets
         }
 
 
-        public PacketStream(IPacket packet)
+        public PacketStream(Packet packet)
         {
             this.m_Packet = packet;
             m_Position = 0;

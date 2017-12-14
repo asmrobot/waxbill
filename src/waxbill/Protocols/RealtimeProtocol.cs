@@ -11,11 +11,11 @@ namespace waxbill.Protocols
     /// <summary>
     /// 收到的全转发
     /// </summary>
-    public class RealtimeProtocol:IProtocol<RealtimeProtocolFrame>
+    public class RealtimeProtocol:IProtocol
     {
         public static readonly RealtimeProtocol Define = new RealtimeProtocol();
        
-        public bool TryToPacket(ref RealtimeProtocolFrame packet, IntPtr datas, int count, out int giveupCount)
+        public bool TryToPacket(ref Packet packet, IntPtr datas, int count, out int giveupCount)
         {
             giveupCount = count;
             if (count <= 0)
@@ -23,14 +23,9 @@ namespace waxbill.Protocols
                 return true;
             }
             
-            //pack.Write(datas, count);
-
+            packet.Write(datas, count);
             return true;
         }
-
-        public RealtimeProtocolFrame CreatePacket()
-        {
-            return null;
-        }
+        
     }
 }
