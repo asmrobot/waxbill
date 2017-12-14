@@ -8,16 +8,17 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv;
+using waxbill.Packets;
 using waxbill.Utils;
 
 namespace waxbill
 {
-    public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new()
+    public class TCPServer<TSession,TPacket>:TCPMonitor where TSession:SocketSession,new() where TPacket:IPacket
     {
-        public TCPServer(IProtocol protocol,string ip,Int32 port):this(protocol,ip,port,ServerOption.Define)
+        public TCPServer(IProtocol<TPacket> protocol,string ip,Int32 port):this(protocol,ip,port,ServerOption.Define)
         {}
 
-        public TCPServer(IProtocol protocol,string ip, Int32 port, ServerOption option):base(protocol,option)
+        public TCPServer(IProtocol<TPacket> protocol,string ip, Int32 port, ServerOption option):base(protocol,option)
         {
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
             
