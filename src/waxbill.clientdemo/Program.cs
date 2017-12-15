@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Packets;
 using waxbill.Protocols;
 
 namespace waxbill.clientdemo
@@ -14,7 +15,7 @@ namespace waxbill.clientdemo
     {
         public static Int32 completeCount = 0;
 
-        public static byte[] datas = System.Text.Encoding.UTF8.GetBytes("this is tfdsafdsa45f6dsa45f6ds4a56fd4sa56f4d5s6a4f56dsa45f6ds4a56fd4sa56f4d5sa64fd5s6a4f56dsa4estr");
+        public static byte[] datas = System.Text.Encoding.UTF8.GetBytes("thisistfdsafdsa45f6dsa45f6ds4a56fd4sa56f4d5s6a4f56dsa45f6ds4a56fd4sa56f4d5sa64fd5s6a4f56dsa4estr");
 
         private const Int32 ClientCount = 4;
         private const Int32 SendCount = 10000000;
@@ -50,7 +51,7 @@ namespace waxbill.clientdemo
 
         
         
-        private static void Client_OnReceive(SocketSession session, Utils.Packet collection)
+        private static void Client_OnReceive(SocketSession session, Packet collection)
         {
             session.Send(datas);
         }

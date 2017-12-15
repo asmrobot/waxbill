@@ -10,13 +10,14 @@ namespace waxbill.Protocols
     public abstract class ProtocolBase:IProtocol
     {
         /// <summary>
-        /// 是否成功解析开始
+        /// 解析开始
         /// </summary>
-        /// <param name="packet"></param>
-        /// <param name="datas"></param>
-        /// <param name="readlen"></param>
+        /// <param name="packet">数据包</param>
+        /// <param name="datas">数据</param>
+        /// <param name="count">数据长度</param>
+        /// <param name="giveupCount">丢弃长度</param>
         /// <returns></returns>
-        protected abstract bool ParseStart(Packet packet, IntPtr datas,Int32 count, out bool reset);
+        protected abstract bool ParseStart(Packet packet, IntPtr datas,Int32 count,out Int32 giveupCount);
         
         /// <summary>
         /// 解析结束
@@ -30,7 +31,7 @@ namespace waxbill.Protocols
 
 
         #region implements
-        public bool TryToPacket(ref Packet packet, IntPtr memory, int len, out int giveupCount)
+        public bool TryToPacket(Packet packet, IntPtr memory, int len, out int giveupCount)
         {
             bool reset = false;
             giveupCount = 0;
@@ -38,16 +39,11 @@ namespace waxbill.Protocols
             //处理开始
             if (!packet.IsStart)
             {
-                if (!ParseStart(packet, memory, len, out reset))
+                if (!ParseStart(packet, memory, len, out giveupCount))
                 {
-                    giveupCount = len;
-                    if (reset)
+                    if (giveupCount > len)
                     {
-                        packet.Reset();
-                    }
-                    else
-                    {
-                        packet.Write(memory, len);
+                        giveupCount = len;
                     }
                     return false;
                 }

@@ -50,6 +50,8 @@ namespace waxbill
                 this.Close(CloseReason.Exception);
                 Trace.Error("没有分配到发送queue", null);
             }
+
+            this.mPacket = monitor.Protocol.CreatePacket(this.Monitor.BufferManager);
         }
         
         #region state
@@ -366,7 +368,7 @@ namespace waxbill
             giveupCount = 0;
             try
             {
-                result = this.Monitor.Protocol.TryToPacket(ref this.mPacket, memory,nread, out giveupCount);
+                result = this.Monitor.Protocol.TryToPacket(this.mPacket, memory,nread, out giveupCount);
             }
             catch (Exception ex)
             {
@@ -392,7 +394,7 @@ namespace waxbill
             try
             {
                 this.RaiseReceive(this.mPacket);
-                this.mPacket.Clear();
+                this.mPacket.Reset();
 
             }
             catch (Exception ex)
@@ -515,11 +517,6 @@ namespace waxbill
                     ReceiveEnd(CloseReason.Exception, exception);
                 }
                 return;
-            }
-
-            if (mPacket == null)
-            {
-                mPacket = new Packet(this.Monitor.BufferManager);
             }
 
             Int32 giveupCount = 0;

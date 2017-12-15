@@ -23,7 +23,7 @@ namespace waxbill.Protocols
             }
         }
 
-        public FixedLengthProtocol(int length):base(0)
+        public FixedLengthProtocol(int length)
         {
             this.m_Length = length;
         }
@@ -35,7 +35,7 @@ namespace waxbill.Protocols
         /// <param name="datas"></param>
         /// <param name="readlen"></param>
         /// <returns></returns>
-        public override bool ParseStart(Packet packet, IntPtr datas, int count, out bool reset)
+        protected override bool ParseStart(Packet packet, IntPtr datas, int count, out bool reset)
         {
             reset = false;
             packet.ForecastSize = this.m_Length;
@@ -50,7 +50,7 @@ namespace waxbill.Protocols
         /// <param name="datas"></param>
         /// <param name="readlen"></param>
         /// <returns></returns>
-        public override int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)
+        protected override int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)
         {
             reset = false;
             if (packet.Count + count >= this.m_Length)

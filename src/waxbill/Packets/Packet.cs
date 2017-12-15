@@ -256,7 +256,7 @@ namespace waxbill.Packets
         {
             if (Interlocked.CompareExchange(ref mIsFree, 1, 0) == 0)
             {
-                Clear();
+                Reset();
                 if (!isFinilize)
                 {
                     GC.SuppressFinalize(this);
@@ -266,9 +266,11 @@ namespace waxbill.Packets
             
         }
 
-        public void Clear()
+        /// <summary>
+        /// 重置包
+        /// </summary>
+        public virtual void Reset()
         {
-            //重置
             for (int i = 0; i < this.m_Datas.Count; i++)
             {
                 this.m_BufferManager.FreeBuffer(this.m_Datas[i]);

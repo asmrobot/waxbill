@@ -15,12 +15,12 @@ namespace waxbill.Protocols
     public abstract class FixedHeaderProtocol : ProtocolBase
     {
 
-        private Int32 m_HeaderSize;
+        private Int32 mHeaderSize;
         public Int32 HeaderSize
         {
             get
             {
-                return m_HeaderSize;
+                return mHeaderSize;
             }
         }
         public FixedHeaderProtocol(int headerSize)
@@ -29,12 +29,12 @@ namespace waxbill.Protocols
             {
                 throw new ArgumentNullException("headersize");
             }
-            this.m_HeaderSize = headerSize;
+            this.mHeaderSize = headerSize;
         }
 
-        protected unsafe override bool ParseStart(Packet packet, IntPtr datas, int count, out bool reset)
+        protected unsafe override bool ParseStart(Packet packet, IntPtr datas, int count, out Int32 giveupCount)
         {
-            reset = false;
+            giveupCount = 0;
             if (packet.Count + count < this.HeaderSize)
             {
                 return false;
@@ -64,7 +64,6 @@ namespace waxbill.Protocols
             else
             {
                 Marshal.Copy(datas, temp, 0, this.HeaderSize);
-                //Buffer.BlockCopy(datas.Array, datas.Offset, temp, 0, this.HeaderSize);
             }
 
             if (!IsStart(temp))
