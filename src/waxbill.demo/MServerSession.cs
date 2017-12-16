@@ -24,9 +24,20 @@ namespace waxbill.demo
         protected override void ReceiveCallback(Packet packet)
         {
             byte[] b = packet.Read();
-            Trace.Debug("receive:" + System.Text.Encoding.UTF8.GetString(b));
+
+            Trace.Debug("receive:" +tostring(b));
 
             this.Send(b);
+        }
+
+        private string tostring(byte[] b)
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < b.Length; i++)
+            {
+                builder.Append(b[i] + ",");
+            }
+            return builder.ToString();
         }
 
         protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
