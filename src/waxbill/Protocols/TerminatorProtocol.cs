@@ -9,9 +9,9 @@ namespace waxbill.Protocols
     /// <summary>
     /// 回车分隔
     /// </summary>
-    public class TerminatorProtocol : BeginEndMarkProtocol
+    public class TerminatorProtocol : EndMarkProtocol
     {
-        public TerminatorProtocol():base(0,(byte)'\n')
+        public TerminatorProtocol():base((byte)'\n')
         {}
 
     }

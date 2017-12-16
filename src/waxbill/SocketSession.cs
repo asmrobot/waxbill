@@ -529,6 +529,10 @@ namespace waxbill
                 {
                     //没读完
                     this.mReadOffset = this.mReadOffset - giveupCount;
+                    if (this.mReadOffset >= this.Option.ReceiveBufferSize)
+                    {
+                        throw new ArgumentOutOfRangeException("数据没有读取,数据缓冲区已满");
+                    }
                     UVIntrop.memorymove(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset, UVIntrop.IsWindows);
                 }
                 else

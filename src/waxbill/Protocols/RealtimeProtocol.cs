@@ -15,7 +15,7 @@ namespace waxbill.Protocols
     {
         public static readonly RealtimeProtocol Define = new RealtimeProtocol();
        
-        public bool TryToPacket(ref Packet packet, IntPtr datas, int count, out int giveupCount)
+        public bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
         {
             giveupCount = count;
             if (count <= 0)

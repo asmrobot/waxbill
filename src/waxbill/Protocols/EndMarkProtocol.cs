@@ -8,18 +8,16 @@ using waxbill.Utils;
 
 namespace waxbill.Protocols
 {
-    public class BeginEndMarkProtocol : ProtocolBase
+    public class EndMarkProtocol : ProtocolBase
     {
-        private byte mBeginChars = 0;
         private byte mEndChars = 0;
 
-        public BeginEndMarkProtocol(byte begin,byte end):base(1)
+        public EndMarkProtocol(byte end):base(0)
         {
-            if (begin<=0||end <=0)
+            if (end <=0)
             {
-                throw new ArgumentNullException("begin or end");
+                throw new ArgumentNullException("end");
             }
-            this.mBeginChars = begin;
             this.mEndChars = end;
         }
         
@@ -34,12 +32,7 @@ namespace waxbill.Protocols
         /// <returns></returns>
         protected unsafe override bool ParseHeader(Packet packet,IntPtr datas)
         {
-            if (*(byte*)datas == mBeginChars)
-            {
-                packet.Write(datas, 1);
-                return true;
-            }
-            return false;
+            return true;
         }
 
 

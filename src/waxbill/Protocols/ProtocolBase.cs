@@ -9,75 +9,82 @@ namespace waxbill.Protocols
 {
     public abstract class ProtocolBase:IProtocol
     {
-        /// <summary>
-        /// 是否成功解析开始
-        /// </summary>
-        /// <param name="packet"></param>
-        /// <param name="datas"></param>
-        /// <param name="readlen"></param>
-        /// <returns></returns>
-        protected abstract bool ParseStart(Packet packet, IntPtr datas,Int32 count, out bool reset);
-        
-        /// <summary>
-        /// 解析结束
-        /// </summary>
-        /// <param name="packet"></param>
-        /// <param name="datas"></param>
-        /// <param name="reset"></param>
-        /// <returns>没有查找到结束，则返回-1</returns>
-        protected abstract Int32 IndexOfProtocolEnd(Packet packet, IntPtr datas,Int32 count, out bool reset);
-
-
-
-        #region implements
-        public bool TryToPacket(ref Packet packet, IntPtr memory, int len, out int giveupCount)
+        private Int32 mHeaderSize;
+        public Int32 HeaderSize
         {
-            bool reset = false;
-            giveupCount = 0;
+            get
+            {
+                return mHeaderSize;
+            }
+        }
+        public ProtocolBase(int headerSize)
+        {
+            this.mHeaderSize = headerSize;
+        }
 
-            //处理开始
+        /// <summary>
+        /// 解析头部
+        /// 注：实现函数负责把头部信息保存下来
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="datas"></param>
+        /// <param name="count"></param>
+        /// <param name="giveupCount"></param>
+        /// <returns></returns>
+        protected unsafe abstract bool ParseHeader(Packet packet, IntPtr datas);
+
+        /// <summary>
+        /// 解析消息体
+        /// 注：调用数据不包含头部数据
+        /// </summary>
+        /// <param name="packet"></param>
+        /// <param name="datas"></param>
+        /// <param name="count"></param>
+        /// <param name="giveupCount"></param>
+        /// <returns></returns>
+        protected unsafe abstract bool ParseBody(Packet packet, IntPtr datas, int count, out Int32 giveupCount);
+
+        public unsafe bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
+        {
+            giveupCount = 0;
+            if (count <= 0)
+            {
+                return false;
+            }
+
+            byte* memory = (byte*)datas;
             if (!packet.IsStart)
             {
-                if (!ParseStart(packet, memory, len, out reset))
+                if (mHeaderSize >0)
                 {
-                    giveupCount = len;
-                    if (reset)
+                    if (count < this.mHeaderSize)
                     {
-                        packet.Reset();
+                        return false;
                     }
-                    else
+
+                    if (!ParseHeader(packet, datas))
                     {
-                        packet.Write(memory, len);
+                        giveupCount = count;
+                        return false;
                     }
-                    return false;
+                    giveupCount=this.mHeaderSize;
+                    datas = IntPtr.Add(datas, this.mHeaderSize);
+                    count -= this.mHeaderSize;
                 }
                 packet.IsStart = true;
             }
 
-
-            giveupCount = IndexOfProtocolEnd(packet, memory, len, out reset);
-            if (giveupCount < 0)
+            Int32 giveup = 0;
+            bool endResult = ParseBody(packet, datas, count, out giveup);
+            if (giveup > count)
             {
-                giveupCount = len;
-                if (reset)
-                {
-                    packet.Reset();
-                }
-                else
-                {
-                    packet.Write(memory, len);
-                }
+                giveupCount += count;
                 return false;
             }
+            giveupCount += giveup;
+            return endResult;
+        }
 
-            packet.Write(memory, giveupCount);
-            return true;
-        }
-        
-        public Packet CreatePacket(BufferManager buffer)
-        {
-            return new Packet(buffer);
-        }
-        #endregion
+        public abstract Packet CreatePacket(BufferManager buffer);
     }
 }

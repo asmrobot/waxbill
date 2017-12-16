@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Runtime.InteropServices;
 
 namespace waxbill.Utils
 {
@@ -56,6 +57,16 @@ namespace waxbill.Utils
         {
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt32(value, startIndex));
         }
+
+        public static Int32 ToInt32(byte v1,byte v2,byte v3,byte v4)
+        {
+            convert32 c = new convert32();
+            c.b1 = v4;
+            c.b2 = v3;
+            c.b3 = v2;
+            c.b4 = v1;
+            return c.source;
+        }
         /// <summary>
         /// 返回由网络字节数组中指定位置的八个字节转换来的 64 位有符号整数。
         /// </summary>
@@ -65,6 +76,23 @@ namespace waxbill.Utils
         static public Int64 ToInt64(byte[] value, int startIndex)
         {
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(value, startIndex));
+        }
+
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct convert32
+        {
+            [FieldOffset(0)]
+            public byte b1;
+            [FieldOffset(1)]
+            public byte b2;
+            [FieldOffset(0)]
+            public byte b3;
+            [FieldOffset(1)]
+            public byte b4;
+
+            [FieldOffset(0)]
+            public Int32 source;
         }
     }
 }

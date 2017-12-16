@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace waxbill.demo
 {
-    public class MListener : ITraceListener
+    public class MTrace : ITraceListener
     {
         public void Debug(string message)
         {
