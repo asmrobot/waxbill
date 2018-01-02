@@ -26,7 +26,6 @@ namespace waxbill.demo
             byte[] b = packet.Read();
 
             Trace.Debug("receive:" +tostring(b));
-
             this.Send(b);
         }
 
@@ -40,7 +39,29 @@ namespace waxbill.demo
             return builder.ToString();
         }
 
+        private unsafe string tostring(UVIntrop.PlatformBuf buf)
+        {
+            byte* b = (byte*)(buf.Buffer);
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < buf.Count.ToInt32(); i++)
+            {
+                builder.Append(b[i] + ",");
+            }
+            return builder.ToString();
+        }
+
         protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
-        {}
+        {
+            for (int i = 0; i < packet.Count; i++)
+            {
+                var buf = packet[i].ToPlatformBuf();
+                Console.WriteLine("sended:" + tostring(buf));
+
+            }
+
+            
+
+
+        }
     }
 }

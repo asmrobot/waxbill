@@ -9,7 +9,7 @@ using waxbill.Utils;
 
 namespace waxbill.Protocols
 {
-    public class ZTProtocol:ProtocolBase
+    public class ZTProtocol:ProtocolBase<ZTProtocolPacket>
     {
         public ZTProtocol():base(6)
         {}
@@ -47,28 +47,26 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe override bool ParseHeader(Packet packet, IntPtr datas)
+        protected unsafe override bool ParseHeader(ZTProtocolPacket packet, IntPtr datas)
         {
             byte* memory = (byte*)datas;
             if (*memory != 0x0d || *(memory + 1) != 0x0a)
             {
                 return false;
             }
-
-            ZTProtocolPacket p = packet as ZTProtocolPacket;
-            p.ContentLength= NetworkBitConverter.ToInt32(*(memory+2),*(memory+3),*(memory+4),*(memory+5));
+            
+            packet.ContentLength= NetworkBitConverter.ToInt32(*(memory+2),*(memory+3),*(memory+4),*(memory+5));
             return true;
         }
 
 
-        protected unsafe override bool ParseBody(Packet packet, IntPtr datas, int count, out Int32 giveupCount)
+        protected unsafe override bool ParseBody(ZTProtocolPacket packet, IntPtr datas, int count, out Int32 giveupCount)
         {
             giveupCount = 0;
-            ZTProtocolPacket p = packet as ZTProtocolPacket;
             bool result = false;
-            if ((count + packet.Count) >= p.ContentLength)
+            if ((count + packet.Count) >= packet.ContentLength)
             {
-                giveupCount = p.ContentLength - (Int32)packet.Count;
+                giveupCount = packet.ContentLength - (Int32)packet.Count;
                 result = true;
             }
             else

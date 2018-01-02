@@ -590,8 +590,11 @@ namespace waxbill
                 SendedCallback(packet, result);
                 Monitor.RaiseOnSendedEvent(this, packet, result);
             }
-            catch
-            { }
+            catch(Exception ex)
+            {
+                Trace.Error("execute sended callback error", ex);
+
+            }
 
         }
 
