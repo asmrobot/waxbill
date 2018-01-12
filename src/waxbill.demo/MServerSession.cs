@@ -37,7 +37,7 @@ namespace waxbill.demo
             {
                 builder.Append(b[i] + ",");
             }
-            return builder.ToString();
+            return builder.ToString().TrimEnd(',');
         }
 
         private unsafe string tostring(UVIntrop.PlatformBuf buf)

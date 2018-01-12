@@ -19,7 +19,7 @@ namespace waxbill
         public event OnConnectionEvent OnConnection;
         public ServerOption Option { get; private set; }
         internal IProtocol Protocol { get; private set; }
-        internal SendPool SendPool;
+        internal UVRequestPool SendPool;
         internal BufferManager BufferManager;
 
 
@@ -29,7 +29,7 @@ namespace waxbill
             Validate.ThrowIfNull(option, "服务配置参数不正确");
             this.Protocol = protocol;
             this.Option = option;
-            this.SendPool = new SendPool();
+            this.SendPool = new UVRequestPool();
             this.BufferManager = new BufferManager(this.Option.BufferSize, this.Option.BufferIncemerCount);
         }
 

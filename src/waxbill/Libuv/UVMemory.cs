@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace waxbill.Libuv
 {
+    /// <summary>
+    /// 基本内存分配
+    /// </summary>
     public unsafe abstract class UVMemory : SafeHandle
     {
         private GCHandleType mHandleType;
@@ -15,6 +18,10 @@ namespace waxbill.Libuv
             this.mHandleType = type;
         }
         
+        /// <summary>
+        /// 分配需要的内存并把本对象GCHand放入
+        /// </summary>
+        /// <param name="size"></param>
         public void CreateMemory(Int32 size)
         {
             handle = Marshal.AllocHGlobal(size);
@@ -29,6 +36,11 @@ namespace waxbill.Libuv
             DestroyMemory(memory, gcHandlePtr);
         }
 
+        /// <summary>
+        /// 释放GCHandle及其占用的内存
+        /// </summary>
+        /// <param name="memory"></param>
+        /// <param name="gcHandlePtr"></param>
         public static void DestroyMemory(IntPtr memory, IntPtr gcHandlePtr)
         {
             if (gcHandlePtr != IntPtr.Zero)
