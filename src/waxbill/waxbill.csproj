@@ -53,12 +53,16 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
+    <Reference Include="ZTImage, Version=1.1.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ZTImage.1.1.2\lib\net45\ZTImage.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="CloseReason.cs" />
@@ -67,7 +71,6 @@
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
     <Compile Include="Exceptions\WaxbillException.cs" />
-    <Compile Include="ITraceListener.cs" />
     <Compile Include="Libuv\Collections\SockAddr.cs" />
     <Compile Include="Libuv\Native\NativeLibraryHelper.cs" />
     <Compile Include="Libuv\Native\UnsafeNativeMethodsPosix.cs" />
@@ -96,21 +99,22 @@
     <Compile Include="WebSockets\WaitHandleStream.cs" />
     <Compile Include="WebSockets\WebSocketFrame.cs" />
     <Compile Include="WebSockets\WebSocketSession.cs" />
-    <None Include="TCPClient.cs_remove" />
+    <Compile Include="TCPClient.cs" />
     <Compile Include="TCPListener.cs" />
     <Compile Include="TCPMonitor.cs" />
     <Compile Include="TCPServer.cs" />
     <Compile Include="SocketSession.cs" />
-    <Compile Include="Utils\PoolBase.cs" />
-    <Compile Include="Utils\SendPool.cs" />
+    <Compile Include="Pools\PoolBase.cs" />
+    <Compile Include="Pools\SendPool.cs" />
     <Compile Include="Utils\Validate.cs" />
-    <Compile Include="Utils\BufferManager.cs" />
-    <Compile Include="Utils\EventArgPool.cs" />
+    <Compile Include="Pools\BufferManager.cs" />
     <Compile Include="Utils\NetworkBitConverter.cs" />
     <Compile Include="Packets\Packet.cs" />
     <Compile Include="Packets\PacketStream.cs" />
-    <Compile Include="Utils\SendingPool.cs" />
-    <Compile Include="Utils\SendingQueue.cs" />
+    <Compile Include="Pools\SendingQueue.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

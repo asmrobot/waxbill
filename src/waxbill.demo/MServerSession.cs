@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Utils;
+using ZTImage.Log;
 
 namespace waxbill.demo
 {
@@ -13,19 +14,19 @@ namespace waxbill.demo
     {
         protected override void ConnectedCallback()
         {
-            Trace.Debug("connection!远程地址为：" + this.RemoteEndPoint.ToString());
+            Trace.Info("connection!远程地址为：" + this.RemoteEndPoint.ToString());
         }
 
         protected override void DisconnectedCallback(CloseReason reason)
         {
-            Trace.Debug("disconnection");
+            Trace.Info("disconnection");
         }
 
         protected override void ReceiveCallback(Packet packet)
         {
             byte[] b = packet.Read();
 
-            Trace.Debug("receive:" +tostring(b));
+            Trace.Info("receive:" +tostring(b));
             this.Send(b);
         }
 
@@ -55,13 +56,8 @@ namespace waxbill.demo
             for (int i = 0; i < packet.Count; i++)
             {
                 var buf = packet[i].ToPlatformBuf();
-                Console.WriteLine("sended:" + tostring(buf));
-
+                Trace.Info("sended:" + tostring(buf));
             }
-
-            
-
-
         }
     }
 }

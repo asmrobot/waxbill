@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace waxbill.Libuv
 {
-    unsafe public abstract class UVMemory : SafeHandle
+    public unsafe abstract class UVMemory : SafeHandle
     {
         private GCHandleType mHandleType;
         public UVMemory(GCHandleType type=GCHandleType.Weak):base(IntPtr.Zero,true)
