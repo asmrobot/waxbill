@@ -114,7 +114,7 @@ namespace waxbill.Libuv
             }
             catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
         }
        
@@ -130,7 +130,8 @@ namespace waxbill.Libuv
             {
                 buf = target.mAllocCallback(target, suggestedSize,target.mallocCallbackState);
             }
-            catch (Exception ex)
+            //catch (Exception ex)
+            catch
             {
                 //todo:清理操作
                 throw new WaxbillException("分配内存出错");

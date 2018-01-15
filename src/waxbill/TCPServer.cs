@@ -141,8 +141,7 @@ namespace waxbill
         /// </summary>
         /// <param name="state"></param>
         private void AutoRecycleSessionThread(object state)
-        {
-            
+        {            
             List<Int64> removesConnectionID = new List<Int64>();
 
             foreach (var item in mSessions)

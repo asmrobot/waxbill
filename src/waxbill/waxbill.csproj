@@ -96,7 +96,7 @@
     <Compile Include="WebSockets\WaitHandleStream.cs" />
     <Compile Include="WebSockets\WebSocketFrame.cs" />
     <Compile Include="WebSockets\WebSocketSession.cs" />
-    <None Include="TCPClient.cs_remove" />
+    <Compile Include="TCPClient.cs" />
     <Compile Include="TCPListener.cs" />
     <Compile Include="TCPMonitor.cs" />
     <Compile Include="TCPServer.cs" />

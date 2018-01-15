@@ -44,7 +44,7 @@ namespace waxbill.Libuv
                 }
                 catch (UVException ex)
                 {
-                    throw;
+                    throw ex;
                 }
                 return addr.GetIPEndPoint();
             }
@@ -62,7 +62,7 @@ namespace waxbill.Libuv
                 }
                 catch (UVException ex)
                 {
-                    throw;
+                    throw ex;
                 }
                 return addr.GetIPEndPoint();
             }
