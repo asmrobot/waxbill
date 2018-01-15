@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Utils;
+using ZTImage.Log;
 
 namespace waxbill
 {

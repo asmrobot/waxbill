@@ -10,6 +10,7 @@ using System.Threading;
 using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Utils;
+using ZTImage.Log;
 
 namespace waxbill.WebSockets
 {

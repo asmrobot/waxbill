@@ -83,38 +83,44 @@ namespace waxbill.Packets
         public byte[] Read()
         {
             byte[] datas = new byte[this.m_Count];
-            Read(0, datas, 0, datas.Length);
+            Read(datas,0, 0, datas.Length);
             return datas;
         }
 
+        public Int32 Read(int bufferOffset, byte[] buffer, int offset, int count)
+        {
+            return Read(buffer, bufferOffset, offset, count);
+        }
+
         /// <summary>
-        /// todo:复制一个范围
+        /// 从包中读取数据
         /// </summary>
-        /// <param name="targetDatas">读取到的目录数组</param>
+        /// <param name="buffer">目标数组</param>
+        /// <param name="bufferOffset">目标数组偏移</param>
         /// <param name="offset">当前包的开始读取位置</param>
         /// <param name="count">读取数量</param>
-        public Int32 Read(int sourceOffset,byte[] targetDatas, int offset, int count)
+        public Int32 Read(byte[] buffer, int bufferOffset, int offset, int count)
         {
-            if (sourceOffset > this.m_Count)
+            if (bufferOffset > this.m_Count)
             {
                 return 0;
             }
-            if (targetDatas == null)
+            if (buffer == null)
             {
                 throw new ArgumentNullException("提供的空间为空");
             }
             
-            if (offset + count > targetDatas.Length)
+            if (offset + count > buffer.Length)
             {
                 throw new ArgumentOutOfRangeException("没有提供足够大的空间，装填数据");
             }
             
             //读取开始数据和开始偏移
-            int readArrayIndex = sourceOffset / this.m_BufferManager.BufferSize;//当前数组
-            int readPosition = sourceOffset%this.m_BufferManager.BufferSize;//开始字节
+            int readArrayIndex = bufferOffset / this.m_BufferManager.BufferSize;//当前数组
+            int readPosition = bufferOffset%this.m_BufferManager.BufferSize;//开始字节
 
 
-            int canReadCount = Math.Min(count, this.m_Count - sourceOffset);
+            int canReadCount = Math.Min(count, this.m_Count - bufferOffset);
             int let = canReadCount;
             ArraySegment<byte> temp;
             while (let > 0)
@@ -126,7 +132,7 @@ namespace waxbill.Packets
                 }
                 int copySize = Math.Min(this.m_BufferManager.BufferSize - readPosition, let);
                 temp = this.m_Datas[readArrayIndex];
-                Buffer.BlockCopy(temp.Array, temp.Offset + readPosition, targetDatas, offset + canReadCount - let, copySize);
+                Buffer.BlockCopy(temp.Array, temp.Offset + readPosition, buffer, offset + canReadCount - let, copySize);
                 let -= copySize;
                 readPosition += copySize;
             }
@@ -190,8 +196,6 @@ namespace waxbill.Packets
                     }
                     EnsureBuffer();
                 }
-
-
                 this.m_Count += bytes.Count;
             }
         }

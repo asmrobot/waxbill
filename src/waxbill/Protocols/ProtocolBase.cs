@@ -7,7 +7,7 @@ using waxbill.Packets;
 using waxbill.Utils;
 namespace waxbill.Protocols
 {
-    public abstract class ProtocolBase:IProtocol
+    public abstract class ProtocolBase<TPacket>:IProtocol where TPacket:Packet
     {
         private Int32 mHeaderSize;
         public Int32 HeaderSize
@@ -31,7 +31,7 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe abstract bool ParseHeader(Packet packet, IntPtr datas);
+        protected unsafe abstract bool ParseHeader(TPacket packet, IntPtr datas);
 
         /// <summary>
         /// 解析消息体
@@ -42,13 +42,19 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe abstract bool ParseBody(Packet packet, IntPtr datas, int count, out Int32 giveupCount);
+        protected unsafe abstract bool ParseBody(TPacket packet, IntPtr datas, int count, out Int32 giveupCount);
 
-        public unsafe bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
+        public unsafe bool TryToPacket(Packet fpacket, IntPtr datas, int count, out int giveupCount)
         {
             giveupCount = 0;
             if (count <= 0)
             {
+                return false;
+            }
+            TPacket packet = fpacket as TPacket;
+            if (packet == null)
+            {
+                giveupCount = count;
                 return false;
             }
 
@@ -87,4 +93,5 @@ namespace waxbill.Protocols
 
         public abstract Packet CreatePacket(BufferManager buffer);
     }
+    
 }

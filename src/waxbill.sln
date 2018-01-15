@@ -1,13 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.8
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "waxbill", "waxbill\waxbill.csproj", "{AF12DB15-97CD-49D5-9605-C49F437F6B10}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "waxbill.demo", "waxbill.demo\waxbill.demo.csproj", "{A128AEAD-B4CE-4471-938E-34E722967E32}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "waxbill.clientdemo", "waxbill.clientdemo\waxbill.clientdemo.csproj", "{02141C52-A4E4-4349-9B5A-EA3A5629BCF9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +21,6 @@ Global
 		{A128AEAD-B4CE-4471-938E-34E722967E32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A128AEAD-B4CE-4471-938E-34E722967E32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A128AEAD-B4CE-4471-938E-34E722967E32}.Release|Any CPU.Build.0 = Release|Any CPU
-		{02141C52-A4E4-4349-9B5A-EA3A5629BCF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{02141C52-A4E4-4349-9B5A-EA3A5629BCF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{02141C52-A4E4-4349-9B5A-EA3A5629BCF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{02141C52-A4E4-4349-9B5A-EA3A5629BCF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

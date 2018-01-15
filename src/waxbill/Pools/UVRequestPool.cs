@@ -7,9 +7,9 @@ using waxbill.Libuv;
 
 namespace waxbill.Utils
 {
-    public class SendPool : PoolBase<UVRequest>
+    public class UVRequestPool : PoolBase<UVRequest>
     {
-        public SendPool():base(30,0)
+        public UVRequestPool():base(30,0)
         {}
         protected override UVRequest CreateItem(int index)
         {

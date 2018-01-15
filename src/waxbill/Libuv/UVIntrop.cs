@@ -9,13 +9,13 @@ using System.Threading.Tasks;
 using waxbill.Libuv.Collections;
 using waxbill.Libuv.Native;
 
+/*********************
+ * reference from kestrel
+ * *************************/
 namespace waxbill.Libuv
 {
-    //reference from kestrel
-
-
     /// <summary>
-    /// libuv introp 
+    /// libuv互操作
     /// </summary>
     public class UVIntrop
     {
@@ -160,6 +160,35 @@ namespace waxbill.Libuv
                     _field1 = (IntPtr)len;
                 }
             }
+
+            public PlatformBuf ToPlatformBuf()
+            {
+                if (IsWindows)
+                {
+                    return new PlatformBuf(_field1, _field0);
+                }
+                else
+                {
+                    return new PlatformBuf(_field0, _field1);
+                }
+            }
+        }
+
+        public struct PlatformBuf
+        {
+            public readonly IntPtr Buffer;
+            public readonly IntPtr Count;
+
+            public PlatformBuf(IntPtr buffer,IntPtr count)
+            {
+                this.Buffer = buffer;
+                this.Count = count;
+            }
+
+            public uv_buf_t ToUVBufT()
+            {
+                return new uv_buf_t(this.Buffer, this.Count.ToInt32(), IsWindows);
+            }
         }
         #endregion
 
@@ -289,15 +318,15 @@ namespace waxbill.Libuv
             ThrowIfErrored(count);
             return count;
         }
-        
-        unsafe public static void write(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb)
+
+        public unsafe static void write(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb)
         {
             req.Validate();
             handle.Validate();
             ThrowIfErrored(uv_write(req, handle, bufs, nbufs, cb));
         }
 
-        unsafe public static void write2(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb)
+        public unsafe static void write2(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb)
         {
             req.Validate();
             handle.Validate();
@@ -346,8 +375,8 @@ namespace waxbill.Libuv
             loop.Validate();
             uv_walk(loop, walk_cb, arg);
         }
-        
-        unsafe public static long now(UVLoopHandle loop)
+
+        public unsafe static long now(UVLoopHandle loop)
         {
             loop.Validate();
             return uv_now(loop);

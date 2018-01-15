@@ -10,6 +10,7 @@ using waxbill.Exceptions;
 using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Utils;
+using ZTImage.Log;
 
 namespace waxbill
 {
@@ -590,8 +591,11 @@ namespace waxbill
                 SendedCallback(packet, result);
                 Monitor.RaiseOnSendedEvent(this, packet, result);
             }
-            catch
-            { }
+            catch(Exception ex)
+            {
+                Trace.Error("execute sended callback error", ex);
+
+            }
 
         }
 

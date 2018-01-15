@@ -8,7 +8,7 @@ using waxbill.Utils;
 
 namespace waxbill.Protocols
 {
-    public class EndMarkProtocol : ProtocolBase
+    public class EndMarkProtocol : ProtocolBase<Packet>
     {
         private byte mEndChars = 0;
 
