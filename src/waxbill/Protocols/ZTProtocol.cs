@@ -33,7 +33,7 @@ namespace waxbill.Protocols
         /// </summary>
         /// <param name="datas"></param>
         /// <returns></returns>
-        public int GetSize(byte[] datas)
+        public virtual int GetSize(byte[] datas)
         {
             return NetworkBitConverter.ToInt32(datas, 2);
         }

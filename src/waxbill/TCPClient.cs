@@ -56,13 +56,13 @@ namespace waxbill
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
                 this.mConnect.Connect(this.mServerHandle, ip, port, this.ConnectionCallback, null);
-                Thread thread = new Thread(ConnectionThread);
+                Thread thread = new Thread(ConnectionThreadCallback);
                 thread.IsBackground = true;
                 thread.Start();
             }   
         }
 
-        private void ConnectionThread(object state)
+        private void ConnectionThreadCallback(object state)
         {
             this.mLoopHandle.Start();
         }
