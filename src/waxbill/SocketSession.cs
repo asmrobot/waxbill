@@ -20,7 +20,7 @@ namespace waxbill
         internal UVTCPHandle TcpHandle;//客户端socket
         protected ServerOption Option;//服务器配置
 
-        private Int32 m_state = 0;//会话状态
+        private Int32 mState = 0;//会话状态
         private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
         
@@ -63,16 +63,16 @@ namespace waxbill
         /// <returns></returns>
         public bool GetState(int state)
         {
-            return (m_state & state) == state;
+            return (mState & state) == state;
         }
 
         public void RemoveState(int state)
         {
             while (true)
             {
-                Int32 oldStatus = m_state;
+                Int32 oldStatus = mState;
                 Int32 newStatus = oldStatus & (~state);
-                if (Interlocked.CompareExchange(ref m_state, newStatus, oldStatus) == oldStatus)
+                if (Interlocked.CompareExchange(ref mState, newStatus, oldStatus) == oldStatus)
                 {
                     return;
                 }
@@ -88,7 +88,7 @@ namespace waxbill
         {
             while (true)
             {
-                Int32 oldState = m_state;
+                Int32 oldState = mState;
                 if (noClose)
                 {
                     if (oldState >= SessionState.Closeing)
@@ -96,8 +96,8 @@ namespace waxbill
                         return false;
                     }
                 }
-                Int32 newState = m_state | state;
-                if (Interlocked.CompareExchange(ref m_state, newState, oldState) == oldState)
+                Int32 newState = mState | state;
+                if (Interlocked.CompareExchange(ref mState, newState, oldState) == oldState)
                 {
                     return true;
                 }
@@ -108,13 +108,13 @@ namespace waxbill
         {
             while (true)
             {
-                Int32 oldState = m_state;
+                Int32 oldState = mState;
                 Int32 newState = oldState | state;
-                if (newState == m_state)
+                if (newState == mState)
                 {
                     return false;
                 }
-                if (Interlocked.CompareExchange(ref m_state, newState, oldState) == oldState)
+                if (Interlocked.CompareExchange(ref mState, newState, oldState) == oldState)
                 {
                     return true;
                 }
@@ -124,12 +124,12 @@ namespace waxbill
 
         public bool IsClosingOrClosed
         {
-            get { return m_state >= SessionState.Closeing; }
+            get { return mState >= SessionState.Closeing; }
         }
 
         public bool IsClosed
         {
-            get { return m_state >= SessionState.Closed; }
+            get { return mState >= SessionState.Closed; }
         }
         #endregion
         
