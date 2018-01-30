@@ -27,9 +27,9 @@ namespace waxbill.demo
 
 
 
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
-            socket.Send(datas);
+            //Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
+            //socket.Send(datas);
 
             Console.ReadKey();
         }
