@@ -9,33 +9,38 @@ using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Sessions;
 using waxbill.Utils;
 
 namespace waxbill
 {
-    public class TCPServer<TSession>:TCPMonitor where TSession:SocketSession,new() 
+    public class TCPServer<TSession>:MonitorBase where TSession:ServerSession,new() 
     {
 
-        public TCPServer(IProtocol protocol):this(protocol,ServerOption.Define)
-        {}
-
-        public TCPServer(IProtocol protocol,ServerOption option):base(protocol,option)
-        {
-            this.Listener = new TCPListener();
-            this.Listener.OnStartSession += Listener_OnStartSession;
-        }
-        
         public string LocalIP { get; private set; }
-
         public Int32 LocalPort { get; private set; }
-
-        public TCPListener Listener { get; private set; }
+        internal TCPListener Listener { get; private set; }
 
         private ConcurrentDictionary<Int64, TSession> mSessions = new ConcurrentDictionary<Int64, TSession>();
 
-        private Timer mRecycleTimer=null;
+        private Timer mRecycleTimer = null;
 
         private Int32 IsRunning = 0;
+
+        private UVRequestPool SendPool;
+        
+        
+        public TCPServer(IProtocol protocol):this(protocol,TCPOption.Define)
+        {}
+
+        public TCPServer(IProtocol protocol,TCPOption option)
+            :base(protocol, option, new BufferManager(option.BufferSize, option.BufferIncemerCount))
+        {
+            this.SendPool = new UVRequestPool();
+            this.Listener = new TCPListener();
+            this.Listener.OnListenerConnect += Listener_OnStartSession;
+        }
+        
 
         public void Start(string ip, Int32 port)
         {
@@ -83,12 +88,11 @@ namespace waxbill
         private void Listener_OnStartSession(Int64 connectionID,UVTCPHandle connection)
         {
             TSession session = new TSession();
-            session.Init(connectionID,connection,this,this.Option);
+            session.Init(connectionID,connection,this);
             if (this.mSessions.TryAdd(session.ConnectionID, session))
             {
                 //添加到队列中
-                session.RaiseAccept();
-                connection.ReadStart(session.AllocMemoryCallback, session.ReadCallback, session, session);
+                session.RaiseOnConnected();
             }
             else
             {
@@ -163,5 +167,44 @@ namespace waxbill
             }
         }
         #endregion
+        
+
+        public override bool TryGetSendQueue(out UVRequest queue)
+        {
+            return this.SendPool.TryGet(out queue);
+        }
+
+        public override void ReleaseSendQueue(UVRequest queue)
+        {
+            this.SendPool.Release(queue);
+        }
+
+
+        /// <summary>
+        /// 获取接收缓存
+        /// </summary>
+        /// <returns></returns>
+        public override bool TryGetReceiveMemory(out IntPtr memory)
+        {
+            memory = IntPtr.Zero;
+            try
+            {
+                memory = Marshal.AllocHGlobal(this.Option.ReceiveBufferSize);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 释放缓存
+        /// </summary>
+        /// <param name="memory"></param>
+        public override void ReleaseReceiveMemory(IntPtr memory)
+        {
+            Marshal.FreeHGlobal(memory);
+        }
     }
 }

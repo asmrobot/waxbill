@@ -91,7 +91,7 @@ namespace waxbill.Protocols
             return endResult;
         }
 
-        public abstract Packet CreatePacket(BufferManager buffer);
+        
     }
     
 }

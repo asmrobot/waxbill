@@ -5,24 +5,27 @@ using System.Text;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Sessions;
 using waxbill.Utils;
 using ZTImage.Log;
 
 namespace waxbill.demo
 {
-    public class MServerSession : SocketSession
+    public class MServerSession : ServerSession
     {
-        protected override void ConnectedCallback()
+       
+        protected override void OnConnected()
         {
             Trace.Info("connection!远程地址为：" + this.RemoteEndPoint.ToString());
         }
 
-        protected override void DisconnectedCallback(CloseReason reason)
+
+        protected override void OnDisconnected(CloseReason reason)
         {
             Trace.Info("disconnection");
         }
-
-        protected override void ReceiveCallback(Packet packet)
+        
+        protected override void OnReceived(Packet packet)
         {
             byte[] b = packet.Read();
 
@@ -51,7 +54,7 @@ namespace waxbill.demo
             return builder.ToString();
         }
 
-        protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
+        protected override void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result)
         {
             for (int i = 0; i < packet.Count; i++)
             {

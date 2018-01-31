@@ -12,18 +12,17 @@ using waxbill.Packets;
 using waxbill.Utils;
 using ZTImage.Log;
 
-namespace waxbill
+namespace waxbill.Sessions
 {
-    public abstract class SocketSession
+    public abstract class SessionBase
     {
-        protected TCPMonitor Monitor;
+        protected MonitorBase Monitor;
         internal UVTCPHandle TcpHandle;//客户端socket
-        protected ServerOption Option;//服务器配置
-
+        
         private Int32 mState = 0;//会话状态
         private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
-        
+
         private UVRequest mSendQueue;//发送队列
         private IPEndPoint mRemoteEndPoint;
 
@@ -38,23 +37,22 @@ namespace waxbill
             }
         }
 
-        internal void Init(Int64 connectionID,UVTCPHandle handle, TCPMonitor monitor, ServerOption option)
+        internal void Init(Int64 connectionID, UVTCPHandle handle, MonitorBase monitor)
         {
-            this.TcpHandle = handle;
-            this.mRemoteEndPoint = handle.RemoteEndPoint;
-            this.Monitor = monitor;
-            this.Option = option;
             this.ConnectionID = connectionID;
-
-            if (!this.Monitor.SendPool.TryGet(out mSendQueue))
+            this.TcpHandle = handle;
+            this.Monitor = monitor;
+            this.mRemoteEndPoint = handle.RemoteEndPoint;
+            
+            if (!this.Monitor.TryGetSendQueue(out mSendQueue))
             {
                 this.Close(CloseReason.Exception);
                 Trace.Error("没有分配到发送queue", null);
             }
 
-            this.mPacket = monitor.Protocol.CreatePacket(this.Monitor.BufferManager);
+            this.mPacket = monitor.CreatePacket();
         }
-        
+
         #region state
         /// <summary>
         /// 
@@ -132,7 +130,7 @@ namespace waxbill
             get { return mState >= SessionState.Closed; }
         }
         #endregion
-        
+
         #region send
         /// <summary>
         /// 加入到发送列表中
@@ -168,7 +166,7 @@ namespace waxbill
             }
 
             SpinWait wait = new SpinWait();
-            DateTime dt = DateTime.Now.AddMilliseconds(this.Option.SendTimeout);
+            DateTime dt = DateTime.Now.AddMilliseconds(this.Monitor.Option.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
@@ -191,7 +189,7 @@ namespace waxbill
 
         public void Send(IList<ArraySegment<byte>> datas)
         {
-            if (datas.Count > this.Option.SendQueueSize)
+            if (datas.Count > this.Monitor.Option.SendQueueSize)
             {
                 throw new ArgumentOutOfRangeException("发送内容大于缓存池");
             }
@@ -207,7 +205,7 @@ namespace waxbill
             }
 
             SpinWait wait = new SpinWait();
-            DateTime dt = DateTime.Now.AddMilliseconds(this.Option.SendTimeout);
+            DateTime dt = DateTime.Now.AddMilliseconds(this.Monitor.Option.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
@@ -277,14 +275,14 @@ namespace waxbill
             }
 
             UVRequest newQueue;
-            
-            if (!this.Monitor.SendPool.TryGet(out newQueue))
+
+            if (!this.Monitor.TryGetSendQueue(out newQueue))
             {
                 SendEnd(oldQueue, CloseReason.InernalError);
                 Trace.Error("没有分配到发送queue", null);
                 return false;
             }
-            
+
             newQueue.StartQueue();
             this.mSendQueue = newQueue;
             oldQueue.StopQueue();
@@ -299,7 +297,7 @@ namespace waxbill
                 SendEnd(queue, CloseReason.Closeing);
                 return false;
             }
-            
+
             try
             {
                 queue.Send(this.TcpHandle, SendCompleted, null);
@@ -310,7 +308,7 @@ namespace waxbill
                 SendEnd(queue, CloseReason.Exception);
                 return false;
             }
-            
+
             return true;
         }
 
@@ -319,21 +317,21 @@ namespace waxbill
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SendCompleted(UVRequest req, Int32  statue, UVException ex, object state)
+        private void SendCompleted(UVRequest req, Int32 statue, UVException ex, object state)
         {
 
             if (ex != null)
             {
-                this.RaiseSended(req, false);
+                this.OnSended(req, false);
                 SendEnd(req, CloseReason.Exception);
                 return;
             }
 
             //发送下一包
-            
-            this.RaiseSended(req, true);
+
+            this.OnSended(req, true);
             req.Clear();
-            this.Monitor.SendPool.Release(req);
+            this.Monitor.ReleaseSendQueue(req);
 
             RemoveState(SessionState.Sending);
             PreSend();
@@ -349,7 +347,7 @@ namespace waxbill
             if (queue != null)
             {
                 queue.Clear();
-                this.Monitor.SendPool.Release(queue);
+                this.Monitor.ReleaseSendQueue(queue);
             }
             RemoveState(SessionState.Sending);
             this.Close(reason);
@@ -363,13 +361,13 @@ namespace waxbill
         /// <param name="connector"></param>
         /// <param name="datas"></param>
         /// <param name="callback"></param>
-        private void ReceiveCompleted(IntPtr memory,Int32 nread,out Int32 giveupCount)
+        private void ReceiveCompleted(IntPtr memory, Int32 nread, out Int32 giveupCount)
         {
             bool result = false;
             giveupCount = 0;
             try
             {
-                result = this.Monitor.Protocol.TryToPacket(this.mPacket, memory,nread, out giveupCount);
+                result = this.Monitor.Protocol.TryToPacket(this.mPacket, memory, nread, out giveupCount);
             }
             catch (Exception ex)
             {
@@ -381,20 +379,20 @@ namespace waxbill
             {
                 return;
             }
-            
+
             if (giveupCount < 0 || giveupCount > nread)
             {
                 throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
             }
-            
+
             memory = IntPtr.Add(memory, giveupCount);
             int readCount = 0;
-            
+
             //Packet oldPacket = this.mPacket;
             //this.mPacket = new Packet(this.Monitor.BufferManager);
             try
             {
-                this.RaiseReceive(this.mPacket);
+                this.OnReceived(this.mPacket);
                 this.mPacket.Reset();
 
             }
@@ -414,11 +412,11 @@ namespace waxbill
             ReceiveCompleted(memory, nread - giveupCount, out readCount);
             giveupCount += readCount;
         }
-        
+
         /// <summary>
         /// 消息接收中止
         /// </summary>
-        private void ReceiveEnd(CloseReason reason,Exception exception=null)
+        private void ReceiveEnd(CloseReason reason, Exception exception = null)
         {
             RemoveState(SessionState.Receiveing);
             this.Close(reason, exception);
@@ -427,7 +425,7 @@ namespace waxbill
 
         #region control
 
-        public void Close(CloseReason reason,Exception exception=null)
+        public void Close(CloseReason reason, Exception exception = null)
         {
             lock (this)
             {
@@ -441,13 +439,13 @@ namespace waxbill
                     return;
                 }
 
-                this.RaiseDisconnect(reason);
+                this.OnDisconnected(reason);
 
                 if (this.mReadDatas != IntPtr.Zero)
                 {
                     Marshal.FreeHGlobal(this.mReadDatas);
                 }
-                
+
                 this.TcpHandle.Dispose();
                 this.FreeResource(reason);
             }
@@ -467,15 +465,15 @@ namespace waxbill
             {
                 if (this.mSendQueue.Count > 0)
                 {
-                    this.RaiseSended(this.mSendQueue, false);
+                    this.OnSended(this.mSendQueue, false);
                 }
                 this.mSendQueue.Clear();
-                this.Monitor.SendPool.Release(this.mSendQueue);
+                this.Monitor.ReleaseSendQueue(this.mSendQueue);
             }
             SetState(SessionState.Closed);
         }
         #endregion
-        
+
         #region handle
         private IntPtr mReadDatas = IntPtr.Zero;
         private Int32 mReadOffset = 0;
@@ -491,10 +489,13 @@ namespace waxbill
         {
             if (mReadDatas == IntPtr.Zero)
             {
-                mReadDatas = Marshal.AllocHGlobal(this.Option.ReceiveBufferSize);
+                if (!this.Monitor.TryGetReceiveMemory(out mReadDatas))
+                {
+                    throw new ArgumentOutOfRangeException("allow bytes");
+                }
             }
-            
-            return new UVIntrop.uv_buf_t(mReadDatas+mReadOffset, this.Option.ReceiveBufferSize-this.mReadOffset, UVIntrop.IsWindows);
+
+            return new UVIntrop.uv_buf_t(mReadDatas + mReadOffset, this.Monitor.Option.ReceiveBufferSize - this.mReadOffset, UVIntrop.IsWindows);
         }
 
         /// <summary>
@@ -530,7 +531,7 @@ namespace waxbill
                 {
                     //没读完
                     this.mReadOffset = this.mReadOffset - giveupCount;
-                    if (this.mReadOffset >= this.Option.ReceiveBufferSize)
+                    if (this.mReadOffset >= this.Monitor.Option.ReceiveBufferSize)
                     {
                         throw new ArgumentOutOfRangeException("数据没有读取,数据缓冲区已满");
                     }
@@ -543,40 +544,27 @@ namespace waxbill
                 }
             }
         }
-        
+
         #endregion
 
         #region Events Raise
+
+        internal void RaiseOnConnected()
+        {
+            OnConnected();
+            this.TcpHandle.ReadStart(this.AllocMemoryCallback, this.ReadCallback, this, this);
+        }
         /// <summary>
         /// 连接
         /// </summary>
-        internal void RaiseAccept()
-        {
-            try
-            {
-                ConnectedCallback();
-                Monitor.RaiseOnConnectionEvent(this);
-            }
-            catch
-            { }
-        }
+        protected abstract void OnConnected();
 
         /// <summary>
         /// 断开连接
         /// </summary>
         /// <param name="ex"></param>
         /// <param name="connector"></param>
-        private void RaiseDisconnect(CloseReason reason)
-        {
-            try
-            {
-                DisconnectedCallback(reason);
-                Monitor.RaiseOnDisconnectedEvent(this, reason);
-            }
-            catch
-            { }
-
-        }
+        protected abstract void OnDisconnected(CloseReason reason);
 
         /// <summary>
         /// 发送成功
@@ -584,43 +572,19 @@ namespace waxbill
         /// <param name="connector"></param>
         /// <param name="packet"></param>
         /// <param name="result"></param>
-        private void RaiseSended(IList<UVIntrop.uv_buf_t> packet, bool result)
-        {
-            try
-            {
-                SendedCallback(packet, result);
-                Monitor.RaiseOnSendedEvent(this, packet, result);
-            }
-            catch(Exception ex)
-            {
-                Trace.Error("execute sended callback error", ex);
+        protected abstract void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result);
 
-            }
-
-        }
-
-        private void RaiseReceive(Packet packet)
-        {
-            try
-            {
-                ReceiveCallback(packet);
-                Monitor.RaiseOnReceiveEvent(this, packet);
-            }
-            catch (Exception ex)
-            {
-                Trace.Error(ex.Message, ex);
-            }
-        }
+        protected abstract void OnReceived(Packet packet);
         #endregion
 
-        #region Callback
-        protected abstract void ConnectedCallback();
+        //#region Callback
+        //protected abstract void ConnectedCallback();
 
-        protected abstract void DisconnectedCallback(CloseReason reason);
+        //protected abstract void DisconnectedCallback(CloseReason reason);
 
-        protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
+        //protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
 
-        protected abstract void ReceiveCallback(Packet packet);
-        #endregion
+        //protected abstract void ReceiveCallback(Packet packet);
+        //#endregion
     }
 }

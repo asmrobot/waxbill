@@ -9,8 +9,11 @@ namespace waxbill.Libuv
 {
     public class UVLoopHandle : UVMemory
     {
+        public static readonly UVLoopHandle Define = new UVLoopHandle();
+
         public UVLoopHandle()
         {
+            
             CreateMemory(UVIntrop.loop_size());
             UVIntrop.loop_init(this);
         }
@@ -36,11 +39,13 @@ namespace waxbill.Libuv
         {
             UVIntrop.stop(this);
         }
+        
 
         protected unsafe override bool ReleaseHandle()
         {
             if (handle != IntPtr.Zero)
             {
+                UVIntrop.uv_loop_close(this.handle);
                 DestroyMemory(handle);
                 handle = IntPtr.Zero;
             }

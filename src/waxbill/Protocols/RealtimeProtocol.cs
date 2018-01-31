@@ -27,10 +27,6 @@ namespace waxbill.Protocols
             return true;
         }
 
-        public Packet CreatePacket(BufferManager buffer)
-        {
-            return new Packet(buffer);
-        }
 
     }
 }

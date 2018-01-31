@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace waxbill
 {
-    public class ServerOption
+    public class TCPOption
     {
-        public static readonly ServerOption Define;
-        static ServerOption()
+        public static readonly TCPOption Define;
+        static TCPOption()
         {
-            Define = new ServerOption() {
+            Define = new TCPOption() {
                 ListenBacklog = 100,
                 BufferSize = 8192,
                 BufferIncemerCount = 1000,

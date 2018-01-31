@@ -11,8 +11,7 @@ namespace waxbill.Utils
 {
     public class BufferManager
     {
-        private List<byte[]> m_Buffers=new List<byte[]>(); 
-        
+        private List<byte[]> m_Buffers=new List<byte[]>();        
         private ConcurrentStack<ArraySegment<byte>> m_freeIndexPool; 
         private int m_ListIndex;
         private int m_CurrentIndex;

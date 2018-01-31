@@ -193,12 +193,7 @@ namespace waxbill.Libuv
                 throw;
             }
         }
-
         
-
-
-
-
         // Safe handle has instance method called Unpin
         // so using UnpinGcHandles to avoid conflict
         private void UnpinGCHandles()

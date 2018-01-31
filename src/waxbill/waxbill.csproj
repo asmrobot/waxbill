@@ -68,9 +68,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Libuv\UVIntrop.cs" />
     <Compile Include="Protocols\ZTHostProtocol.cs" />
-    <Compile Include="ServerOption.cs" />
-    <Compile Include="SessionEvent.cs" />
-    <Compile Include="SessionState.cs" />
+    <Compile Include="TCPOption.cs" />
+    <Compile Include="Sessions\ClientSession.cs" />
+    <Compile Include="Sessions\SessionBase.cs" />
+    <Compile Include="Sessions\SessionEvent.cs" />
+    <Compile Include="Sessions\SessionState.cs" />
     <Compile Include="Protocols\EndMarkProtocol.cs" />
     <Compile Include="Protocols\BeginEndMarkProtocol.cs" />
     <Compile Include="Protocols\IProtocol.cs" />
@@ -83,9 +85,9 @@
     <Compile Include="WebSockets\WebSocketFrame.cs" />
     <Compile Include="WebSockets\WebSocketSession.cs" />
     <Compile Include="TCPListener.cs" />
-    <Compile Include="TCPMonitor.cs" />
+    <Compile Include="MonitorBase.cs" />
     <Compile Include="TCPServer.cs" />
-    <Compile Include="SocketSession.cs" />
+    <Compile Include="Sessions\ServerSession.cs" />
     <Compile Include="Pools\PoolBase.cs" />
     <Compile Include="Pools\UVRequestPool.cs" />
     <Compile Include="Utils\Validate.cs" />

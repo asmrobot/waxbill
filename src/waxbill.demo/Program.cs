@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using ZTImage.Log;
 using System.Net.Sockets;
 using System.Net;
+using waxbill.Sessions;
 
 namespace waxbill.demo
 {
@@ -18,22 +19,50 @@ namespace waxbill.demo
         {
             Trace.EnableListener(ZTImage.Log.NLog.Instance);
 
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol());
+            //todo: receive
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
             //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
             //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
             server.Start("0.0.0.0", 2333);
-
             Trace.Info("server is start");
 
 
+            ////todo：send
+            //for (int i = 0; i < 20; i++)
+            //{
+            //    TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
+            //    client.OnConnection += Client_OnConnection;
+            //    client.OnDisconnected += Client_OnDisconnected;
+            //    client.OnReceive += Client_OnReceive;
+            //    client.OnSended += Client_OnSended;
+            //    client.Connection("127.0.0.1", 2333);
+            //}
 
-            //Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            //socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
-            //socket.Send(datas);
+            //ZTImage.Log.Trace.Info("run complete");
 
             Console.ReadKey();
         }
+
+        private static void Client_OnSended(ServerSession session, System.Collections.Generic.IList<Libuv.UVIntrop.uv_buf_t> packet, bool result)
+        {
+            ZTImage.Log.Trace.Info("Client_OnSended");
+        }
         
 
+        private static void Client_OnReceive(ServerSession session, Packets.Packet collection)
+        {
+            ZTImage.Log.Trace.Info("Client_OnReceive");
+        }
+
+        private static void Client_OnDisconnected(ServerSession session, CloseReason reason)
+        {
+            ZTImage.Log.Trace.Info("Client_OnDisconnected");
+        }
+
+        private static void Client_OnConnection(ServerSession session)
+        {
+            ZTImage.Log.Trace.Info("Client_OnConnection");
+            session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghi"));
+        }
     }
 }

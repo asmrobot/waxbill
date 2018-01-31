@@ -25,11 +25,16 @@ namespace waxbill.Libuv
         public void CreateMemory(Int32 size)
         {
             handle = Marshal.AllocHGlobal(size);
+            //todo:那种分配内存的方式更好
             //handle = Marshal.AllocCoTaskMem(size);
             GCHandle gcHandlePtr = GCHandle.Alloc(this, this.mHandleType);
             *(IntPtr*)handle = GCHandle.ToIntPtr(gcHandlePtr);
         }
 
+        /// <summary>
+        /// 释放内存
+        /// </summary>
+        /// <param name="memory"></param>
         public static void DestroyMemory(IntPtr memory)
         {
             IntPtr gcHandlePtr = *(IntPtr*)memory;

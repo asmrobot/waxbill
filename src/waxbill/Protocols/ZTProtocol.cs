@@ -78,11 +78,6 @@ namespace waxbill.Protocols
             packet.Write(datas, giveupCount);
             return result;
         }
-        
-        public override Packet CreatePacket(BufferManager buffer)
-        {
-            return new ZTProtocolPacket(buffer);
-        }
 
         protected int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)
         {
