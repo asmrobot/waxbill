@@ -22,7 +22,7 @@ namespace waxbill
         private bool mIsDispose = false;
         private Int32 mIsConnected = 0;
 
-        public MClientSession Session
+        private MClientSession Session
         {
             get
             {
@@ -125,7 +125,7 @@ namespace waxbill
         }
 
 
-        public class MClientSession : SocketSession
+        private class MClientSession : SocketSession
         {
             private TCPClient mClient;
             public MClientSession(TCPClient client)

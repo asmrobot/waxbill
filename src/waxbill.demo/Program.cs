@@ -18,18 +18,18 @@ namespace waxbill.demo
         {
             Trace.EnableListener(ZTImage.Log.NLog.Instance);
 
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol());
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
-            server.Start("0.0.0.0", 2333);
+            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol());
+            ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
+            ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
+            //server.Start("0.0.0.0", 2333);
 
-            Trace.Info("server is start");
+            //Trace.Info("server is start");
 
 
 
-            Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
-            socket.Send(datas);
+            //Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            //socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
+            //socket.Send(datas);
 
             Console.ReadKey();
         }
