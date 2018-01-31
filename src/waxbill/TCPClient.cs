@@ -22,29 +22,15 @@ namespace waxbill
         private UVConnect mConnect;
         private bool mIsDispose = false;
         private Int32 mIsConnected = 0;
-
-<<<<<<< HEAD
-        private MClientSession Session
-        {
-            get
-            {
-                return this.mSession;
-            }
-        }
-        
-        public TCPClient(IProtocol protocol):base(protocol,ServerOption.Define)
-        {
-            Init();
-        }
-=======
         private static UVRequestPool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
->>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
+
+
 
         static TCPClient()
         {
-            mOption = TCPOption.Define;
+            mOption = TCPOption.Define;            
             mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
             mSendPool = new UVRequestPool();
         }
@@ -88,8 +74,6 @@ namespace waxbill
                 this.mSession.Close(CloseReason.Shutdown, null);
                 this.mConnect.Close();
                 this.mServerHandle.Close();
-                this.mLoopHandle.Stop();
-                this.mLoopHandle.Close();
                 mIsDispose = true;
             }
         }
@@ -144,11 +128,8 @@ namespace waxbill
         /// </summary>
         public event OnDisconnectedEvent OnDisconnected;
 
-<<<<<<< HEAD
-        private class MClientSession : SocketSession
-=======
+
         internal void RaiseOnDisconnectedEvent(SessionBase session, CloseReason reason)
->>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
         {
             if (this.OnDisconnected != null)
             {

@@ -5,6 +5,7 @@ using ZTImage.Log;
 using System.Net.Sockets;
 using System.Net;
 using waxbill.Sessions;
+using waxbill.Libuv;
 
 namespace waxbill.demo
 {
@@ -13,27 +14,48 @@ namespace waxbill.demo
     {
         public static byte[] datas = new byte[] { 0x0d, 0x0a, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0d, 0x0a, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0d, 0x0a, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0d, 0x0a, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x0d, 0x0a, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 
+        static Int32 counter = 0;
+        static void wait_for_while(UVIdleHandle handle)
+        {
+            counter++;
 
+            if (counter % 100000 == 0)
+            {
+                Console.WriteLine(counter);
+            }
+            if (counter > 1000000)
+            {
+                
+                handle.Stop();
+            }
+        }
 
         static void Main(string[] args)
         {
             Trace.EnableListener(ZTImage.Log.NLog.Instance);
 
-<<<<<<< HEAD
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new RealtimeProtocol());
+            
+            UVLoopHandle loop = new UVLoopHandle();
+            UVIdleHandle idle = new UVIdleHandle(loop);
+            idle.Start(wait_for_while);
+
+            Trace.Info("entry start");
+            loop.Start();
+            Trace.Info("start return");
+            loop.LoopClose();
+            loop.Close();
+
+            
+
+
+
+            ////todo: receive
+            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
             ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
             ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
             //server.Start("0.0.0.0", 2333);
-
             //Trace.Info("server is start");
-=======
-            //todo: receive
-            TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
-            server.Start("0.0.0.0", 2333);
-            Trace.Info("server is start");
->>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
+
 
 
             ////todo：send
@@ -47,14 +69,8 @@ namespace waxbill.demo
             //    client.Connection("127.0.0.1", 2333);
             //}
 
-<<<<<<< HEAD
-            //Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            //socket.Connect(new IPEndPoint(IPAddress.Parse("192.168.0.162"), 2333));
-            //socket.Send(datas);
-=======
             //ZTImage.Log.Trace.Info("run complete");
->>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
-
+            Trace.Info("complete");
             Console.ReadKey();
         }
 

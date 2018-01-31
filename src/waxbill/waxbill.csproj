@@ -58,6 +58,7 @@
     <Compile Include="Libuv\Native\UnsafeNativeMethodsWin32.cs" />
     <Compile Include="Libuv\UVException.cs" />
     <Compile Include="Libuv\UVHandle.cs" />
+    <Compile Include="Libuv\UVIdleHandle.cs" />
     <Compile Include="Libuv\UVLoopHandle.cs" />
     <Compile Include="Libuv\UVMemory.cs" />
     <Compile Include="Libuv\UVConnect.cs" />

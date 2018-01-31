@@ -247,6 +247,24 @@ namespace waxbill.Libuv
             uv_close(handle, close_cb);
         }
 
+        public static void idle_init(UVLoopHandle loop, UVIdleHandle handle)
+        {
+            loop.Validate();
+            handle.Validate();
+            ThrowIfErrored(uv_idle_init(loop, handle));
+        }
+
+        public static void idle_start( UVIdleHandle handle,uv_idle_cb cb)
+        {
+            handle.Validate();
+            ThrowIfErrored(uv_idle_start(handle, cb));
+        }
+
+        public static void idle_stop(UVIdleHandle handle)
+        {
+            handle.Validate();
+            ThrowIfErrored(uv_idle_stop(handle));
+        }
 
 
         public static void unsafe_async_send(IntPtr handle)
@@ -451,6 +469,9 @@ namespace waxbill.Libuv
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void uv_timer_cb(IntPtr handle);
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void uv_idle_cb(IntPtr server);
         #endregion
 
         #region declare
@@ -477,7 +498,16 @@ namespace waxbill.Libuv
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern void uv_close(IntPtr handle, uv_close_cb close_cb);
-        
+
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int uv_idle_init(UVLoopHandle loop, UVIdleHandle handle);
+
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int uv_idle_start(UVIdleHandle handle, uv_idle_cb cb);
+
+        [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+        public static extern int uv_idle_stop(UVIdleHandle handle);
+
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uv_async_send")]
         public extern static int uv_unsafe_async_send(IntPtr handle);
 

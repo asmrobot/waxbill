@@ -39,13 +39,17 @@ namespace waxbill.Libuv
         {
             UVIntrop.stop(this);
         }
-        
+
+        public void LoopClose()
+        {
+            UVIntrop.loop_close(this);
+        }
 
         protected unsafe override bool ReleaseHandle()
         {
             if (handle != IntPtr.Zero)
             {
-                UVIntrop.uv_loop_close(this.handle);
+                //UVIntrop.loop_close(this);
                 DestroyMemory(handle);
                 handle = IntPtr.Zero;
             }
