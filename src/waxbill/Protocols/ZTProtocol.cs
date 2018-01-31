@@ -33,7 +33,7 @@ namespace waxbill.Protocols
         /// </summary>
         /// <param name="datas"></param>
         /// <returns></returns>
-        public int GetSize(byte[] datas)
+        public virtual int GetSize(byte[] datas)
         {
             return NetworkBitConverter.ToInt32(datas, 2);
         }
@@ -77,11 +77,6 @@ namespace waxbill.Protocols
             //保存数据 
             packet.Write(datas, giveupCount);
             return result;
-        }
-        
-        public override Packet CreatePacket(BufferManager buffer)
-        {
-            return new ZTProtocolPacket(buffer);
         }
 
         protected int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)

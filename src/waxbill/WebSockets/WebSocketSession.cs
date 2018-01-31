@@ -9,12 +9,13 @@ using System.Text;
 using System.Threading;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Sessions;
 using waxbill.Utils;
 using ZTImage.Log;
 
 namespace waxbill.WebSockets
 {
-    public abstract class WebSocketSession:SocketSession
+    public abstract class WebSocketSession:ServerSession
     {
         private const string magic = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
         public readonly X509Certificate2 m_ServerCertificate;
@@ -56,14 +57,15 @@ namespace waxbill.WebSockets
 
         public WebSocketSession():this(false,string.Empty,string.Empty)
         { }
-
-        protected override void ConnectedCallback()
-        { }
-
-        protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
-        { }
         
-        protected override void ReceiveCallback(Packet packet)
+        protected override void OnConnected()
+        {}
+        
+        protected override void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result)
+        {}
+
+
+        protected override void OnReceived(Packet packet)
         {
             byte[] datas = packet.Read();
             m_InnerStream.SetData(datas);
@@ -76,12 +78,9 @@ namespace waxbill.WebSockets
             return;
         }
 
-
-        protected override void DisconnectedCallback(CloseReason reason)
-        {
-            
-        }
-
+        protected override void OnDisconnected(CloseReason reason)
+        {}
+        
 
         private void DoCancel()
         {

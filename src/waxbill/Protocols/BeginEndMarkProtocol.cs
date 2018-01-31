@@ -68,9 +68,5 @@ namespace waxbill.Protocols
         }
         
 
-        public override Packet CreatePacket(BufferManager buffer)
-        {
-            return new Packet(buffer);
-        }
     }
 }

@@ -14,27 +14,25 @@ using ZTImage.Log;
 namespace waxbill
 {
 
-
-    public class TCPListener
+    internal delegate void ListenerConnect(Int64 connectionID, UVTCPHandle client);
+    internal class TCPListener
     {
         private string mIP;
         private Int32 mPort;
         private UVTCPHandle mServerHandle = null;
         private UVLoopHandle mLoopHandle = null;
-
         private long mConnectionIncremer = 0;
         
-        public delegate void NewSession(Int64 connectionID,UVTCPHandle client);
-
         /// <summary>
         /// new session event
         /// </summary>
-        public event NewSession OnStartSession;
-        private void RaiseStartSession(Int64 connectionID,UVTCPHandle client)
+        public event ListenerConnect OnListenerConnect;
+
+        private void RaiseOnlistenerConnect(Int64 connectionID,UVTCPHandle client)
         {
-            if (OnStartSession != null)
+            if (OnListenerConnect != null)
             {
-                OnStartSession(connectionID,client);
+                OnListenerConnect(connectionID,client);
             }
         }
         
@@ -49,8 +47,7 @@ namespace waxbill
         {
             Validate.ThrowIfNull(ip, "endpoint不能为空");
             Validate.ThrowIfZeroOrMinus(port, "端口号不正确");
-
-
+            
             this.mIP = ip;
             this.mPort = port;
 
@@ -64,7 +61,7 @@ namespace waxbill
             }
             
             this.mServerHandle.Listen(backlog, OnConnection, this);
-            this.mLoopHandle.AsyncStart();            
+            this.mLoopHandle.AsyncStart();
         }
 
         public void Stop()
@@ -94,7 +91,7 @@ namespace waxbill
                 stream.Accept(client);
 
                 Int64 connectionID= Interlocked.Increment(ref this.mConnectionIncremer);
-                RaiseStartSession(connectionID,client);
+                RaiseOnlistenerConnect(connectionID,client);
             }
             catch(Exception wex)
             {

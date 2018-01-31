@@ -3,25 +3,27 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Sessions;
 using waxbill.Utils;
 using ZTImage.Log;
 
 namespace waxbill
 {
-    public class TCPClient:TCPMonitor
+    public class TCPClient:MonitorBase
     {
-        private MClientSession mSession;
-        private UVLoopHandle mLoopHandle;
+        private ClientSession mSession;
         private UVTCPHandle mServerHandle;
         private UVConnect mConnect;
         private bool mIsDispose = false;
         private Int32 mIsConnected = 0;
 
+<<<<<<< HEAD
         private MClientSession Session
         {
             get
@@ -34,19 +36,25 @@ namespace waxbill
         {
             Init();
         }
+=======
+        private static UVRequestPool mSendPool;
+        private static BufferManager mBufferManager;
+        private readonly static TCPOption mOption;
+>>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
 
-        public TCPClient(IProtocol protocol,ServerOption option):base(protocol,option)
+        static TCPClient()
         {
-            Init();
+            mOption = TCPOption.Define;
+            mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
+            mSendPool = new UVRequestPool();
         }
 
-        private void Init()
+        public TCPClient(IProtocol protocol):base(protocol, mOption,mBufferManager)
         {
-            this.mLoopHandle = new UVLoopHandle();
-            this.mServerHandle = new UVTCPHandle(this.mLoopHandle);
+            this.mServerHandle = new UVTCPHandle(UVLoopHandle.Define);
             this.mConnect = new UVConnect();
         }
-
+        
         public void Connection(string ip, Int32 port)
         {
             if (mIsDispose)
@@ -56,15 +64,8 @@ namespace waxbill
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
                 this.mConnect.Connect(this.mServerHandle, ip, port, this.ConnectionCallback, null);
-                Thread thread = new Thread(ConnectionThread);
-                thread.IsBackground = true;
-                thread.Start();
+                UVLoopHandle.Define.AsyncStart();
             }   
-        }
-
-        private void ConnectionThread(object state)
-        {
-            this.mLoopHandle.Start();
         }
 
         private void ConnectionCallback(UVConnect connection, Int32 retStatus, UVException exception, object state)
@@ -74,9 +75,9 @@ namespace waxbill
                 this.mIsConnected = 0;
                 return;
             }
-            this.mSession = new MClientSession(this);
-            this.mSession.Init(0, this.mServerHandle, this, this.Option);
-            this.mSession.RaiseAccept();
+            this.mSession = new ClientSession(this);
+            this.mSession.Init(0, this.mServerHandle, this);
+            this.mSession.RaiseOnConnected();
             this.mServerHandle.ReadStart(mSession.AllocMemoryCallback, mSession.ReadCallback, mSession, mSession);
         }
 
@@ -88,12 +89,12 @@ namespace waxbill
                 this.mConnect.Close();
                 this.mServerHandle.Close();
                 this.mLoopHandle.Stop();
-                this.mLoopHandle.Stop();
                 this.mLoopHandle.Close();
                 mIsDispose = true;
             }
         }
-        
+
+        #region Sends
         /// <summary>
         /// 加入到发送列表中
         /// </summary>
@@ -123,34 +124,66 @@ namespace waxbill
         {
             this.mSession.Send(datas);
         }
+        #endregion
 
-
-        private class MClientSession : SocketSession
+        #region Events
+        /// <summary>
+        /// 连接事件
+        /// </summary>
+        public event OnConnectionEvent OnConnection;
+        internal void RaiseOnConnectionEvent(SessionBase session)
         {
-            private TCPClient mClient;
-            public MClientSession(TCPClient client)
+            if (OnConnection != null)
             {
-                this.mClient = client;
+                OnConnection(session);
             }
-            protected override void ConnectedCallback()
-            {}
-
-            protected override void DisconnectedCallback(CloseReason reason)
-            {
-                if (mClient != null)
-                {
-                    mClient.Disconnect();
-                }
-            }
-
-            protected override void ReceiveCallback(Packet packet)
-            {}
-
-            protected override void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result)
-            {}
         }
 
-        #region static
+        /// <summary>
+        /// 断开连接事件
+        /// </summary>
+        public event OnDisconnectedEvent OnDisconnected;
+
+<<<<<<< HEAD
+        private class MClientSession : SocketSession
+=======
+        internal void RaiseOnDisconnectedEvent(SessionBase session, CloseReason reason)
+>>>>>>> 23d675f4a89456e1fbea8c972fcc3acc2db76432
+        {
+            if (this.OnDisconnected != null)
+            {
+                OnDisconnected(session, reason);
+            }
+        }
+
+        /// <summary>
+        /// 发送事件
+        /// </summary>
+        public event OnSendedEvent OnSended;
+        internal void RaiseOnSendedEvent(SessionBase session, IList<UVIntrop.uv_buf_t> packet, bool result)
+        {
+            if (this.OnSended != null)
+            {
+                OnSended(session, packet, result);
+            }
+        }
+
+
+        /// <summary>
+        /// 接收事件
+        /// </summary>
+        public event OnReceiveEvent OnReceive;
+        internal void RaiseOnReceiveEvent(SessionBase session, Packet collection)
+        {
+            if (OnReceive != null)
+            {
+                OnReceive(session, collection);
+            }
+        }
+
+        #endregion
+
+        #region Statics
         public static void Send(string ip, Int32 port, byte[] datas)
         {
             Send(ip, port, datas, 0, datas.Length, (socket) => { });
@@ -240,7 +273,46 @@ namespace waxbill
         {
             return new byte[0];
         }
+
+
         #endregion
 
+        public override bool TryGetSendQueue(out UVRequest queue)
+        {
+            return mSendPool.TryGet(out queue);
+        }
+
+        public override void ReleaseSendQueue(UVRequest queue)
+        {
+            mSendPool.Release(queue);
+        }
+
+        /// <summary>
+        /// 获取接收缓存
+        /// </summary>
+        /// <returns></returns>
+        public override bool TryGetReceiveMemory(out IntPtr memory)
+        {
+            memory = IntPtr.Zero;
+            try
+            {
+                memory = Marshal.AllocHGlobal(this.Option.ReceiveBufferSize);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 释放缓存
+        /// </summary>
+        /// <param name="memory"></param>
+        public override void ReleaseReceiveMemory(IntPtr memory)
+        {
+            Marshal.FreeHGlobal(memory);
+        }
+        
     }
 }

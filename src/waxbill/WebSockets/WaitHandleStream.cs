@@ -3,13 +3,14 @@ using System.IO;
 using System.Threading;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
+using waxbill.Sessions;
 
 namespace waxbill.WebSockets
 {
 
     internal class WaitHandleStream : Stream
     {
-        private SocketSession m_Session;
+        private ServerSession m_Session;
         private bool m_Readable = true;
         private bool m_Writeable = true;
         private ManualResetEvent m_WaitHandle = new ManualResetEvent(false);
@@ -19,7 +20,7 @@ namespace waxbill.WebSockets
         private CancellationToken m_CancelToken;
         
 
-        public WaitHandleStream(SocketSession session,CancellationToken cancelToken)
+        public WaitHandleStream(ServerSession session,CancellationToken cancelToken)
         {
             if (session == null)
             {
