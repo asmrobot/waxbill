@@ -21,11 +21,12 @@ namespace waxbill.demo
 
             if (counter % 100000 == 0)
             {
+                //counter = 0;
                 Console.WriteLine(counter);
             }
             if (counter > 1000000)
             {
-                
+
                 handle.Stop();
             }
         }
@@ -37,9 +38,13 @@ namespace waxbill.demo
             
             UVLoopHandle loop = new UVLoopHandle();
             UVIdleHandle idle = new UVIdleHandle(loop);
+           
             idle.Start(wait_for_while);
 
             Trace.Info("entry start");
+            loop.Start();
+            Trace.Info("async start");
+            counter = 0;
             loop.Start();
             Trace.Info("start return");
             loop.LoopClose();
