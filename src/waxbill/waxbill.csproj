@@ -93,7 +93,7 @@
     <Compile Include="TCPServer.cs" />
     <Compile Include="Sessions\ServerSession.cs" />
     <Compile Include="Pools\PoolBase.cs" />
-    <Compile Include="Pools\UVRequestPool.cs" />
+    <Compile Include="Pools\SendingPool.cs" />
     <Compile Include="Utils\Validate.cs" />
     <Compile Include="Pools\BufferManager.cs" />
     <Compile Include="Utils\NetworkBitConverter.cs" />

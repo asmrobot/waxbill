@@ -24,7 +24,7 @@ namespace waxbill
         private ConcurrentDictionary<Int64, TSession> mSessions = new ConcurrentDictionary<Int64, TSession>();//在线会话
         private Timer mRecycleTimer = null;//异常会话回收定时器
         private Int32 IsRunning = 0;
-        private UVRequestPool mSendPool;//发送池
+        private SendingPool mSendPool;//发送池
 
 
 
@@ -34,7 +34,7 @@ namespace waxbill
         public TCPServer(IProtocol protocol,TCPOption option)
             :base(protocol, option, new BufferManager(option.BufferSize, option.BufferIncemerCount))
         {
-            this.mSendPool = new UVRequestPool();
+            this.mSendPool = new SendingPool();
             this.Listener = new TCPListener();
             this.Listener.OnNewConnected += OnNewConnected;
         }
@@ -177,12 +177,12 @@ namespace waxbill
         #endregion
         
 
-        public override bool TryGetSendQueue(out UVRequest queue)
+        public override bool TryGetSendQueue(out UVWriteRequest queue)
         {
             return this.mSendPool.TryGet(out queue);
         }
 
-        public override void ReleaseSendQueue(UVRequest queue)
+        public override void ReleaseSendQueue(UVWriteRequest queue)
         {
             this.mSendPool.Release(queue);
         }

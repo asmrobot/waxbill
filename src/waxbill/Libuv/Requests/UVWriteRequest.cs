@@ -13,35 +13,33 @@ namespace waxbill.Libuv
 {
     public unsafe class UVWriteRequest : UVRequest, IList<UVIntrop.uv_buf_t>
     {
-        public static UVIntrop.uv_write_cb mWritecb = WriteCallback;
-        public Int32 mMaxQueueSize;
-        public UVIntrop.uv_buf_t* mBufs;
-        public object mState;
-        public Action<UVRequest, Int32, UVException, object> mCallback;
-        public GCHandle[] mPins;
+        public const Int32 QUEUE_SIZE = 6;
+        
+        private Action<UVWriteRequest, Int32, UVException, object> mWriteCallback;
+        private object mWriteCallbackState;
+        private GCHandle[] mPins;
 
         private bool m_IsReadOnly = false;
         private int m_Updateing = 0;//进入队列数
-        public int mCurrentQueueSize;
+        internal UVIntrop.uv_buf_t* Buffer;
+        internal int Offset;
         
 
-        public UVWriteRequest(Int32 queueSize) 
+        public UVWriteRequest() 
         {
-            waxbill.Utils.Validate.ThrowIfZeroOrMinus(queueSize, "发送队列要大于0");
-            this.mMaxQueueSize = queueSize;
             Int32 requestSize = UVIntrop.req_size(UVRequestType.WRITE);
-            var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * this.mMaxQueueSize;
-            this.mPins = new GCHandle[this.mMaxQueueSize];
+            var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * QUEUE_SIZE;
+            this.mPins = new GCHandle[QUEUE_SIZE];
             CreateMemory(requestSize + bufferSize);
-            this.mBufs = (UVIntrop.uv_buf_t*)(this.handle + requestSize);
+            this.Buffer = (UVIntrop.uv_buf_t*)(this.handle + requestSize);
         }
         
-        public void StartQueue()
+        public void StartEnqueue()
         {
             m_IsReadOnly = false;
         }
 
-        public void StopQueue()
+        public void StopEnqueue()
         {
             if (m_IsReadOnly)
             {
@@ -62,7 +60,7 @@ namespace waxbill.Libuv
             }
         }
         
-        public bool EnQueue(ArraySegment<byte> item)
+        public bool Enqueue(ArraySegment<byte> item)
         {
             if (m_IsReadOnly)
             {
@@ -73,7 +71,7 @@ namespace waxbill.Libuv
             while (!m_IsReadOnly)
             {
                 bool conflict = false;
-                if (TryEnQueue(item, out conflict))
+                if (TryEnqueue(item, out conflict))
                 {
                     Interlocked.Decrement(ref m_Updateing);
                     return true;
@@ -88,16 +86,16 @@ namespace waxbill.Libuv
             return false;
         }
 
-        unsafe private bool TryEnQueue(ArraySegment<byte> item, out bool conflict)
+        private unsafe bool TryEnqueue(ArraySegment<byte> item, out bool conflict)
         {
             conflict = false;
-            int currentCount = mCurrentQueueSize;
-            if (currentCount >= this.mMaxQueueSize)
+            int currentCount = Offset;
+            if (currentCount >= QUEUE_SIZE)
             {
                 return false;
             }
 
-            if (Interlocked.CompareExchange(ref mCurrentQueueSize, currentCount + 1, currentCount) != currentCount)
+            if (Interlocked.CompareExchange(ref Offset, currentCount + 1, currentCount) != currentCount)
             {
                 conflict = true;
                 return false;
@@ -106,12 +104,12 @@ namespace waxbill.Libuv
             //添加
             var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
             mPins[currentCount]=gcHandle;
-            this.mBufs[currentCount] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+            this.Buffer[currentCount] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
 
             return true;
         }
 
-        public bool EnQueue(IList<ArraySegment<byte>> items)
+        public bool Enqueue(IList<ArraySegment<byte>> items)
         {
             if (m_IsReadOnly)
             {
@@ -122,7 +120,7 @@ namespace waxbill.Libuv
             while (!m_IsReadOnly)
             {
                 bool conflict = false;
-                if (TryEnQueue(items, out conflict))
+                if (TryEnqueue(items, out conflict))
                 {
                     Interlocked.Decrement(ref m_Updateing);
                     return true;
@@ -137,16 +135,16 @@ namespace waxbill.Libuv
             return false;
         }
 
-        private bool TryEnQueue(IList<ArraySegment<byte>> items, out bool conflict)
+        private bool TryEnqueue(IList<ArraySegment<byte>> items, out bool conflict)
         {
             conflict = false;
-            int oldCurrent = mCurrentQueueSize;
-            if (oldCurrent + items.Count >= this.mMaxQueueSize)
+            int oldCurrent = Offset;
+            if (oldCurrent + items.Count >= QUEUE_SIZE)
             {
                 return false;
             }
 
-            if (Interlocked.CompareExchange(ref mCurrentQueueSize, oldCurrent + items.Count, oldCurrent) != oldCurrent)
+            if (Interlocked.CompareExchange(ref Offset, oldCurrent + items.Count, oldCurrent) != oldCurrent)
             {
                 conflict = true;
                 return false;
@@ -157,24 +155,32 @@ namespace waxbill.Libuv
                 ArraySegment<byte> item = items[i];
                 var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
                 mPins[oldCurrent+i] = gcHandle;
-                this.mBufs[oldCurrent+i] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+                this.Buffer[oldCurrent+i] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
             }
             return true;
         }
-        
-        public unsafe void Send(UVStreamHandle stream,Action<UVRequest,Int32,UVException,object> callback,object state)
+
+        public void SetCallback(Action<UVWriteRequest, Int32, UVException, object> callback, object state)
+        {
+            this.mWriteCallback = callback;
+            this.mWriteCallbackState = state;
+        }
+
+        public void RaiseSended(Int32 status,UVException error)
         {
             try
             {
-                this.mCallback = callback;
-                this.mState = state;
-                UVIntrop.write(this, stream, this.mBufs, this.mCurrentQueueSize, mWritecb);
+                if (this.mWriteCallback != null)
+                {
+                    this.mWriteCallback(this, status, error, this.mWriteCallbackState);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                this.mCallback = null;
-                this.mState = null;
+                this.mWriteCallback = null;
+                this.mWriteCallbackState = null;
                 UnpinGCHandles();
+                Trace.Error("UvWriteCb", ex);
                 throw;
             }
         }
@@ -183,37 +189,13 @@ namespace waxbill.Libuv
         // so using UnpinGcHandles to avoid conflict
         internal void UnpinGCHandles()
         {            
-            for (var i = 0; i < this.mCurrentQueueSize; i++)
+            for (var i = 0; i < this.Offset; i++)
             {
                 this.mPins[i].Free();
                 this.mPins[i] = default(GCHandle);
             }
         }
-
-        private static void WriteCallback(IntPtr reqHandle, Int32 status)
-        {
-            var req = FromIntPtr<UVRequest>(reqHandle);
-            var callback = req.mCallback;
-            var state = req.mState;
-
-
-            UVException error = null;
-            if (status < 0)
-            {
-                UVIntrop.Check(status, out error);
-            }
-
-            try
-            {
-                callback(req, status, error, state);
-            }
-            catch (Exception ex)
-            {
-                Trace.Error("UvWriteCb", ex);
-                throw;
-            }
-        }
-
+        
         #region IList
 
         public UVIntrop.uv_buf_t this[int index]
@@ -225,7 +207,7 @@ namespace waxbill.Libuv
                     throw new ArgumentOutOfRangeException("index 小于0");
                 }
                 
-                var value = this.mBufs[index];
+                var value = this.Buffer[index];
                 return value;
             }
             set
@@ -253,7 +235,7 @@ namespace waxbill.Libuv
         {
             get
             {
-                return this.mCurrentQueueSize;
+                return this.Offset;
             }
         }
 
@@ -276,10 +258,10 @@ namespace waxbill.Libuv
         public void Clear()
         {
             this.UnpinGCHandles();
-            this.mCallback = null;
-            this.mState = null;
+            this.mWriteCallback = null;
+            this.mWriteCallbackState = null;
 
-            this.mCurrentQueueSize = 0;
+            this.Offset = 0;
 
         }
 
@@ -311,9 +293,6 @@ namespace waxbill.Libuv
         {
             throw new NotImplementedException();
         }
-
-
-
         #endregion
 
 

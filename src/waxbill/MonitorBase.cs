@@ -41,13 +41,13 @@ namespace waxbill
         /// </summary>
         /// <param name="queue"></param>
         /// <returns></returns>
-        public abstract bool TryGetSendQueue(out UVRequest queue);
+        public abstract bool TryGetSendQueue(out UVWriteRequest queue);
 
         /// <summary>
         /// 释放发送队列
         /// </summary>
         /// <param name="queue"></param>
-        public abstract void ReleaseSendQueue(UVRequest queue);
+        public abstract void ReleaseSendQueue(UVWriteRequest queue);
 
         /// <summary>
         /// 获取接收缓存

@@ -7,13 +7,13 @@ using waxbill.Libuv;
 
 namespace waxbill.Utils
 {
-    public class UVRequestPool : PoolBase<UVRequest>
+    public class SendingPool : PoolBase<UVWriteRequest>
     {
-        public UVRequestPool():base(30,0)
+        public SendingPool():base(30,0)
         {}
-        protected override UVRequest CreateItem(int index)
+        protected override UVWriteRequest CreateItem(int index)
         {
-            UVRequest request = new UVRequest(6);
+            UVWriteRequest request = new UVWriteRequest();
             return request;
         }
     }

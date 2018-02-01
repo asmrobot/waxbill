@@ -57,12 +57,17 @@ namespace waxbill.Libuv
             }
         }
 
-        
-        public unsafe void Write(UVWriteRequest request, Action<UVWriteRequest, Int32, UVException, object> callback, object state)
+        /// <summary>
+        /// 写入数据
+        /// </summary>
+        /// <param name="request"></param>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
+        public unsafe void Write(UVWriteRequest request)
         {
             try
             {
-                UVIntrop.write(request, this, request.mBufs, request.mCurrentQueueSize, mOnWrite);
+                UVIntrop.write(request, this, request.Buffer, request.Offset, mOnWrite);
             }
             catch
             {
@@ -115,10 +120,7 @@ namespace waxbill.Libuv
 
             try
             {
-                if (req.mCallback != null)
-                {
-                    req.mCallback(req, status, error, req.mState);
-                }
+                req.RaiseSended(status,error);
             }
             catch
             {

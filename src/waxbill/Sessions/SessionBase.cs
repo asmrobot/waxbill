@@ -23,7 +23,7 @@ namespace waxbill.Sessions
         private Packet mPacket;//本包
         public long ConnectionID { get; private set; }//连接ID
 
-        private UVRequest mSendQueue;//发送队列
+        private UVWriteRequest mSendQueue;//发送队列
         private IPEndPoint mRemoteEndPoint;
 
         /// <summary>
@@ -229,13 +229,13 @@ namespace waxbill.Sessions
         private bool TrySend(ArraySegment<byte> data, out bool reTry)
         {
             reTry = false;
-            UVRequest oldQueue = this.mSendQueue;
+            UVWriteRequest oldQueue = this.mSendQueue;
             if (oldQueue == null)
             {
                 return false;
             }
 
-            if (!oldQueue.EnQueue(data))
+            if (!oldQueue.Enqueue(data))
             {
                 reTry = true;
                 return false;
@@ -247,14 +247,14 @@ namespace waxbill.Sessions
         private bool TrySend(IList<ArraySegment<byte>> datas, out bool reTry)
         {
             reTry = false;
-            UVRequest oldQueue = this.mSendQueue;
+            UVWriteRequest oldQueue = this.mSendQueue;
             if (oldQueue == null)
             {
                 //todo:是否关闭连接？
                 return false;
             }
 
-            if (!oldQueue.EnQueue(datas))
+            if (!oldQueue.Enqueue(datas))
             {
                 reTry = true;
                 return false;
@@ -264,7 +264,7 @@ namespace waxbill.Sessions
 
         private bool PreSend()
         {
-            UVRequest oldQueue = this.mSendQueue;
+            UVWriteRequest oldQueue = this.mSendQueue;
             if (oldQueue.Count <= 0)
             {
                 return true;
@@ -274,7 +274,7 @@ namespace waxbill.Sessions
                 return true;
             }
 
-            UVRequest newQueue;
+            UVWriteRequest newQueue;
 
             if (!this.Monitor.TryGetSendQueue(out newQueue))
             {
@@ -283,14 +283,14 @@ namespace waxbill.Sessions
                 return false;
             }
 
-            newQueue.StartQueue();
+            newQueue.StartEnqueue();
             this.mSendQueue = newQueue;
-            oldQueue.StopQueue();
+            oldQueue.StopEnqueue();
 
             return InternalSend(oldQueue);
         }
 
-        private bool InternalSend(UVRequest queue)
+        private bool InternalSend(UVWriteRequest queue)
         {
             if (IsClosingOrClosed)
             {
@@ -300,7 +300,8 @@ namespace waxbill.Sessions
 
             try
             {
-                queue.Send(this.TcpHandle, SendCompleted, null);
+                queue.SetCallback(SendCompleted, null);
+                this.TcpHandle.Write(queue);
             }
             catch (Exception ex)
             {
@@ -317,7 +318,7 @@ namespace waxbill.Sessions
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void SendCompleted(UVRequest req, Int32 statue, UVException ex, object state)
+        private void SendCompleted(UVWriteRequest req, Int32 statue, UVException ex, object state)
         {
             if (ex != null)
             {
@@ -340,7 +341,7 @@ namespace waxbill.Sessions
         /// </summary>
         /// <param name="queue"></param>
         /// <param name="reason"></param>
-        private void SendEnd(UVRequest queue, CloseReason reason)
+        private void SendEnd(UVWriteRequest queue, CloseReason reason)
         {
             if (queue != null)
             {

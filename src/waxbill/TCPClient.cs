@@ -19,10 +19,10 @@ namespace waxbill
     {
         private ClientSession mSession;
         private UVTCPHandle mTCPHandle;
-        private UVConnectRquest mConnect;
+        private UVConnectRquest mConnector;
         private bool mIsDispose = false;
         private Int32 mIsConnected = 0;
-        private static UVRequestPool mSendPool;
+        private static SendingPool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
         
@@ -30,7 +30,7 @@ namespace waxbill
         {
             mOption = TCPOption.Define;
             mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
-            mSendPool = new UVRequestPool();
+            mSendPool = new SendingPool();
         }
 
         public TCPClient() : this(RealtimeProtocol.Define)
@@ -39,7 +39,7 @@ namespace waxbill
         public TCPClient(IProtocol protocol):base(protocol, mOption,mBufferManager)
         {
             this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
-            this.mConnect = new UVConnectRquest();
+            this.mConnector = new UVConnectRquest();
         }
         
         public void Connection(string ip, Int32 port)
@@ -50,7 +50,7 @@ namespace waxbill
             }
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
-                this.mConnect.Connect(this.mTCPHandle, ip, port, this.ConnectionCallback, null);
+                this.mConnector.Connect(this.mTCPHandle, ip, port, this.ConnectionCallback, null);
                 UVLoopHandle.Define.AsyncStart(null);
             }   
         }
@@ -65,7 +65,6 @@ namespace waxbill
             this.mSession = new ClientSession(this);
             this.mSession.Init(0, this.mTCPHandle, this);
             this.mSession.RaiseOnConnected();
-            this.mTCPHandle.ReadStart(mSession.AllocMemoryCallback, mSession.ReadCallback, mSession, mSession);
         }
 
         public void Disconnect()
@@ -73,7 +72,7 @@ namespace waxbill
             if (Interlocked.CompareExchange(ref this.mIsConnected, 0, 1) == 1)
             {
                 this.mSession.Close(CloseReason.Shutdown, null);
-                this.mConnect.Close();
+                this.mConnector.Close();
                 this.mTCPHandle.Close();
                 mIsDispose = true;
             }
@@ -259,12 +258,12 @@ namespace waxbill
 
         #endregion
 
-        public override bool TryGetSendQueue(out UVRequest queue)
+        public override bool TryGetSendQueue(out UVWriteRequest queue)
         {
             return mSendPool.TryGet(out queue);
         }
 
-        public override void ReleaseSendQueue(UVRequest queue)
+        public override void ReleaseSendQueue(UVWriteRequest queue)
         {
             mSendPool.Release(queue);
         }
