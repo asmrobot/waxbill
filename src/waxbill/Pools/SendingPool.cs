@@ -9,7 +9,7 @@ namespace waxbill.Utils
 {
     public class SendingPool : PoolBase<UVWriteRequest>
     {
-        public SendingPool():base(30,0)
+        public SendingPool():base(3,0)
         {}
         protected override UVWriteRequest CreateItem(int index)
         {

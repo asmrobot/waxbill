@@ -185,6 +185,16 @@ namespace waxbill.Libuv
             }
         }
         
+        public void Reset()
+        {
+            this.UnpinGCHandles();
+            this.mWriteCallback = null;
+            this.mWriteCallbackState = null;
+
+            this.Offset = 0;
+            this.m_IsReadOnly = false;
+        }
+        
         // Safe handle has instance method called Unpin
         // so using UnpinGcHandles to avoid conflict
         internal void UnpinGCHandles()
@@ -195,6 +205,8 @@ namespace waxbill.Libuv
                 this.mPins[i] = default(GCHandle);
             }
         }
+
+
         
         #region IList
 

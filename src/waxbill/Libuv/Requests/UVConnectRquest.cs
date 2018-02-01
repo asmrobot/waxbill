@@ -62,7 +62,11 @@ namespace waxbill.Libuv
 
             try
             {
-                callback(req, status, error, state);
+                if (callback != null)
+                {
+                    callback(req, status, error, state);
+                }
+                
             }
             catch (Exception ex)
             {

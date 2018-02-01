@@ -177,14 +177,15 @@ namespace waxbill
         #endregion
         
 
-        public override bool TryGetSendQueue(out UVWriteRequest queue)
+        public override bool TryGetSendQueue(out UVWriteRequest reqeust)
         {
-            return this.mSendPool.TryGet(out queue);
+            return this.mSendPool.TryGet(out reqeust);
         }
 
-        public override void ReleaseSendQueue(UVWriteRequest queue)
+        public override void ReleaseSendQueue(UVWriteRequest request)
         {
-            this.mSendPool.Release(queue);
+            request.Reset();
+            this.mSendPool.Release(request);
         }
 
 

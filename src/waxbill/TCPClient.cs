@@ -25,6 +25,7 @@ namespace waxbill
         private static SendingPool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
+        private static Int32 mConnectID = 0;
         
         static TCPClient()
         {
@@ -51,7 +52,9 @@ namespace waxbill
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
                 this.mConnector.Connect(this.mTCPHandle, ip, port, this.ConnectionCallback, null);
-                UVLoopHandle.Define.AsyncStart(null);
+                UVLoopHandle.Define.AsyncStart((loop)=> {
+                    Trace.Info("loop return");
+                });
             }   
         }
 
@@ -62,8 +65,14 @@ namespace waxbill
                 this.mIsConnected = 0;
                 return;
             }
+
+            Int32 cid=Interlocked.Increment(ref mConnectID);
+            if (cid >=Int32.MaxValue - 1)
+            {
+                Volatile.Write(ref mConnectID, 0);
+            }
             this.mSession = new ClientSession(this);
-            this.mSession.Init(0, this.mTCPHandle, this);
+            this.mSession.Init(cid, this.mTCPHandle, this);
             this.mSession.RaiseOnConnected();
         }
 
@@ -258,14 +267,15 @@ namespace waxbill
 
         #endregion
 
-        public override bool TryGetSendQueue(out UVWriteRequest queue)
+        public override bool TryGetSendQueue(out UVWriteRequest request)
         {
-            return mSendPool.TryGet(out queue);
+            return mSendPool.TryGet(out request);
         }
 
-        public override void ReleaseSendQueue(UVWriteRequest queue)
+        public override void ReleaseSendQueue(UVWriteRequest request)
         {
-            mSendPool.Release(queue);
+            request.Reset();
+            mSendPool.Release(request);
         }
 
         /// <summary>

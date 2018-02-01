@@ -187,6 +187,26 @@ namespace waxbill.Sessions
             }
         }
 
+        
+
+        private bool TrySend(ArraySegment<byte> data, out bool reTry)
+        {
+            reTry = false;
+            UVWriteRequest oldQueue = this.mSendQueue;
+            if (oldQueue == null)
+            {
+                return false;
+            }
+
+            if (!oldQueue.Enqueue(data))
+            {
+                reTry = true;
+                return false;
+            }
+
+            return PreSend();
+        }
+
         public void Send(IList<ArraySegment<byte>> datas)
         {
             if (datas.Count > this.Monitor.Option.SendQueueSize)
@@ -224,24 +244,6 @@ namespace waxbill.Sessions
                     continue;
                 }
             }
-        }
-
-        private bool TrySend(ArraySegment<byte> data, out bool reTry)
-        {
-            reTry = false;
-            UVWriteRequest oldQueue = this.mSendQueue;
-            if (oldQueue == null)
-            {
-                return false;
-            }
-
-            if (!oldQueue.Enqueue(data))
-            {
-                reTry = true;
-                return false;
-            }
-
-            return PreSend();
         }
 
         private bool TrySend(IList<ArraySegment<byte>> datas, out bool reTry)

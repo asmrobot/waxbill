@@ -60,13 +60,20 @@ namespace waxbill.demo
 
 
 
+            //for (int i = 0; i < 1000; i++)
+            //{
+            //    Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            //    socket.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2333));
+            //    socket.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+            //}
 
 
 
-            TCPClient[] clients = new TCPClient[20];
+
 
             //todo：send
-            for (int i = 0; i < 5; i++)
+            //TCPClient[] clients = new TCPClient[20];
+            for (int i = 0; i < 20; i++)
             {
                 TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
                 client.OnConnection += Client_OnConnection; ;
@@ -74,8 +81,25 @@ namespace waxbill.demo
                 client.OnReceive += Client_OnReceive;
                 client.OnSended += Client_OnSended;
                 client.Connection("127.0.0.1", 2333);
-                clients[i] = client;
+                //clients[i] = client;
             }
+
+
+
+
+            //for (int i = 0; i < 200; i++)
+            //{
+            //    UVTCPHandle mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
+            //    UVConnectRquest mConnector = new UVConnectRquest();
+            //    mConnector.Connect(mTCPHandle, "127.0.0.1", 2333, null, null);
+            //    UVLoopHandle.Define.AsyncStart((loop)=> {
+            //        //Trace.Info("run ok");
+            //    });
+            //}
+
+
+
+
 
             ZTImage.Log.Trace.Info("run complete");
 
@@ -90,6 +114,7 @@ namespace waxbill.demo
         private static void Client_OnReceive(SessionBase session, Packets.Packet collection)
         {
             ZTImage.Log.Trace.Info("Client_OnReceive");
+            //session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
             //session.Close(CloseReason.Shutdown);
         }
 
@@ -100,7 +125,7 @@ namespace waxbill.demo
 
         private static void Client_OnConnection(SessionBase session)
         {
-            ZTImage.Log.Trace.Info("Client_OnConnection");
+            ZTImage.Log.Trace.Info("Client_OnConnection,connectionid:"+session.ConnectionID.ToString());
             session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
         }
         

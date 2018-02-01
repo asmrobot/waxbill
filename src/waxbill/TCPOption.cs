@@ -12,7 +12,7 @@ namespace waxbill
         static TCPOption()
         {
             Define = new TCPOption() {
-                ListenBacklog = 100,
+                ListenBacklog = 10000,
                 BufferSize = 8192,
                 BufferIncemerCount = 1000,
                 ReceiveBufferSize = 40960,
