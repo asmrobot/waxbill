@@ -33,29 +33,35 @@ namespace waxbill.demo
         static void Main(string[] args)
         {
             Trace.EnableListener(ZTImage.Log.NLog.Instance);
-            
-            UVLoopHandle loop = new UVLoopHandle();
-            UVIdleHandle idle = new UVIdleHandle(loop);
-           
-            idle.Start(wait_for_while);            
 
-            Trace.Info("entry async start");
-            loop.AsyncStart(null);
-            Trace.Info("entry async end");
-           
-           
-            
+            //UVLoopHandle loop = new UVLoopHandle();
+            //UVIdleHandle idle = new UVIdleHandle(loop);
 
-            
+            //idle.Start(wait_for_while);            
+
+            //Trace.Info("entry async start");
+            //loop.AsyncStart(null);
+            //Trace.Info("entry async end");
 
 
 
-            ////todo: receive
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
-            ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
-            ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
-            //server.Start("0.0.0.0", 2333);
-            //Trace.Info("server is start");
+
+
+
+
+
+            //todo: receive
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
+            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
+            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
+            server.Start("0.0.0.0", 2333);
+            Trace.Info("server is start");
+
+
+
+
+
+
 
 
 
@@ -71,7 +77,7 @@ namespace waxbill.demo
             //}
 
             //ZTImage.Log.Trace.Info("run complete");
-            
+
             Console.ReadKey();
         }
 

@@ -21,27 +21,29 @@ namespace waxbill
         public Int32 LocalPort { get; private set; }
         internal TCPListener Listener { get; private set; }
 
-        private ConcurrentDictionary<Int64, TSession> mSessions = new ConcurrentDictionary<Int64, TSession>();
-
-        private Timer mRecycleTimer = null;
-
+        private ConcurrentDictionary<Int64, TSession> mSessions = new ConcurrentDictionary<Int64, TSession>();//在线会话
+        private Timer mRecycleTimer = null;//异常会话回收定时器
         private Int32 IsRunning = 0;
+        private UVRequestPool mSendPool;//发送池
 
-        private UVRequestPool SendPool;
-        
-        
+
+
         public TCPServer(IProtocol protocol):this(protocol,TCPOption.Define)
         {}
 
         public TCPServer(IProtocol protocol,TCPOption option)
             :base(protocol, option, new BufferManager(option.BufferSize, option.BufferIncemerCount))
         {
-            this.SendPool = new UVRequestPool();
+            this.mSendPool = new UVRequestPool();
             this.Listener = new TCPListener();
-            this.Listener.OnListenerConnect += Listener_OnStartSession;
+            this.Listener.OnNewConnected += OnNewConnected;
         }
         
-
+        /// <summary>
+        /// 开启服务
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
         public void Start(string ip, Int32 port)
         {
             if (Interlocked.CompareExchange(ref this.IsRunning, 1, 0) == 0)
@@ -63,9 +65,11 @@ namespace waxbill
                     mRecycleTimer.Change(Option.RecycleSessionFrequency, Timeout.Infinite);
                 }
             }
-            
         }
 
+        /// <summary>
+        /// 终止服务
+        /// </summary>
         public void Stop()
         {
             if (Interlocked.CompareExchange(ref this.IsRunning, 0, 1) == 1)
@@ -85,13 +89,17 @@ namespace waxbill
 
         }
         
-        private void Listener_OnStartSession(Int64 connectionID,UVTCPHandle connection)
+        /// <summary>
+        /// 新连接回调
+        /// </summary>
+        /// <param name="connectionID"></param>
+        /// <param name="connection"></param>
+        private void OnNewConnected(Int64 connectionID,UVTCPHandle connection)
         {
             TSession session = new TSession();
             session.Init(connectionID,connection,this);
             if (this.mSessions.TryAdd(session.ConnectionID, session))
             {
-                //添加到队列中
                 session.RaiseOnConnected();
             }
             else
@@ -171,12 +179,12 @@ namespace waxbill
 
         public override bool TryGetSendQueue(out UVRequest queue)
         {
-            return this.SendPool.TryGet(out queue);
+            return this.mSendPool.TryGet(out queue);
         }
 
         public override void ReleaseSendQueue(UVRequest queue)
         {
-            this.SendPool.Release(queue);
+            this.mSendPool.Release(queue);
         }
 
 

@@ -52,6 +52,7 @@
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
     <Compile Include="Exceptions\WaxbillException.cs" />
+    <Compile Include="Libuv\Requests\UVWriteRequest.cs" />
     <Compile Include="Libuv\UVHandleType.cs" />
     <Compile Include="Libuv\Collections\SockAddr.cs" />
     <Compile Include="Libuv\Native\NativeLibraryHelper.cs" />
@@ -62,10 +63,10 @@
     <Compile Include="Libuv\Handles\UVIdleHandle.cs" />
     <Compile Include="Libuv\Handles\UVLoopHandle.cs" />
     <Compile Include="Libuv\UVMemory.cs" />
-    <Compile Include="Libuv\Requests\UVConnect.cs" />
+    <Compile Include="Libuv\Requests\UVConnectRquest.cs" />
     <Compile Include="Libuv\Requests\UVRequest.cs" />
     <Compile Include="Libuv\UVRequestType.cs" />
-    <Compile Include="Libuv\UVStreamHandle.cs" />
+    <Compile Include="Libuv\Handles\UVStreamHandle.cs" />
     <Compile Include="Libuv\Handles\UVTCPHandle.cs" />
     <Compile Include="Packets\ZTProtocolPacket.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

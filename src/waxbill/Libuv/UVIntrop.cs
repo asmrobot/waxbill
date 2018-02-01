@@ -260,7 +260,7 @@ namespace waxbill.Libuv
             ThrowIfErrored(uv_tcp_open(handle, hSocket));
         }
 
-        public static void tcp_connect(UVConnect handle, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb)
+        public static void tcp_connect(UVConnectRquest handle, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_connect(handle, socket, ref addr, cb));
@@ -306,14 +306,14 @@ namespace waxbill.Libuv
             return count;
         }
 
-        public unsafe static void write(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb)
+        public unsafe static void write(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb)
         {
             req.Validate();
             handle.Validate();
             ThrowIfErrored(uv_write(req, handle, bufs, nbufs, cb));
         }
 
-        public unsafe static void write2(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb)
+        public unsafe static void write2(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb)
         {
             req.Validate();
             handle.Validate();
@@ -510,10 +510,10 @@ namespace waxbill.Libuv
         public static extern int uv_try_write(UVStreamHandle handle, uv_buf_t[] bufs, int nbufs);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_write(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb);
+        unsafe public static extern int uv_write(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_write2(UVRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb);
+        unsafe public static extern int uv_write2(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public extern static IntPtr uv_err_name(int err);
@@ -537,7 +537,7 @@ namespace waxbill.Libuv
         public static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_connect(UVConnect connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
+        public static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);

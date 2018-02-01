@@ -3,12 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace waxbill.Libuv
 {
     public abstract class UVHandle:UVMemory
     {
         private static readonly UVIntrop.uv_close_cb mDestroyMemory = DestroyMemory;
+        public UVHandle():base(GCHandleType.Weak)
+        {}
+
+        public UVHandle(GCHandleType gcType) : base(gcType)
+        { }
 
         protected void CreateHandle(Int32 size)
         {

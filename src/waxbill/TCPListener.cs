@@ -13,8 +13,6 @@ using ZTImage.Log;
 
 namespace waxbill
 {
-
-    internal delegate void ListenerConnect(Int64 connectionID, UVTCPHandle client);
     internal class TCPListener
     {
         private string mIP;
@@ -26,15 +24,8 @@ namespace waxbill
         /// <summary>
         /// new session event
         /// </summary>
-        public event ListenerConnect OnListenerConnect;
+        public Action<Int64,UVTCPHandle> OnNewConnected;
 
-        private void RaiseOnlistenerConnect(Int64 connectionID,UVTCPHandle client)
-        {
-            if (OnListenerConnect != null)
-            {
-                OnListenerConnect(connectionID,client);
-            }
-        }
         
         public TCPListener()
         {
@@ -73,27 +64,24 @@ namespace waxbill
             this.mLoopHandle.Close();
         }
 
-        private void OnConnection(UVStreamHandle stream, Int32 status, UVException ex, object state)
+        private void OnConnection(UVTCPHandle server, Int32 status, UVException ex, object state)
         {
             if (ex != null)
             {
                 Trace.Error("connection error", ex);
                 return;
             }
-            TCPListener listener = state as TCPListener;
-            if (listener == null)
-            {
-                return;
-            }
-
-            UVTCPHandle client = new UVTCPHandle(listener.mLoopHandle);
+           
+            UVTCPHandle client = new UVTCPHandle(this.mLoopHandle);
 
             try
             {
-                stream.Accept(client);
-
+                server.Accept(client);
                 Int64 connectionID= Interlocked.Increment(ref this.mConnectionIncremer);
-                RaiseOnlistenerConnect(connectionID,client);
+                if (OnNewConnected != null)
+                {
+                    OnNewConnected(connectionID, client);
+                }
             }
             catch(Exception wex)
             {

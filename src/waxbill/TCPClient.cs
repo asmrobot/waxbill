@@ -12,22 +12,20 @@ using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
 using ZTImage.Log;
-
+using waxbill.Protocols;
 namespace waxbill
 {
     public class TCPClient:MonitorBase
     {
         private ClientSession mSession;
-        private UVTCPHandle mServerHandle;
-        private UVConnect mConnect;
+        private UVTCPHandle mTCPHandle;
+        private UVConnectRquest mConnect;
         private bool mIsDispose = false;
         private Int32 mIsConnected = 0;
         private static UVRequestPool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
-
-
-
+        
         static TCPClient()
         {
             mOption = TCPOption.Define;
@@ -35,10 +33,13 @@ namespace waxbill
             mSendPool = new UVRequestPool();
         }
 
+        public TCPClient() : this(RealtimeProtocol.Define)
+        { }
+
         public TCPClient(IProtocol protocol):base(protocol, mOption,mBufferManager)
         {
-            this.mServerHandle = new UVTCPHandle(UVLoopHandle.Define);
-            this.mConnect = new UVConnect();
+            this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
+            this.mConnect = new UVConnectRquest();
         }
         
         public void Connection(string ip, Int32 port)
@@ -49,12 +50,12 @@ namespace waxbill
             }
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
-                this.mConnect.Connect(this.mServerHandle, ip, port, this.ConnectionCallback, null);
+                this.mConnect.Connect(this.mTCPHandle, ip, port, this.ConnectionCallback, null);
                 UVLoopHandle.Define.AsyncStart(null);
             }   
         }
 
-        private void ConnectionCallback(UVConnect connection, Int32 retStatus, UVException exception, object state)
+        private void ConnectionCallback(UVConnectRquest connection, Int32 retStatus, UVException exception, object state)
         {
             if (exception != null)
             {
@@ -62,9 +63,9 @@ namespace waxbill
                 return;
             }
             this.mSession = new ClientSession(this);
-            this.mSession.Init(0, this.mServerHandle, this);
+            this.mSession.Init(0, this.mTCPHandle, this);
             this.mSession.RaiseOnConnected();
-            this.mServerHandle.ReadStart(mSession.AllocMemoryCallback, mSession.ReadCallback, mSession, mSession);
+            this.mTCPHandle.ReadStart(mSession.AllocMemoryCallback, mSession.ReadCallback, mSession, mSession);
         }
 
         public void Disconnect()
@@ -73,7 +74,7 @@ namespace waxbill
             {
                 this.mSession.Close(CloseReason.Shutdown, null);
                 this.mConnect.Close();
-                this.mServerHandle.Close();
+                this.mTCPHandle.Close();
                 mIsDispose = true;
             }
         }

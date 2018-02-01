@@ -12,20 +12,19 @@ using ZTImage.Log;
 
 namespace waxbill.Libuv
 {
-    public unsafe class UVConnect : UVMemory
+    public unsafe class UVConnectRquest : UVRequest
     {
-        private static UVIntrop.uv_connect_cb mConnectcb = ConnectCallback;
-        private object mState;
-        private Action<UVConnect, Int32, UVException, object> mCallback;
+        private static UVIntrop.uv_connect_cb UVConnectcb = UVConnectCallback;
         
+        private Action<UVConnectRquest, Int32, UVException, object> mCallback;
+        private object mState;
 
-        public UVConnect() : base(GCHandleType.Normal)
+        public UVConnectRquest()
         {
-            Int32 requestSize = UVIntrop.req_size(UVRequestType.CONNECT);
-            CreateMemory(requestSize);
+            CreateRequest(UVRequestType.CONNECT);
         }
 
-        public void Connect(UVTCPHandle tcp,string ip,Int32 port, Action<UVConnect, Int32, UVException, object> callback,object state)
+        public void Connect(UVTCPHandle tcp,string ip,Int32 port, Action<UVConnectRquest, Int32, UVException, object> callback,object state)
         {
             this.mCallback = callback;
             this.mState = state;
@@ -37,10 +36,8 @@ namespace waxbill.Libuv
                 throw ex;
             }
 
-            UVIntrop.tcp_connect(this, tcp, ref addr, mConnectcb);
+            UVIntrop.tcp_connect(this, tcp, ref addr, UVConnectcb);
         }
-
-        
         
         protected override bool ReleaseHandle()
         {
@@ -48,10 +45,11 @@ namespace waxbill.Libuv
             handle = IntPtr.Zero;
             return true;
         }
-        
-        private static void ConnectCallback(IntPtr reqHandle, Int32 status)
+
+        #region Callback
+        private static void UVConnectCallback(IntPtr reqHandle, Int32 status)
         {
-            var req = FromIntPtr<UVConnect>(reqHandle);
+            var req = FromIntPtr<UVConnectRquest>(reqHandle);
             var callback = req.mCallback;
             var state = req.mState;
 
@@ -72,5 +70,6 @@ namespace waxbill.Libuv
                 throw;
             }
         }
+        #endregion
     }
 }

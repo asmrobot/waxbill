@@ -572,17 +572,11 @@ namespace waxbill.Sessions
         /// <param name="result"></param>
         protected abstract void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result);
 
+        /// <summary>
+        /// 收到数据时回调
+        /// </summary>
+        /// <param name="packet"></param>
         protected abstract void OnReceived(Packet packet);
         #endregion
-
-        //#region Callback
-        //protected abstract void ConnectedCallback();
-
-        //protected abstract void DisconnectedCallback(CloseReason reason);
-
-        //protected abstract void SendedCallback(IList<UVIntrop.uv_buf_t> packet, bool result);
-
-        //protected abstract void ReceiveCallback(Packet packet);
-        //#endregion
     }
 }
