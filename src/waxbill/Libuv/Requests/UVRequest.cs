@@ -34,7 +34,7 @@ namespace waxbill.Libuv
         
         private unsafe void Init()
         {
-            Int32 requestSize = UVIntrop.req_size(UVIntrop.RequestType.WRITE);
+            Int32 requestSize = UVIntrop.req_size(UVRequestType.WRITE);
             var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * this.mMaxQueueSize;
             this.mPins=new GCHandle[this.mMaxQueueSize];
             CreateMemory(requestSize + bufferSize);
@@ -171,8 +171,13 @@ namespace waxbill.Libuv
         
         protected override bool ReleaseHandle()
         {
-            DestroyMemory(handle);
-            handle = IntPtr.Zero;
+            IntPtr memory = handle;
+            if (memory != IntPtr.Zero)
+            {
+                DestroyMemory(handle);
+                handle = IntPtr.Zero;
+            }
+
             return true;
         }
         

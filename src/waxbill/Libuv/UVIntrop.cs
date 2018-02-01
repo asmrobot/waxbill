@@ -26,24 +26,31 @@ namespace waxbill.Libuv
             IsWindows = System.Environment.OSVersion.Platform == PlatformID.Win32NT;
             Initialize();
         }
-        #region load dll
+
+        public const Int32 UV_EOF = -4095;
+
         private static void Initialize()
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
             string filename = string.Empty;
-            if (IntPtr.Size == 4)
+            if (IsWindows)
             {
-                filename = Path.Combine(dir, "win-x86", "libuv.dll");
+                if (IntPtr.Size == 4)
+                {
+                    filename = Path.Combine(dir, "win-x86", "libuv.dll");
+                }
+                else
+                {
+                    filename = Path.Combine(dir, "win-x64", "libuv.dll");
+                }
             }
             else
             {
-                filename = Path.Combine(dir, "win-x64", "libuv.dll");
+                filename = "linux path";
+                //todo:linux load
             }
-
             NativeLibraryHelper.LoadLibrary(filename);
         }
-        #endregion
-
 
         #region tools
         public static void ThrowIfErrored(int statusCode)
@@ -80,53 +87,15 @@ namespace waxbill.Libuv
             return new UVException("Error " + statusCode + " " + errorName + " " + errorDescription, statusCode);
         }
         #endregion
-
-        #region struct
+        
+        #region Struct
         [StructLayout(LayoutKind.Sequential)]
         public struct uv_req_t
         {
             public IntPtr data;
-            public RequestType type;
+            public UVRequestType type;
         }
-
-
-        public const Int32 UV_EOF = -4095;
-        public enum RequestType
-        {
-            Unknown = 0,
-            REQ,
-            CONNECT,
-            WRITE,
-            SHUTDOWN,
-            UDP_SEND,
-            FS,
-            WORK,
-            GETADDRINFO,
-            GETNAMEINFO,
-        }
-
-        public enum HandleType
-        {
-            Unknown = 0,
-            ASYNC,
-            CHECK,
-            FS_EVENT,
-            FS_POLL,
-            HANDLE,
-            IDLE,
-            NAMED_PIPE,
-            POLL,
-            PREPARE,
-            PROCESS,
-            STREAM,
-            TCP,
-            TIMER,
-            TTY,
-            UDP,
-            SIGNAL,
-        }
-
-
+        
         public enum UV_RUN_MODE:Int32
         {
             UV_RUN_DEFAULT = 0,
@@ -193,7 +162,7 @@ namespace waxbill.Libuv
         #endregion
 
 
-        #region Simplify Call
+        #region Functions
 
         public static void loop_init(UVLoopHandle handle)
         {
@@ -368,12 +337,12 @@ namespace waxbill.Libuv
             return uv_loop_size();
         }
 
-        public static int handle_size(HandleType handleType)
+        public static int handle_size(UVHandleType handleType)
         {
             return uv_handle_size(handleType);
         }
 
-        public static int req_size(RequestType reqType)
+        public static int req_size(UVRequestType reqType)
         {
             return uv_req_size(reqType);
         }
@@ -440,9 +409,8 @@ namespace waxbill.Libuv
         }
 
         #endregion
-
-
-        #region unmanaged delegate
+        
+        #region Unmanaged Functions
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void uv_connect_cb(IntPtr req, int status);
 
@@ -474,7 +442,7 @@ namespace waxbill.Libuv
         public delegate void uv_idle_cb(IntPtr server);
         #endregion
 
-        #region declare
+        #region P/Invoke
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_loop_init(UVLoopHandle handle);
 
@@ -557,10 +525,10 @@ namespace waxbill.Libuv
         public static extern int uv_loop_size();
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_handle_size(HandleType handleType);
+        public static extern int uv_handle_size(UVHandleType handleType);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_req_size(RequestType reqType);
+        public static extern int uv_req_size(UVRequestType reqType);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_ip4_addr(string ip, int port, out SockAddr addr);
@@ -613,7 +581,5 @@ namespace waxbill.Libuv
 
 
         #endregion
-
-
     }
 }

@@ -11,8 +11,7 @@ namespace waxbill.Libuv
         private static readonly UVIntrop.uv_idle_cb mIdleCallback = IdleCallback;
         public UVIdleHandle(UVLoopHandle loop)
         {
-            Int32 size = UVIntrop.handle_size(UVIntrop.HandleType.IDLE);
-            this.CreateHandle(size);
+            this.CreateHandle(UVHandleType.IDLE);
             UVIntrop.idle_init(loop, this);
         }
 

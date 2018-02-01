@@ -319,7 +319,6 @@ namespace waxbill.Sessions
         /// <param name="e"></param>
         private void SendCompleted(UVRequest req, Int32 statue, UVException ex, object state)
         {
-
             if (ex != null)
             {
                 this.OnSended(req, false);
@@ -327,8 +326,7 @@ namespace waxbill.Sessions
                 return;
             }
 
-            //发送下一包
-
+            //todo:发送下一包
             this.OnSended(req, true);
             req.Clear();
             this.Monitor.ReleaseSendQueue(req);

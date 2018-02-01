@@ -9,7 +9,7 @@ using waxbill.Exceptions;
 namespace waxbill.Libuv
 {
 
-    public class UVStreamHandle : UVHandle
+    public abstract class UVStreamHandle : UVHandle
     {
         public delegate UVIntrop.uv_buf_t AllocCallback(UVStreamHandle handle, Int32 suggestedSize,object allocState);
         public delegate void ReadCallback(UVStreamHandle handle, Int32 nread, UVException exception,ref UVIntrop.uv_buf_t buf, object readState);

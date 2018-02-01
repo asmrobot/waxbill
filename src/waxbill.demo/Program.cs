@@ -18,7 +18,6 @@ namespace waxbill.demo
         static void wait_for_while(UVIdleHandle handle)
         {
             counter++;
-
             if (counter % 100000 == 0)
             {
                 //counter = 0;
@@ -26,7 +25,7 @@ namespace waxbill.demo
             }
             if (counter > 1000000)
             {
-
+                
                 handle.Stop();
             }
         }
@@ -34,21 +33,18 @@ namespace waxbill.demo
         static void Main(string[] args)
         {
             Trace.EnableListener(ZTImage.Log.NLog.Instance);
-
             
             UVLoopHandle loop = new UVLoopHandle();
             UVIdleHandle idle = new UVIdleHandle(loop);
            
-            idle.Start(wait_for_while);
+            idle.Start(wait_for_while);            
 
-            Trace.Info("entry start");
-            loop.Start();
-            Trace.Info("async start");
-            counter = 0;
-            loop.Start();
-            Trace.Info("start return");
-            loop.LoopClose();
-            loop.Close();
+            Trace.Info("entry async start");
+            loop.AsyncStart(null);
+            Trace.Info("entry async end");
+           
+           
+            
 
             
 
@@ -75,7 +71,7 @@ namespace waxbill.demo
             //}
 
             //ZTImage.Log.Trace.Info("run complete");
-            Trace.Info("complete");
+            
             Console.ReadKey();
         }
 

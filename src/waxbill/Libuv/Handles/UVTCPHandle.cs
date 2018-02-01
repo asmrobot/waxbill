@@ -14,7 +14,7 @@ namespace waxbill.Libuv
 
         public UVTCPHandle(UVLoopHandle loop)
         {
-            CreateHandle(UVIntrop.HandleType.TCP);
+            CreateHandle(UVHandleType.TCP);
             UVIntrop.tcp_init(loop, this);
         }
 

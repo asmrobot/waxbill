@@ -10,12 +10,12 @@ namespace waxbill.Libuv
     {
         private static readonly UVIntrop.uv_close_cb mDestroyMemory = DestroyMemory;
 
-        public void CreateHandle(Int32 size)
+        protected void CreateHandle(Int32 size)
         {
             CreateMemory(size);
         }
 
-        public void CreateHandle(UVIntrop.HandleType type)
+        protected void CreateHandle(UVHandleType type)
         {
             CreateMemory(UVIntrop.handle_size(type));
         }

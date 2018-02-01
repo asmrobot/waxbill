@@ -22,7 +22,7 @@ namespace waxbill.Libuv
         /// 分配需要的内存并把本对象GCHand放入
         /// </summary>
         /// <param name="size"></param>
-        public void CreateMemory(Int32 size)
+        protected void CreateMemory(Int32 size)
         {
             handle = Marshal.AllocHGlobal(size);
             //todo:那种分配内存的方式更好
@@ -35,7 +35,7 @@ namespace waxbill.Libuv
         /// 释放内存
         /// </summary>
         /// <param name="memory"></param>
-        public static void DestroyMemory(IntPtr memory)
+        protected static void DestroyMemory(IntPtr memory)
         {
             IntPtr gcHandlePtr = *(IntPtr*)memory;
             DestroyMemory(memory, gcHandlePtr);
@@ -46,7 +46,7 @@ namespace waxbill.Libuv
         /// </summary>
         /// <param name="memory"></param>
         /// <param name="gcHandlePtr"></param>
-        public static void DestroyMemory(IntPtr memory, IntPtr gcHandlePtr)
+        protected static void DestroyMemory(IntPtr memory, IntPtr gcHandlePtr)
         {
             if (gcHandlePtr != IntPtr.Zero)
             {

@@ -30,7 +30,7 @@ namespace waxbill
 
         static TCPClient()
         {
-            mOption = TCPOption.Define;            
+            mOption = TCPOption.Define;
             mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
             mSendPool = new UVRequestPool();
         }
@@ -50,7 +50,7 @@ namespace waxbill
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
                 this.mConnect.Connect(this.mServerHandle, ip, port, this.ConnectionCallback, null);
-                UVLoopHandle.Define.AsyncStart();
+                UVLoopHandle.Define.AsyncStart(null);
             }   
         }
 

@@ -21,7 +21,7 @@ namespace waxbill.Libuv
 
         public UVConnect() : base(GCHandleType.Normal)
         {
-            Int32 requestSize = UVIntrop.req_size(UVIntrop.RequestType.CONNECT);
+            Int32 requestSize = UVIntrop.req_size(UVRequestType.CONNECT);
             CreateMemory(requestSize);
         }
 
