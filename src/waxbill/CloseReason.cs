@@ -41,6 +41,11 @@ namespace waxbill
         /// <summary>
         /// 协议错误
         /// </summary>
-        ProtocolError = 6
+        ProtocolError = 6,
+
+        /// <summary>
+        /// 服务器未找到
+        /// </summary>
+        RemoteNotFound=7,
     }
 }

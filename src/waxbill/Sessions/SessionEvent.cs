@@ -10,11 +10,11 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    public delegate void OnConnectionEvent(SessionBase session);
+    public delegate void OnConnectionEvent(TCPClient client,SessionBase session);
 
-    public delegate void OnDisconnectedEvent(SessionBase session, CloseReason reason);
+    public delegate void OnDisconnectedEvent(TCPClient client, SessionBase session, Exception exception);
 
-    public delegate void OnSendedEvent(SessionBase session, IList<UVIntrop.uv_buf_t> packet, bool result);
+    public delegate void OnSendedEvent(TCPClient client, SessionBase session, IList<UVIntrop.uv_buf_t> datas, bool result);
 
-    public delegate void OnReceiveEvent(SessionBase session, Packet collection);
+    public delegate void OnReceiveEvent(TCPClient client, SessionBase session, Packet packet);
 }

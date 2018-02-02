@@ -100,7 +100,7 @@ namespace waxbill
             session.Init(connectionID,connection,this);
             if (this.mSessions.TryAdd(session.ConnectionID, session))
             {
-                session.RaiseOnConnected();
+                session.InnerTellConnected();
             }
             else
             {
@@ -177,12 +177,12 @@ namespace waxbill
         #endregion
         
 
-        public override bool TryGetSendQueue(out UVWriteRequest reqeust)
+        protected internal override bool TryGetSendQueue(out UVWriteRequest reqeust)
         {
             return this.mSendPool.TryGet(out reqeust);
         }
 
-        public override void ReleaseSendQueue(UVWriteRequest request)
+        protected internal override void ReleaseSendQueue(UVWriteRequest request)
         {
             request.Reset();
             this.mSendPool.Release(request);
@@ -193,7 +193,7 @@ namespace waxbill
         /// 获取接收缓存
         /// </summary>
         /// <returns></returns>
-        public override bool TryGetReceiveMemory(out IntPtr memory)
+        protected internal override bool TryGetReceiveMemory(out IntPtr memory)
         {
             memory = IntPtr.Zero;
             try
@@ -211,7 +211,7 @@ namespace waxbill
         /// 释放缓存
         /// </summary>
         /// <param name="memory"></param>
-        public override void ReleaseReceiveMemory(IntPtr memory)
+        protected internal override void ReleaseReceiveMemory(IntPtr memory)
         {
             Marshal.FreeHGlobal(memory);
         }

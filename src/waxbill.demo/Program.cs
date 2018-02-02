@@ -6,6 +6,7 @@ using System.Net.Sockets;
 using System.Net;
 using waxbill.Sessions;
 using waxbill.Libuv;
+using System.Text;
 
 namespace waxbill.demo
 {
@@ -45,11 +46,6 @@ namespace waxbill.demo
 
 
 
-
-
-
-
-
             ////todo: receive
             //TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
             ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
@@ -57,73 +53,135 @@ namespace waxbill.demo
             //server.Start("0.0.0.0", 2333);
             //Trace.Info("server is start");
 
+            //Socket s = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
+            //s.SendTimeout = 1;
+            //s.ReceiveTimeout = 1;
+            //s.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2333));
+            //s.Send(new byte[20000000]);
+            //s.Receive(new byte[200000000], SocketFlags.None);
 
-
-
-            //for (int i = 0; i < 1000; i++)
+            //Socket[] clients = new Socket[200];
+            //for (int i = 0; i < 200; i++)
             //{
-            //    Socket socket = new Socket(SocketType.Stream, ProtocolType.Tcp);
-            //    socket.Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2333));
-            //    socket.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+            //    clients[i] = new Socket(SocketType.Stream, ProtocolType.Tcp);
+            //    clients[i].Connect(new IPEndPoint(IPAddress.Parse("127.0.0.1"), 2333));
+            //    Trace.Info("connect,index:" + i.ToString());
             //}
-
-
-
-
-
-            //todo：send
-            //TCPClient[] clients = new TCPClient[20];
-            for (int i = 0; i < 20; i++)
-            {
-                TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
-                client.OnConnection += Client_OnConnection; ;
-                client.OnDisconnected += Client_OnDisconnected;
-                client.OnReceive += Client_OnReceive;
-                client.OnSended += Client_OnSended;
-                client.Connection("127.0.0.1", 2333);
-                //clients[i] = client;
-            }
-
-
 
 
             //for (int i = 0; i < 200; i++)
             //{
-            //    UVTCPHandle mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
-            //    UVConnectRquest mConnector = new UVConnectRquest();
-            //    mConnector.Connect(mTCPHandle, "127.0.0.1", 2333, null, null);
-            //    UVLoopHandle.Define.AsyncStart((loop)=> {
-            //        //Trace.Info("run ok");
-            //    });
+            //    System.Threading.ThreadPool.QueueUserWorkItem((l) =>
+            //    {
+            //        Int32 index = (Int32)l;
+
+            //        byte[] recs = new byte[1024];
+            //        clients[index].Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+            //        Trace.Info("send,index:" + index);
+            //        clients[index].Receive(recs);
+            //        Trace.Info("receive,index:" + index);
+            //    }, i);
+
             //}
 
 
+            //todo：send
+            //for (int i = 0; i < 200; i++)
+            //{
+            //    TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
+            //    client.OnConnection += Client_OnConnection; ;
+            //    client.OnDisconnected += Client_OnDisconnected;
+            //    client.OnReceive += Client_OnReceive;
+            //    client.OnSended += Client_OnSended;
+            //    client.Connection("127.0.0.1", 2333);
+            //}
 
 
+            for (int i = 0; i < 200; i++)
+            {
+                try
+                {
+                    TCPClient.SendOnly("127.0.0.1", 2333, datas, 0, datas.Length);
+                    Trace.Info(i.ToString() + ":send ok!~");
+                }
+                catch (Exception ex)
+                {
+                    Trace.Error(ex.Message);
+                }
+            }
 
-            ZTImage.Log.Trace.Info("run complete");
 
+            //System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);
+            //TCPClient client = new TCPClient();
+            //client.OnConnection += (c, session) =>
+            //{
+            //    session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
+            //};
+            //client.OnDisconnected += (c, session, res) =>
+            //{
+            //    Trace.Info("disconnected");
+            //    mre.Set();
+            //};
+            //client.OnReceive += (c, s, p) =>
+            //{
+            //    Trace.Info("receive");
+            //    mre.Set();
+            //};
+
+            //client.Connection("127.0.0.1", 2333);
+            //mre.WaitOne();
+
+            //client.Disconnect();
+
+            //client.Connection("127.0.0.1", 2333);
+            //mre.WaitOne();
+
+
+            Trace.Info("run complete,"+datas.Length);
             Console.ReadKey();
         }
 
-        private static void Client_OnSended(SessionBase session, System.Collections.Generic.IList<UVIntrop.uv_buf_t> packet, bool result)
+
+        private static string tostring(byte[] b)
         {
-            //ZTImage.Log.Trace.Info("Client_OnSended");
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < b.Length; i++)
+            {
+                builder.Append(b[i] + ",");
+            }
+            return builder.ToString().TrimEnd(',');
         }
 
-        private static void Client_OnReceive(SessionBase session, Packets.Packet collection)
+        private unsafe static string tostring(UVIntrop.PlatformBuf buf)
         {
-            ZTImage.Log.Trace.Info("Client_OnReceive");
+            byte* b = (byte*)(buf.Buffer);
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < buf.Count.ToInt32(); i++)
+            {
+                builder.Append(b[i] + ",");
+            }
+            return builder.ToString();
+        }
+
+        private static void Client_OnSended(TCPClient client,SessionBase session, System.Collections.Generic.IList<UVIntrop.uv_buf_t> packet, bool result)
+        {
+            ZTImage.Log.Trace.Info("Client_OnSended,connectid:"+session.ConnectionID.ToString());
+        }
+
+
+        private static void Client_OnReceive(TCPClient client, SessionBase session, Packets.Packet collection)
+        {
+            ZTImage.Log.Trace.Info("Client_OnReceive,sessionid:"+session.ConnectionID);
             //session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));
             //session.Close(CloseReason.Shutdown);
         }
 
-        private static void Client_OnDisconnected(SessionBase session, CloseReason reason)
+        private static void Client_OnDisconnected(TCPClient client, SessionBase session, Exception ex)
         {
             ZTImage.Log.Trace.Info("Client_OnDisconnected");
         }
 
-        private static void Client_OnConnection(SessionBase session)
+        private static void Client_OnConnection(TCPClient client, SessionBase session)
         {
             ZTImage.Log.Trace.Info("Client_OnConnection,connectionid:"+session.ConnectionID.ToString());
             session.Send(System.Text.Encoding.UTF8.GetBytes("abcdefghijklmnopqrstuvwxyz"));

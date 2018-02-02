@@ -22,6 +22,11 @@ namespace waxbill.Libuv
             UVIntrop.tcp_init(loop, this);
         }
 
+        /// <summary>
+        /// 绑定
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
         public void Bind(string ip, Int32 port)
         {
             UVException exception;
@@ -35,6 +40,12 @@ namespace waxbill.Libuv
             UVIntrop.tcp_bind(this, ref addr, 0);
         }
 
+        /// <summary>
+        /// 开始监听
+        /// </summary>
+        /// <param name="backlog"></param>
+        /// <param name="connectionCallback"></param>
+        /// <param name="state"></param>
         public void Listen(int backlog, Action<UVTCPHandle, Int32, UVException, Object> connectionCallback, object state)
         {
             mConnectionCallbackState = state;
@@ -42,10 +53,34 @@ namespace waxbill.Libuv
             UVIntrop.listen(this, backlog, mOnConnection);
         }
 
-
+        /// <summary>
+        /// 接收
+        /// </summary>
+        /// <param name="handle"></param>
         public void Accept(UVTCPHandle handle)
         {
             UVIntrop.accept(this, handle);
+        }
+
+        /// <summary>
+        /// 主动连接
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="connectCallback"></param>
+        /// <param name="state"></param>
+        public void Connect(string ip,Int32 port,Action<UVException , object> connectCallback,object state)
+        {
+            waxbill.Utils.Validate.ThrowIfNullOrWhite(ip,"ip error");
+            waxbill.Utils.Validate.ThrowIfZeroOrMinus(port, "port is error");
+
+            UVConnectRquest request = new UVConnectRquest();
+            request.Connect(this, ip, port, (req, status, ex, s) => {
+                if (connectCallback != null)
+                {
+                    connectCallback(ex, s);
+                }
+            },state);
         }
 
         public IPEndPoint LocalIPEndPoint

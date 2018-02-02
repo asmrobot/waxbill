@@ -41,25 +41,25 @@ namespace waxbill
         /// </summary>
         /// <param name="queue"></param>
         /// <returns></returns>
-        public abstract bool TryGetSendQueue(out UVWriteRequest queue);
+        protected internal abstract bool TryGetSendQueue(out UVWriteRequest queue);
 
         /// <summary>
         /// 释放发送队列
         /// </summary>
         /// <param name="queue"></param>
-        public abstract void ReleaseSendQueue(UVWriteRequest queue);
+        protected internal abstract void ReleaseSendQueue(UVWriteRequest queue);
 
         /// <summary>
         /// 获取接收缓存
         /// </summary>
         /// <returns></returns>
-        public abstract bool TryGetReceiveMemory(out IntPtr memory);
+        protected internal abstract bool TryGetReceiveMemory(out IntPtr memory);
 
         /// <summary>
         /// 释放接收缓存
         /// </summary>
         /// <param name="memory"></param>
-        public abstract void ReleaseReceiveMemory(IntPtr memory);
+        protected internal abstract void ReleaseReceiveMemory(IntPtr memory);
 
         /// <summary>
         /// 创建一个数据包

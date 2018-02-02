@@ -17,11 +17,7 @@ namespace waxbill
 {
     public class TCPClient:MonitorBase
     {
-        private ClientSession mSession;
-        private UVTCPHandle mTCPHandle;
-        private UVConnectRquest mConnector;
-        private bool mIsDispose = false;
-        private Int32 mIsConnected = 0;
+        private const Int32 DEFAULT_MILLISECONDS_TIMEOUT = 15000;
         private static SendingPool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
@@ -34,35 +30,37 @@ namespace waxbill
             mSendPool = new SendingPool();
         }
 
+
+
+        private ClientSession mSession;//会话
+        private UVTCPHandle mTCPHandle;//tcp连接
+        private Int32 mIsConnected = 0;
+
         public TCPClient() : this(RealtimeProtocol.Define)
         { }
 
         public TCPClient(IProtocol protocol):base(protocol, mOption,mBufferManager)
-        {
-            this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
-            this.mConnector = new UVConnectRquest();
-        }
+        {}
         
         public void Connection(string ip, Int32 port)
         {
-            if (mIsDispose)
-            {
-                throw new Exception("已经释放的连接");
-            }
             if (Interlocked.CompareExchange(ref this.mIsConnected, 1, 0) == 0)
             {
-                this.mConnector.Connect(this.mTCPHandle, ip, port, this.ConnectionCallback, null);
-                UVLoopHandle.Define.AsyncStart((loop)=> {
-                    Trace.Info("loop return");
-                });
-            }   
+                this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
+                this.mTCPHandle.Connect(ip, port, this.ConnectionCallback, null);
+                UVLoopHandle.Define.AsyncStart(null);
+            }
+            else
+            {
+                throw new Exception("已连接");
+            }
         }
 
-        private void ConnectionCallback(UVConnectRquest connection, Int32 retStatus, UVException exception, object state)
+        private void ConnectionCallback(UVException exception, object state)
         {
             if (exception != null)
             {
-                this.mIsConnected = 0;
+                Disconnect(exception);
                 return;
             }
 
@@ -73,17 +71,21 @@ namespace waxbill
             }
             this.mSession = new ClientSession(this);
             this.mSession.Init(cid, this.mTCPHandle, this);
-            this.mSession.RaiseOnConnected();
+            this.mSession.InnerTellConnected();
         }
 
-        public void Disconnect()
+        public void Disconnect(Exception exception=null)
         {
             if (Interlocked.CompareExchange(ref this.mIsConnected, 0, 1) == 1)
             {
-                this.mSession.Close(CloseReason.Shutdown, null);
-                this.mConnector.Close();
-                this.mTCPHandle.Close();
-                mIsDispose = true;
+                if (this.mSession != null)
+                {
+                    this.mSession.Close(CloseReason.Shutdown, exception);
+                }
+                else
+                {
+                    RaiseOnDisconnectedEvent(null, exception);
+                }
             }
         }
 
@@ -128,7 +130,7 @@ namespace waxbill
         {
             if (OnConnection != null)
             {
-                OnConnection(session);
+                OnConnection(this,session);
             }
         }
 
@@ -138,11 +140,11 @@ namespace waxbill
         public event OnDisconnectedEvent OnDisconnected;
 
 
-        internal void RaiseOnDisconnectedEvent(SessionBase session, CloseReason reason)
+        internal void RaiseOnDisconnectedEvent(SessionBase session, Exception exception)
         {
             if (this.OnDisconnected != null)
             {
-                OnDisconnected(session, reason);
+                OnDisconnected(this,session, exception);
             }
         }
 
@@ -154,11 +156,10 @@ namespace waxbill
         {
             if (this.OnSended != null)
             {
-                OnSended(session, packet, result);
+                OnSended(this,session, packet, result);
             }
         }
-
-
+        
         /// <summary>
         /// 接收事件
         /// </summary>
@@ -167,112 +168,229 @@ namespace waxbill
         {
             if (OnReceive != null)
             {
-                OnReceive(session, collection);
+                OnReceive(this,session, collection);
             }
         }
 
         #endregion
 
-        #region Statics
-        public static void Send(string ip, Int32 port, byte[] datas)
+        #region Syncs
+        /// <summary>
+        /// 同步发送接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas)
         {
-            Send(ip, port, datas, 0, datas.Length, (socket) => { });
+            return SendAndReceive(ip, port, datas, 0, datas.Length, DEFAULT_MILLISECONDS_TIMEOUT);
         }
 
-        public static void Send(string ip, Int32 port, byte[] datas, int offset, int size)
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas, int offset, int size)
         {
-            Send(ip, port, datas, offset, size, (socket) => { });
+            return SendAndReceive(ip, port, datas, offset, size, DEFAULT_MILLISECONDS_TIMEOUT);
         }
 
-        public static void Send(string ip, Int32 port, ArraySegment<byte> data)
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="data"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, ArraySegment<byte> data)
         {
-            Send(ip, port, data.Array, data.Offset, data.Count, (socket) => { });
+            return SendAndReceive(ip, port, data.Array, data.Offset, data.Count, DEFAULT_MILLISECONDS_TIMEOUT);
         }
-
-        public static void Send(string ip, Int32 port, IList<ArraySegment<byte>> datas)
+        
+        /// <summary>
+        /// 同步发送与接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas, int offset, int count, Int32 millisecondsTimeout)
         {
-            byte[] data = combinDatas(datas);
-            Send(ip, port, data, 0, data.Length, (socket) => { });
-        }
+            Validate.ThrowIfNullOrWhite(ip, "ip");
+            Validate.ThrowIfZeroOrMinus(port, "port");
+            Validate.ThrowIfNull(datas, "datas");
 
-        public static void Send(string ip, Int32 port, byte[] datas, Action<Socket> receiveAction)
-        {
-            Send(ip, port, datas, 0, datas.Length, receiveAction);
-        }
-
-        public static void Send(string ip, Int32 port, byte[] datas, int offset, int size, Action<Socket> receiveAction)
-        {
-            if (offset < 0 || size < 0 || datas.Length < (offset + size))
+            if (offset + count > datas.Length)
             {
-                throw new ArgumentOutOfRangeException("发送数据大小不合理");
+                throw new ArgumentOutOfRangeException("offset+size>datas.length");
             }
-            IPAddress address = default(IPAddress);
-            if (!IPAddress.TryParse(ip, out address))
+            
+            if (count <= 0)
             {
-                throw new Exception("ip格式不正确");
-            }
-
-            Socket client = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            try
-            {
-                client.Connect(new IPEndPoint(address, port));
-                client.Send(datas, offset, size, SocketFlags.None);
-            }
-            catch (Exception ex)
-            {
-                Trace.Error("发送数据时出错", ex);
-                throw;
-            }
-
-            if (receiveAction != null)
-            {
-                try
-                {
-                    client.ReceiveTimeout = 5000;
-                    receiveAction(client);
-                }
-                catch (Exception ex)
-                {
-                    Trace.Error("调用接收函数出错", ex);
-                    throw;
-                }
-
+                return new byte[0];
             }
 
-            try
+            byte[] retDatas=null;
+            Exception exception = null;
+            TCPClient client = new TCPClient();
+            ManualResetEvent mre = new ManualResetEvent(false);
+            client.OnConnection += (c, session) =>
             {
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
+                session.Send(datas, offset, count);
+            };
+            client.OnDisconnected += (c, session, ex) =>
+            {
+                exception = ex;
+                mre.Set();
+            };
+            client.OnReceive += (c, s, p) =>
+            {
+                retDatas = p.Read();
+                client.OnDisconnected = null;
+                mre.Set();
+            };
+
+            client.Connection(ip, port);
+            if (!mre.WaitOne(millisecondsTimeout))
+            {
+                throw new TimeoutException("send or receive timeout");
             }
-            catch
-            { }
+
+            mre.Close();
+            client.Disconnect();
+            if (exception != null)
+            {
+                //连不上
+                throw exception;
+            }
+
+            
+            if (retDatas == null)
+            {
+                //连接关闭
+                throw new Exception("连接关闭");
+            }
+            
+            return retDatas;
         }
 
-        public static void Send(string ip, Int32 port, ArraySegment<byte> data, Action<Socket> receiveAction)
+        /// <summary>
+        /// 同步发送接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        public static void SendOnly(string ip, Int32 port, byte[] datas)
         {
-            Send(ip, port, data.Array, data.Offset, data.Count, receiveAction);
+            SendAndReceive(ip, port, datas, 0, datas.Length, DEFAULT_MILLISECONDS_TIMEOUT);
         }
 
-        public static void Send(string ip, Int32 port, IList<ArraySegment<byte>> datas, Action<Socket> receiveAction)
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        public static void SendOnly(string ip, Int32 port, byte[] datas, int offset, int size)
         {
-            byte[] data = combinDatas(datas);
-            Send(ip, port, data, 0, data.Length, receiveAction);
+            SendAndReceive(ip, port, datas, offset, size, DEFAULT_MILLISECONDS_TIMEOUT);
         }
 
-        private static byte[] combinDatas(IList<ArraySegment<byte>> datas)
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="data"></param>
+        public static void SendOnly(string ip, Int32 port, ArraySegment<byte> data)
         {
-            return new byte[0];
+            SendAndReceive(ip, port, data.Array, data.Offset, data.Count, DEFAULT_MILLISECONDS_TIMEOUT);
         }
 
+        /// <summary>
+        /// 同步发送与接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        public static void SendOnly(string ip, Int32 port, byte[] datas, int offset, int count, Int32 millisecondsTimeout)
+        {
+            Validate.ThrowIfNullOrWhite(ip, "ip");
+            Validate.ThrowIfZeroOrMinus(port, "port");
+            Validate.ThrowIfNull(datas, "datas");
 
+            if (offset + count > datas.Length)
+            {
+                throw new ArgumentOutOfRangeException("offset+size>datas.length");
+            }
+
+            if (count <= 0)
+            {
+                return;
+            }
+
+            byte[] retDatas = null;
+            Exception exception = null;
+            TCPClient client = new TCPClient();
+            ManualResetEvent mre = new ManualResetEvent(false);
+            client.OnConnection += (c, session) =>
+            {
+                session.Send(datas, offset, count);
+            };
+            client.OnDisconnected += (c, session, ex) =>
+            {
+                exception = ex;
+                mre.Set();
+            };
+            
+            client.OnSended += (cleint, session, send_datas, result) => {
+                mre.Set();
+            };
+
+            client.Connection(ip, port);
+            if (!mre.WaitOne(millisecondsTimeout))
+            {
+                throw new TimeoutException("send or receive timeout");
+            }
+
+            mre.Close();
+            client.Disconnect();
+            if (exception != null)
+            {
+                //连不上
+                throw exception;
+            }
+        }
         #endregion
 
-        public override bool TryGetSendQueue(out UVWriteRequest request)
+        #region Override
+        /// <summary>
+        /// 获取发送队列
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
+        protected internal override bool TryGetSendQueue(out UVWriteRequest request)
         {
             return mSendPool.TryGet(out request);
         }
 
-        public override void ReleaseSendQueue(UVWriteRequest request)
+        /// <summary>
+        /// 回收发送队列
+        /// </summary>
+        /// <param name="request"></param>
+        protected internal override void ReleaseSendQueue(UVWriteRequest request)
         {
             request.Reset();
             mSendPool.Release(request);
@@ -282,7 +400,7 @@ namespace waxbill
         /// 获取接收缓存
         /// </summary>
         /// <returns></returns>
-        public override bool TryGetReceiveMemory(out IntPtr memory)
+        protected internal override bool TryGetReceiveMemory(out IntPtr memory)
         {
             memory = IntPtr.Zero;
             try
@@ -300,10 +418,11 @@ namespace waxbill
         /// 释放缓存
         /// </summary>
         /// <param name="memory"></param>
-        public override void ReleaseReceiveMemory(IntPtr memory)
+        protected internal override void ReleaseReceiveMemory(IntPtr memory)
         {
             Marshal.FreeHGlobal(memory);
         }
-        
+
+        #endregion
     }
 }

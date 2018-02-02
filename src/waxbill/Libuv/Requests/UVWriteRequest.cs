@@ -33,7 +33,8 @@ namespace waxbill.Libuv
             CreateMemory(requestSize + bufferSize);
             this.Buffer = (UVIntrop.uv_buf_t*)(this.handle + requestSize);
         }
-        
+
+        #region 队列操作 
         public void StartEnqueue()
         {
             m_IsReadOnly = false;
@@ -159,13 +160,24 @@ namespace waxbill.Libuv
             }
             return true;
         }
+        #endregion
 
+        /// <summary>
+        /// 设置回调
+        /// </summary>
+        /// <param name="callback"></param>
+        /// <param name="state"></param>
         public void SetCallback(Action<UVWriteRequest, Int32, UVException, object> callback, object state)
         {
             this.mWriteCallback = callback;
             this.mWriteCallbackState = state;
         }
 
+        /// <summary>
+        /// 触发已发送
+        /// </summary>
+        /// <param name="status"></param>
+        /// <param name="error"></param>
         public void RaiseSended(Int32 status,UVException error)
         {
             try

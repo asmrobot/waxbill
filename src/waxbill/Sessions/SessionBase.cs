@@ -16,12 +16,13 @@ namespace waxbill.Sessions
 {
     public abstract class SessionBase
     {
+        public long ConnectionID { get; private set; }//连接ID
+
         protected MonitorBase Monitor;
         internal UVTCPHandle TcpHandle;//客户端socket
-        
         private Int32 mState = 0;//会话状态
         private Packet mPacket;//本包
-        public long ConnectionID { get; private set; }//连接ID
+        
 
         private UVWriteRequest mSendQueue;//发送队列
         private IPEndPoint mRemoteEndPoint;
@@ -146,10 +147,10 @@ namespace waxbill.Sessions
         /// </summary>
         /// <param name="datas"></param>
         /// <param name="offset"></param>
-        /// <param name="size"></param>
-        public void Send(byte[] datas, int offset, int size)
+        /// <param name="count"></param>
+        public void Send(byte[] datas, int offset, int count)
         {
-            Send(new ArraySegment<byte>(datas, offset, size));
+            Send(new ArraySegment<byte>(datas, offset, count));
         }
 
         public void Send(ArraySegment<byte> data)
@@ -425,7 +426,6 @@ namespace waxbill.Sessions
         #endregion
 
         #region control
-
         public void Close(CloseReason reason, Exception exception = null)
         {
             lock (this)
@@ -447,7 +447,7 @@ namespace waxbill.Sessions
                     Marshal.FreeHGlobal(this.mReadDatas);
                 }
 
-                this.TcpHandle.Dispose();
+                this.TcpHandle.Close();
                 this.FreeResource(reason);
             }
         }
@@ -550,7 +550,7 @@ namespace waxbill.Sessions
 
         #region Events Raise
 
-        internal void RaiseOnConnected()
+        internal void InnerTellConnected()
         {
             OnConnected();
             this.TcpHandle.ReadStart(this.AllocMemoryCallback, this.ReadCallback, this, this);

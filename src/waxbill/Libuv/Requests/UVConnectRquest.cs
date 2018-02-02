@@ -66,12 +66,15 @@ namespace waxbill.Libuv
                 {
                     callback(req, status, error, state);
                 }
-                
             }
             catch (Exception ex)
             {
                 Trace.Error("UvConnectCb", ex);
                 throw;
+            }
+            finally
+            {
+                req.Close();
             }
         }
         #endregion

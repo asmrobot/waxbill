@@ -36,7 +36,7 @@ namespace waxbill.Sessions
         {
             try
             {
-                this.mClient.RaiseOnDisconnectedEvent(this, reason);
+                this.mClient.RaiseOnDisconnectedEvent(this, null);
                 if (mClient != null)
                 {
                     mClient.Disconnect();
