@@ -85,8 +85,6 @@ namespace waxbill
                     mRecycleTimer.Change(Timeout.Infinite, Timeout.Infinite);
                 }
             }
-            
-
         }
         
         /// <summary>
@@ -184,7 +182,6 @@ namespace waxbill
 
         protected internal override void ReleaseSendQueue(UVWriteRequest request)
         {
-            request.Reset();
             this.mSendPool.Release(request);
         }
 

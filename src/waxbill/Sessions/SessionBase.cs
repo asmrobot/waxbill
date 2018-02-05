@@ -303,8 +303,7 @@ namespace waxbill.Sessions
 
             try
             {
-                queue.SetCallback(SendCompleted, null);
-                this.TcpHandle.Write(queue);
+                this.TcpHandle.Write(queue,SendCompleted,null);
             }
             catch (Exception ex)
             {

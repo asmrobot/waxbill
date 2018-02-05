@@ -52,6 +52,7 @@
     <Compile Include="Exceptions\ConfigException.cs" />
     <Compile Include="Exceptions\FormatException.cs" />
     <Compile Include="Exceptions\WaxbillException.cs" />
+    <Compile Include="Libuv\Requests\UVShutdownRequest.cs" />
     <Compile Include="Libuv\Requests\UVWriteRequest.cs" />
     <Compile Include="Libuv\UVHandleType.cs" />
     <Compile Include="Libuv\Collections\SockAddr.cs" />

@@ -29,7 +29,8 @@ namespace waxbill
         
         public TCPListener()
         {
-            this.mLoopHandle = new UVLoopHandle();
+            //this.mLoopHandle = new UVLoopHandle();
+            this.mLoopHandle = UVLoopHandle.Define;
             this.mServerHandle = new UVTCPHandle(this.mLoopHandle);
         }
 

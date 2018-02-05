@@ -19,7 +19,6 @@ namespace waxbill.Libuv
         
         private readonly static UVIntrop.uv_read_cb mOnRead = UVReadCb;
         private readonly static UVIntrop.uv_alloc_cb mOnAlloc = UVAllocCb;
-        private readonly static UVIntrop.uv_write_cb mOnWrite = UVWriteCb;
         private AllocCallback mAllocCallback;
         private ReadCallback mReadCallback;
 
@@ -56,24 +55,18 @@ namespace waxbill.Libuv
                 UVIntrop.try_write(this, mbuf, 1);
             }
         }
-
+        
         /// <summary>
         /// 写入数据
         /// </summary>
         /// <param name="request"></param>
         /// <param name="callback"></param>
         /// <param name="state"></param>
-        public unsafe void Write(UVWriteRequest request)
+        public unsafe void Write(UVWriteRequest request, Action<UVWriteRequest, Int32, UVException, object> callback, object state)
         {
-            try
-            {
-                UVIntrop.write(request, this, request.Buffer, request.Offset, mOnWrite);
-            }
-            catch
-            {
-                request.UnpinGCHandles();
-                throw;
-            }
+            System.Threading.ThreadPool.QueueUserWorkItem((obj) => {
+                request.Write(this, callback, state);
+            });
         }
 
         #region UVCallback
@@ -108,25 +101,7 @@ namespace waxbill.Libuv
             target.mReadCallback(target, nread, ex,ref buf, target.mReadCallbackState);
         }
 
-        private static void UVWriteCb(IntPtr reqHandle, Int32 status)
-        {
-            var req = FromIntPtr<UVWriteRequest>(reqHandle);
-
-            UVException error = null;
-            if (status < 0)
-            {
-                UVIntrop.Check(status, out error);
-            }
-
-            try
-            {
-                req.RaiseSended(status,error);
-            }
-            catch
-            {
-                throw;
-            }
-        }
+        
         #endregion
     }
 }

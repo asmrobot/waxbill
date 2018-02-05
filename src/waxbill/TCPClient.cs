@@ -23,6 +23,7 @@ namespace waxbill
         private readonly static TCPOption mOption;
         private static Int32 mConnectID = 0;
         
+        
         static TCPClient()
         {
             mOption = TCPOption.Define;
@@ -48,11 +49,13 @@ namespace waxbill
             {
                 this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
                 this.mTCPHandle.Connect(ip, port, this.ConnectionCallback, null);
-                UVLoopHandle.Define.AsyncStart(null);
+                UVLoopHandle.Define.AsyncStart((loop)=> {
+                    ZTImage.Log.Trace.Info("loop return");
+                });
             }
             else
             {
-                throw new Exception("已连接");
+                throw new Exception("重复连接");
             }
         }
 
@@ -119,6 +122,8 @@ namespace waxbill
         {
             this.mSession.Send(datas);
         }
+
+
         #endregion
 
         #region Events
@@ -392,7 +397,6 @@ namespace waxbill
         /// <param name="request"></param>
         protected internal override void ReleaseSendQueue(UVWriteRequest request)
         {
-            request.Reset();
             mSendPool.Release(request);
         }
 
