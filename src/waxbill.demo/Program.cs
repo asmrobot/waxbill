@@ -96,7 +96,8 @@ namespace waxbill.demo
             //    client.Connection("127.0.0.1", 2333);
             //}
 
-
+            TCPClient client = new TCPClient(new waxbill.Protocols.TerminatorProtocol());
+            
             for (int i = 0; i < 200; i++)
             {
                 try
@@ -141,6 +142,10 @@ namespace waxbill.demo
             Console.ReadKey();
         }
 
+        private static void Client_OnReceive1(TCPClient client, SessionBase session, Packets.Packet packet)
+        {
+            throw new NotImplementedException();
+        }
 
         private static string tostring(byte[] b)
         {
