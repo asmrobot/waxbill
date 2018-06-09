@@ -267,7 +267,7 @@ namespace waxbill.WebSockets
         /// websocket发送数据
         /// </summary>
         /// <param name="content"></param>
-        protected void SendFrame(string content)
+        public void SendFrame(string content)
         {
             if (string.IsNullOrEmpty(content))
             {
@@ -283,7 +283,7 @@ namespace waxbill.WebSockets
         /// websocket发送数据
         /// </summary>
         /// <param name="datas"></param>
-        protected void SendFrame(byte[] datas)
+        public void SendFrame(byte[] datas)
         {
             if (datas == null || datas.Length <= 0)
             {
