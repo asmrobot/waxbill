@@ -45,13 +45,14 @@ namespace waxbill.demo
             //Trace.Info("entry async end");
 
 
-
+            byte[] s = new byte[] { 13, 10, 0, 0, 0, 193, 1, 10, 176, 1, 99, 99, 51, 53, 53, 53, 49, 99, 51, 51, 51, 102, 53, 101, 98, 54, 50, 51, 49, 48, 50, 49, 102, 97, 52, 53, 55, 50, 49, 49, 52, 102, 99, 100, 48, 52, 100, 50, 101, 102, 53, 97, 102, 99, 54, 101, 101, 102, 52, 52, 56, 101, 101, 99, 55, 53, 98, 54, 48, 50, 101, 102, 100, 54, 100, 51, 56, 49, 48, 100, 48, 49, 53, 57, 102, 101, 51, 55, 97, 102, 97, 97, 50, 100, 102, 102, 57, 98, 51, 100, 100, 51, 52, 48, 53, 98, 100, 55, 97, 55, 57, 102, 97, 55, 53, 51, 100, 55, 56, 57, 57, 55, 53, 51, 50, 97, 99, 102, 102, 49, 98, 57, 51, 102, 99, 48, 49, 50, 102, 99, 49, 54, 49, 55, 55, 49, 57, 99, 102, 52, 100, 100, 49, 100, 101, 49, 51, 53, 102, 100, 53, 100, 97, 100, 55, 49, 53, 100, 102, 52, 99, 98, 53, 48, 57, 102, 57, 52, 54, 51, 102, 101, 51, 97, 48, 101, 18, 11, 68, 69, 86, 50, 48, 49, 56, 48, 49, 50, 54 };
+            Console.WriteLine(s.Length); 
             ////todo: receive
-            //TCPServer<MServerSession> server = new TCPServer<MServerSession>(RealtimeProtocol.Define);
+            TCPServer<MServerSession> server = new TCPServer<MServerSession>(ZTProtocol.Define);
             ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new BeginEndMarkProtocol((byte)'{',(byte)'}'));
             ////TCPServer<MServerSession> server = new TCPServer<MServerSession>(new ZTProtocol());
-            //server.Start("0.0.0.0", 2333);
-            //Trace.Info("server is start");
+            server.Start("0.0.0.0", 7888);
+            Trace.Info("server is start");
 
             //Socket s = new Socket(AddressFamily.InterNetwork,SocketType.Stream,ProtocolType.Tcp);
             //s.SendTimeout = 1;
@@ -96,20 +97,20 @@ namespace waxbill.demo
             //    client.Connection("127.0.0.1", 2333);
             //}
 
-            TCPClient client = new TCPClient(new waxbill.Protocols.TerminatorProtocol());
-            
-            for (int i = 0; i < 200; i++)
-            {
-                try
-                {
-                    TCPClient.SendOnly("127.0.0.1", 2333, datas, 0, datas.Length);
-                    Trace.Info(i.ToString() + ":send ok!~");
-                }
-                catch (Exception ex)
-                {
-                    Trace.Error(ex.Message);
-                }
-            }
+            //TCPClient client = new TCPClient(new waxbill.Protocols.TerminatorProtocol());
+
+            //for (int i = 0; i < 200; i++)
+            //{
+            //    try
+            //    {
+            //        TCPClient.SendOnly("127.0.0.1", 2333, datas, 0, datas.Length);
+            //        Trace.Info(i.ToString() + ":send ok!~");
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        Trace.Error(ex.Message);
+            //    }
+            //}
 
 
             //System.Threading.ManualResetEvent mre = new System.Threading.ManualResetEvent(false);

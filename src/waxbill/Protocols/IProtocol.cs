@@ -19,6 +19,14 @@ namespace waxbill
         /// <param name="giveupCount">丢弃长度</param>
         /// <returns>是否读完一条信息</returns>
         bool TryToPacket(Packet packet,IntPtr datas,Int32 count, out int giveupCount);
-                
+
+
+        /// <summary>
+        /// 创建协议独有数据包
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns></returns>
+        Packet CreatePacket(BufferManager buffer);
+
     }
 }

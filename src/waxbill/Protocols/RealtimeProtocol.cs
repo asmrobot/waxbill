@@ -14,7 +14,12 @@ namespace waxbill.Protocols
     public class RealtimeProtocol:IProtocol
     {
         public static readonly RealtimeProtocol Define = new RealtimeProtocol();
-       
+
+        public Packet CreatePacket(BufferManager buffer)
+        {
+            return new Packet(buffer);
+        }
+
         public bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
         {
             giveupCount = count;

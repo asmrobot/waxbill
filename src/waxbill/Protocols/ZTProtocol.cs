@@ -9,24 +9,25 @@ using waxbill.Utils;
 
 namespace waxbill.Protocols
 {
-    public class ZTProtocol:ProtocolBase<ZTProtocolPacket>
+    public class ZTProtocol:ProtocolBase
     {
+        public static ZTProtocol Define = new ZTProtocol();
         public ZTProtocol():base(6)
         {}
 
-        /// <summary>
-        /// 是否协议开始
-        /// </summary>
-        /// <param name="datas"></param>
-        /// <returns></returns>
-        public bool IsStart(byte[] datas)
-        {
-            if (datas[0] != 0x0d || datas[1] != 0x0a)
-            {
-                return false;
-            }
-            return true;
-        }
+        ///// <summary>
+        ///// 是否协议开始
+        ///// </summary>
+        ///// <param name="datas"></param>
+        ///// <returns></returns>
+        //public bool IsStart(byte[] datas)
+        //{
+        //    if (datas[0] != 0x0d || datas[1] != 0x0a)
+        //    {
+        //        return false;
+        //    }
+        //    return true;
+        //}
 
         /// <summary>
         /// 通信长度，不包含协议头的长度
@@ -47,8 +48,14 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe override bool ParseHeader(ZTProtocolPacket packet, IntPtr datas)
+        protected unsafe override bool ParseHeader(Packet _packet, IntPtr datas)
         {
+            ZTProtocolPacket packet = _packet as ZTProtocolPacket;
+            if (packet == null)
+            {
+                return false;
+            }
+
             byte* memory = (byte*)datas;
             if (*memory != 0x0d || *(memory + 1) != 0x0a)
             {
@@ -60,8 +67,14 @@ namespace waxbill.Protocols
         }
 
 
-        protected unsafe override bool ParseBody(ZTProtocolPacket packet, IntPtr datas, int count, out Int32 giveupCount)
+        protected unsafe override bool ParseBody(Packet _packet, IntPtr datas, int count, out Int32 giveupCount)
         {
+            ZTProtocolPacket packet = _packet as ZTProtocolPacket;
+            if (packet == null)
+            {
+                giveupCount = count;
+                return false;
+            }
             giveupCount = 0;
             bool result = false;
             if ((count + packet.Count) >= packet.ContentLength)
@@ -88,6 +101,11 @@ namespace waxbill.Protocols
             }
             return -1;
 
+        }
+
+        public override Packet CreatePacket(BufferManager buffer)
+        {
+            return new ZTProtocolPacket(buffer);
         }
     }
 }

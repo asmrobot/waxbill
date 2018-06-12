@@ -68,7 +68,7 @@ namespace waxbill
         /// <returns></returns>
         public Packet CreatePacket()
         {
-            return new Packet(this.BufferManager);
+            return this.Protocol.CreatePacket(this.BufferManager);
         }
     }
 }
