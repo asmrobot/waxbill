@@ -9,25 +9,14 @@ using waxbill.Utils;
 
 namespace waxbill.Protocols
 {
+    /// <summary>
+    /// 解析出来的包不包含协议头
+    /// </summary>
     public class ZTProtocol:ProtocolBase
     {
         public static ZTProtocol Define = new ZTProtocol();
         public ZTProtocol():base(6)
         {}
-
-        ///// <summary>
-        ///// 是否协议开始
-        ///// </summary>
-        ///// <param name="datas"></param>
-        ///// <returns></returns>
-        //public bool IsStart(byte[] datas)
-        //{
-        //    if (datas[0] != 0x0d || datas[1] != 0x0a)
-        //    {
-        //        return false;
-        //    }
-        //    return true;
-        //}
 
         /// <summary>
         /// 通信长度，不包含协议头的长度
@@ -91,18 +80,7 @@ namespace waxbill.Protocols
             packet.Write(datas, giveupCount);
             return result;
         }
-
-        protected int IndexOfProtocolEnd(Packet packet, IntPtr datas, int count, out bool reset)
-        {
-            reset = false;
-            if (packet.Count + count >= packet.ForecastSize)
-            {
-                return packet.ForecastSize - (Int32)packet.Count;
-            }
-            return -1;
-
-        }
-
+        
         public override Packet CreatePacket(BufferManager buffer)
         {
             return new ZTProtocolPacket(buffer);
