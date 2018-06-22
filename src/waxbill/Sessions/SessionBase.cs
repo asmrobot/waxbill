@@ -50,6 +50,7 @@ namespace waxbill.Sessions
                 this.Close(CloseReason.Exception);
                 Trace.Error("没有分配到发送queue", null);
             }
+            mSendQueue.StartEnqueue();
 
             this.mPacket = monitor.CreatePacket();
         }

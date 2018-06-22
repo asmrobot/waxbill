@@ -397,6 +397,7 @@ namespace waxbill
         /// <param name="request"></param>
         protected internal override void ReleaseSendQueue(UVWriteRequest request)
         {
+            
             mSendPool.Release(request);
         }
 
