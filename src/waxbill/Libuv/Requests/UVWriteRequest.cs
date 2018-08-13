@@ -7,7 +7,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Utils;
-using ZTImage.Log;
 
 namespace waxbill.Libuv
 {
@@ -203,7 +202,7 @@ namespace waxbill.Libuv
                 this.mWriteCallback = null;
                 this.mWriteCallbackState = null;
                 UnpinGCHandles();
-                Trace.Error("UvWriteCb", ex);
+                //Trace.Error("UvWriteCb", ex);
                 throw;
             }
         }

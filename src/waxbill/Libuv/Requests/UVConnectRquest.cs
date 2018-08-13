@@ -8,7 +8,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv.Collections;
 using waxbill.Utils;
-using ZTImage.Log;
 
 namespace waxbill.Libuv
 {

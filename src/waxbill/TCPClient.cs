@@ -11,7 +11,6 @@ using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
-using ZTImage.Log;
 using waxbill.Protocols;
 namespace waxbill
 {
@@ -50,7 +49,7 @@ namespace waxbill
                 this.mTCPHandle = new UVTCPHandle(UVLoopHandle.Define);
                 this.mTCPHandle.Connect(ip, port, this.ConnectionCallback, null);
                 UVLoopHandle.Define.AsyncStart((loop)=> {
-                    ZTImage.Log.Trace.Info("loop return");
+                    Trace.Info("loop return");
                 });
             }
             else

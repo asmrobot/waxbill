@@ -11,7 +11,6 @@ using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
-using ZTImage.Log;
 
 namespace waxbill.WebSockets
 {
