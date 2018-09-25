@@ -7,7 +7,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
-using waxbill.Libuv;
+using ZTImage.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
