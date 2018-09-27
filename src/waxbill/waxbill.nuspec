@@ -13,6 +13,6 @@
     <copyright>Copyright 2017</copyright>
   </metadata>
   <files>
-      <file src="..\..\libs\libuv\**" target="build\net45" />
+      <file src="..\..\libs\libuv\**" target="build\libuv" />
   </files>
 </package>

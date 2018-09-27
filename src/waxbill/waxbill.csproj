@@ -36,7 +36,8 @@
     <SignAssembly>true</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyOriginatorKeyFile>waxbill.pfx</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>
+    </AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -106,9 +107,6 @@
     <Compile Include="Packets\Packet.cs" />
     <Compile Include="Packets\PacketStream.cs" />
     <Compile Include="Pools\SendingQueue.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="waxbill.pfx" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

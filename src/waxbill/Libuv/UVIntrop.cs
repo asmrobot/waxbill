@@ -33,7 +33,7 @@ namespace waxbill.Libuv
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
             string filename = string.Empty;
-            if (IsWindows)
+            if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 if (IntPtr.Size == 4)
                 {
@@ -44,10 +44,17 @@ namespace waxbill.Libuv
                     filename = Path.Combine(dir, "win-x64", "libuv.dll");
                 }
             }
+            else if (System.Environment.OSVersion.Platform == PlatformID.Unix)
+            {
+                //Architecture osArch = RuntimeInformation.OSArchitecture;
+                //Architecture processArch = RuntimeInformation.ProcessArchitecture;
+                filename = "linux path";
+                //x86 还是arm
+                //todo:linux load
+            }
             else
             {
-                filename = "linux path";
-                //todo:linux load
+                filename = Path.Combine(dir, "osx", "libuv.dylib");
             }
             NativeLibraryHelper.LoadLibrary(filename);
         }
