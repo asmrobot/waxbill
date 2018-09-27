@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Exceptions;
-using waxbill.Libuv;
+using ZTImage.Libuv;
 using waxbill.Utils;
 
 namespace waxbill

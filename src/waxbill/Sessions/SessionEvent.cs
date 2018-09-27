@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Libuv;
+using ZTImage.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
