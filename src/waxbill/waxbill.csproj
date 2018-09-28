@@ -4,25 +4,22 @@
 	  <!--<TargetFramework>net45</TargetFramework>-->
 	  <TargetFrameworks>net45;netstandard2.0;</TargetFrameworks>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
 	  <Version>2.1.14</Version>
 	  <AssemblyVersion>2.1.14.0</AssemblyVersion>
 	  <FileVersion>2.1.14.0</FileVersion>
-	  <Description>sample server lib</Description>
+	  <Description>
+      sample tcp server lib.IncludeRuntimeFolder property is  false to remove runtime folder from csproj.
+    </Description>
 	  <Copyright />
 	  <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
 	  <PackageProjectUrl>https://github.com/asmrobot/waxbill</PackageProjectUrl>
 	  <RepositoryType />
-    <IncludeRuntimeFolder>false</IncludeRuntimeFolder>
   </PropertyGroup>
 
   <PropertyGroup>
     <OutputPath>..\..\pkg-work\lib\</OutputPath>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="ZTImage.Libuv" Version="2.1.15" />
-  </ItemGroup>
 
 </Project>
 

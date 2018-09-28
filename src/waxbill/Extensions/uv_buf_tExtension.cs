@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ZTImage.Libuv;
-using static ZTImage.Libuv.UVIntrop;
+using waxbill.Libuv;
+using static waxbill.Libuv.UVIntrop;
 
 namespace waxbill.Extensions
 {

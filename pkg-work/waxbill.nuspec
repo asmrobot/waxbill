@@ -6,8 +6,10 @@
     <authors>asmrobot</authors>
     <owners>asmrobot</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>usage in .net framework and .net core.</description>
-    <releaseNotes>usage in .net framework and .net core. add IncludeRuntimeFolder propery to remove libs file from project when value is false</releaseNotes>
+    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0</licenseUrl>
+    <projectUrl>https://github.com/asmrobot/waxbill</projectUrl>
+    <description>sample tcp server lib.IncludeRuntimeFolder property is  false to remove runtime folder from csproj.</description>
+    <releaseNotes>usage in .net framework and .net core. </releaseNotes>
     <copyright>Copyright 2018</copyright>
     <tags>waxbill</tags>
     <dependencies>

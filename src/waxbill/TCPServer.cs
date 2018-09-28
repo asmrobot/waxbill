@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ZTImage.Libuv;
+using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
