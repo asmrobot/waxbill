@@ -14,7 +14,7 @@ namespace waxbill
 
     public delegate void OnDisconnectedEvent(TCPClient client, SessionBase session, Exception exception);
 
-    public delegate void OnSendedEvent(TCPClient client, SessionBase session, IList<UVIntrop.uv_buf_t> datas, bool result);
+    public delegate void OnSendedEvent(TCPClient client, SessionBase session, PlatformBuf datas, bool result);
 
     public delegate void OnReceiveEvent(TCPClient client, SessionBase session, Packet packet);
 }

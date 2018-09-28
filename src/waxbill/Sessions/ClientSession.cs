@@ -45,7 +45,7 @@ namespace waxbill.Sessions
             { }
         }
 
-        protected override void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result)
+        protected override void OnSended(PlatformBuf packet, bool result)
         {
             try
             {

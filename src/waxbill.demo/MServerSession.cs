@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Libuv;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
@@ -46,7 +45,7 @@ namespace waxbill.demo
             return builder.ToString().TrimEnd(',');
         }
 
-        private unsafe string tostring(UVIntrop.PlatformBuf buf)
+        private unsafe string tostring(PlatformBuf buf)
         {
             byte* b = (byte*)(buf.Buffer);
             StringBuilder builder = new StringBuilder();
@@ -57,13 +56,9 @@ namespace waxbill.demo
             return builder.ToString();
         }
 
-        protected override void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result)
+        protected override void OnSended(PlatformBuf packet, bool result)
         {
-            for (int i = 0; i < packet.Count; i++)
-            {
-                var buf = packet[i].ToPlatformBuf();
-                Trace.Info("sended:" + tostring(buf));
-            }
+            Trace.Info("sended:" + tostring(packet));
         }
     }
 }

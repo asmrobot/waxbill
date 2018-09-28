@@ -10,6 +10,7 @@ using waxbill.Exceptions;
 using ZTImage.Libuv;
 using waxbill.Packets;
 using waxbill.Utils;
+using waxbill.Extensions;
 
 namespace waxbill.Sessions
 {
@@ -322,15 +323,22 @@ namespace waxbill.Sessions
         /// <param name="e"></param>
         private void SendCompleted(UVWriteRequest req, Int32 statue, UVException ex, object state)
         {
+            IList<UVIntrop.uv_buf_t> reqList = req as IList<UVIntrop.uv_buf_t>;
             if (ex != null)
             {
-                this.OnSended(req, false);
+                for (int i = 0; i < reqList.Count; i++)
+                {
+                    this.OnSended(reqList[i].ToPlatformBuf(), false);
+                }
                 SendEnd(req, CloseReason.Exception);
                 return;
             }
 
             //todo:发送下一包
-            this.OnSended(req, true);
+            for (int i = 0; i < reqList.Count; i++)
+            {
+                this.OnSended(reqList[i].ToPlatformBuf(), true);
+            }
             req.Clear();
             this.Monitor.ReleaseSendQueue(req);
 
@@ -353,7 +361,12 @@ namespace waxbill.Sessions
             RemoveState(SessionState.Sending);
             this.Close(reason);
         }
+        
         #endregion
+
+
+
+
 
         #region receive
         /// <summary>
@@ -465,7 +478,11 @@ namespace waxbill.Sessions
             {
                 if (this.mSendQueue.Count > 0)
                 {
-                    this.OnSended(this.mSendQueue, false);
+                    IList<UVIntrop.uv_buf_t> reqList = this.mSendQueue as IList<UVIntrop.uv_buf_t>;
+                    for (int i = 0; i < reqList.Count; i++)
+                    {
+                        this.OnSended(reqList[i].ToPlatformBuf(), false);
+                    }
                 }
                 this.mSendQueue.Clear();
                 this.Monitor.ReleaseSendQueue(this.mSendQueue);
@@ -572,7 +589,7 @@ namespace waxbill.Sessions
         /// <param name="connector"></param>
         /// <param name="packet"></param>
         /// <param name="result"></param>
-        protected abstract void OnSended(IList<UVIntrop.uv_buf_t> packet, bool result);
+        protected abstract void OnSended(PlatformBuf packet, bool result);
 
         /// <summary>
         /// 收到数据时回调

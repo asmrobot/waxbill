@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>waxbill</id>
+    <version>2.1.14</version>
+    <authors>asmrobot</authors>
+    <owners>asmrobot</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>usage in .net framework and .net core.</description>
+    <releaseNotes>usage in .net framework and .net core. add IncludeRuntimeFolder propery to remove libs file from project when value is false</releaseNotes>
+    <copyright>Copyright 2018</copyright>
+    <tags>waxbill</tags>
+    <dependencies>
+       <group targetFramework=".NETFramework4.5" />
+       <group targetFramework=".NETStandard2.0" />
+    </dependencies>
+  </metadata>
+</package>

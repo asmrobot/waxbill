@@ -5,9 +5,9 @@
 	  <TargetFrameworks>net45;netstandard2.0;</TargetFrameworks>
 	  <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-	  <Version>2.1.13</Version>
-	  <AssemblyVersion>2.1.13.0</AssemblyVersion>
-	  <FileVersion>2.1.13.0</FileVersion>
+	  <Version>2.1.14</Version>
+	  <AssemblyVersion>2.1.14.0</AssemblyVersion>
+	  <FileVersion>2.1.14.0</FileVersion>
 	  <Description>sample server lib</Description>
 	  <Copyright />
 	  <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0</PackageLicenseUrl>
@@ -16,10 +16,12 @@
     <IncludeRuntimeFolder>false</IncludeRuntimeFolder>
   </PropertyGroup>
 
-
+  <PropertyGroup>
+    <OutputPath>..\..\pkg-work\lib\</OutputPath>
+  </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ZTImage.Libuv" Version="2.1.13" />
+    <PackageReference Include="ZTImage.Libuv" Version="2.1.15" />
   </ItemGroup>
 
 </Project>

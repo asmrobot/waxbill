@@ -156,7 +156,7 @@ namespace waxbill
         /// 发送事件
         /// </summary>
         public event OnSendedEvent OnSended;
-        internal void RaiseOnSendedEvent(SessionBase session, IList<UVIntrop.uv_buf_t> packet, bool result)
+        internal void RaiseOnSendedEvent(SessionBase session, PlatformBuf packet, bool result)
         {
             if (this.OnSended != null)
             {
