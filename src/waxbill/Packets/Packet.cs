@@ -143,7 +143,7 @@ namespace waxbill.Packets
         /// 添加字节段
         /// </summary>
         /// <param name="bytes"></param>
-        internal void Write(IntPtr bytes,Int32 count)
+        public void Write(IntPtr bytes,Int32 count)
         {
             if (bytes!=IntPtr.Zero&&count>0)
             {
