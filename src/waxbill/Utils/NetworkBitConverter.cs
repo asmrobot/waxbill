@@ -67,6 +67,7 @@ namespace waxbill.Utils
             c.b4 = v1;
             return c.source;
         }
+
         /// <summary>
         /// 返回由网络字节数组中指定位置的八个字节转换来的 64 位有符号整数。
         /// </summary>
@@ -78,6 +79,20 @@ namespace waxbill.Utils
             return IPAddress.NetworkToHostOrder(BitConverter.ToInt64(value, startIndex));
         }
 
+        public static Int64 ToInt64(byte v1, byte v2, byte v3, byte v4, byte v5, byte v6, byte v7, byte v8)
+        {
+            convert64 c = new convert64();
+            c.b1 = v8;
+            c.b2 = v7;
+            c.b3 = v6;
+            c.b4 = v5;
+            c.b5 = v4;
+            c.b6 = v3;
+            c.b7 = v2;
+            c.b8 = v1;
+
+            return c.source;
+        }
 
         [StructLayout(LayoutKind.Explicit)]
         public struct convert32
@@ -93,6 +108,36 @@ namespace waxbill.Utils
 
             [FieldOffset(0)]
             public Int32 source;
+        }
+
+
+
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct convert64
+        {
+            [FieldOffset(0)]
+            public byte b1;
+            [FieldOffset(1)]
+            public byte b2;
+            [FieldOffset(2)]
+            public byte b3;
+            [FieldOffset(3)]
+            public byte b4;
+
+
+
+            [FieldOffset(4)]
+            public byte b5;
+            [FieldOffset(5)]
+            public byte b6;
+            [FieldOffset(6)]
+            public byte b7;
+            [FieldOffset(7)]
+            public byte b8;
+
+            [FieldOffset(0)]
+            public Int64 source;
         }
     }
 }

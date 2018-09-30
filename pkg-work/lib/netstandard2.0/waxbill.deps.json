@@ -7,7 +7,7 @@
   "targets": {
     ".NETStandard,Version=v2.0": {},
     ".NETStandard,Version=v2.0/": {
-      "waxbill/2.1.16": {
+      "waxbill/2.1.17": {
         "dependencies": {
           "NETStandard.Library": "2.0.0"
         },
@@ -24,7 +24,7 @@
     }
   },
   "libraries": {
-    "waxbill/2.1.16": {
+    "waxbill/2.1.17": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
