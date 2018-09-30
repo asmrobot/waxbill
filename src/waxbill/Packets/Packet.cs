@@ -68,7 +68,7 @@ namespace waxbill.Packets
             }
         }
         
-        internal Packet(BufferManager bufferManager)
+        public Packet(BufferManager bufferManager)
         {
             this.m_Count = 0;
             this.m_BufferManager = bufferManager;

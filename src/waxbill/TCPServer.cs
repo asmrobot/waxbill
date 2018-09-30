@@ -115,7 +115,12 @@ namespace waxbill
         /// <returns></returns>
         public TSession GetSession(long sessionID)
         {
-            return mSessions.Values.FirstOrDefault<TSession>((item) => item.ConnectionID == sessionID);
+            TSession session;
+            if (mSessions.TryGetValue(sessionID, out session))
+            {
+                return session;
+            }
+            return null;
         }
 
         /// <summary>
