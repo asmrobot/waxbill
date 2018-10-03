@@ -269,7 +269,7 @@ namespace waxbill.Sessions
         private bool PreSend()
         {
             UVWriteRequest oldQueue = this.mSendQueue;
-            if (oldQueue.Count <= 0)
+            if (oldQueue==null||oldQueue.Count <= 0)
             {
                 return true;
             }
@@ -486,6 +486,7 @@ namespace waxbill.Sessions
                 }
                 this.mSendQueue.Clear();
                 this.Monitor.ReleaseSendQueue(this.mSendQueue);
+                this.mSendQueue = null;
             }
             SetState(SessionState.Closed);
         }
