@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using System.Threading;
 using System.Collections.Concurrent;
 
-namespace waxbill.Utils
+namespace waxbill.Pools
 {
     public class BufferManager
     {

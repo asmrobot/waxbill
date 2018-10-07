@@ -56,7 +56,9 @@ namespace waxbill.Libuv
             Marshal.FreeHGlobal(memory);
         }
 
-
+        /// <summary>
+        /// 非托管资源是否无效
+        /// </summary>
         public override bool IsInvalid
         {
             get

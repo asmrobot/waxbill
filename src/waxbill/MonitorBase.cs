@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Pools;
 using waxbill.Sessions;
 using waxbill.Utils;
 

@@ -5,11 +5,14 @@ using System.Text;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 
-namespace waxbill.Utils
+namespace waxbill.Pools
 {
-    public class SendingPool : PoolBase<UVWriteRequest>
+    /// <summary>
+    /// 发送队列池
+    /// </summary>
+    public class SendingQueuePool : PoolBase<UVWriteRequest>
     {
-        public SendingPool():base(3,0)
+        public SendingQueuePool():base(3,0)
         {}
         protected override UVWriteRequest CreateItem(int index)
         {
