@@ -15,11 +15,7 @@ namespace waxbill.Libuv
 
         public UVHandle(GCHandleType gcType) : base(gcType)
         { }
-
-        protected void CreateHandle(Int32 size)
-        {
-            CreateMemory(size);
-        }
+        
 
         protected void CreateHandle(UVHandleType type)
         {

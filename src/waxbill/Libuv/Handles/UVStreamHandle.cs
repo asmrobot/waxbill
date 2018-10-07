@@ -18,9 +18,9 @@ namespace waxbill.Libuv
         
         private readonly static UVIntrop.uv_read_cb mOnRead = UVReadCb;
         private readonly static UVIntrop.uv_alloc_cb mOnAlloc = UVAllocCb;
+
         private AllocCallback mAllocCallback;
         private ReadCallback mReadCallback;
-
         private object mAllocCallbackState;        
         private object mReadCallbackState;
         
@@ -30,6 +30,7 @@ namespace waxbill.Libuv
             this.mReadCallback = readCallback;
             this.mReadCallbackState = readState;
             this.mAllocCallbackState = allocState;
+
             UVIntrop.read_start(this, mOnAlloc, mOnRead);
         }
 
@@ -98,9 +99,7 @@ namespace waxbill.Libuv
                 throw new UVException("流已释放");
             }
             target.mReadCallback(target, nread, ex,ref buf, target.mReadCallbackState);
-        }
-
-        
+        }        
         #endregion
     }
 }
