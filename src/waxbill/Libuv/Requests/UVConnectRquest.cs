@@ -67,7 +67,7 @@ namespace waxbill.Libuv
             }
             catch (Exception ex)
             {
-                throw;
+                throw ex;
             }
             finally
             {

@@ -344,8 +344,7 @@ namespace waxbill
             {
                 return;
             }
-
-            byte[] retDatas = null;
+            
             Exception exception = null;
             TCPClient client = new TCPClient();
             ManualResetEvent mre = new ManualResetEvent(false);

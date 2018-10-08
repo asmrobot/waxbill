@@ -199,7 +199,7 @@ namespace waxbill.Sessions
             {
                 return false;
             }
-
+            
             if (!oldQueue.Enqueue(data))
             {
                 reTry = true;
@@ -294,22 +294,22 @@ namespace waxbill.Sessions
             return InternalSend(oldQueue);
         }
 
-        private bool InternalSend(UVWriteRequest queue)
+        private bool InternalSend(UVWriteRequest oldQueue)
         {
             if (IsClosingOrClosed)
             {
-                SendEnd(queue, CloseReason.Closeing);
+                SendEnd(oldQueue, CloseReason.Closeing);
                 return false;
             }
 
             try
             {
-                this.TcpHandle.Write(queue,SendCompleted,null);
+                this.TcpHandle.Write(oldQueue,SendCompleted,null);
             }
             catch (Exception ex)
             {
                 Trace.Error("发送出现错误", ex);
-                SendEnd(queue, CloseReason.Exception);
+                SendEnd(oldQueue, CloseReason.Exception);
                 return false;
             }
 

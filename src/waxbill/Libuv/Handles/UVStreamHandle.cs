@@ -84,9 +84,12 @@ namespace waxbill.Libuv
         /// <param name="state"></param>
         public unsafe void Write(UVWriteRequest request, Action<UVWriteRequest, Int32, UVException, object> callback, object state)
         {
-            System.Threading.ThreadPool.QueueUserWorkItem((obj) => {
-                request.Write(this, callback, state);
-            });
+            //todo:write是同步的么，为什么要在线程池里运行？
+            //System.Threading.ThreadPool.QueueUserWorkItem((obj) => {
+            //    request.Write(this, callback, state);
+            //});
+
+            request.Write(this, callback, state);
         }
 
         #region UVCallback

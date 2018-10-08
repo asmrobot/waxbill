@@ -229,8 +229,7 @@ namespace waxbill.Libuv
                 this.mWriteCallback = null;
                 this.mWriteCallbackState = null;
                 UnpinGCHandles();
-                //Trace.Error("UvWriteCb", ex);
-                throw;
+                throw ex;
             }
         }
         
