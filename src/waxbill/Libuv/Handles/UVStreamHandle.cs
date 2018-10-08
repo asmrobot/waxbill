@@ -24,6 +24,13 @@ namespace waxbill.Libuv
         private object mAllocCallbackState;        
         private object mReadCallbackState;
         
+        /// <summary>
+        /// 开始从流中读取数据
+        /// </summary>
+        /// <param name="allocCallback"></param>
+        /// <param name="readCallback"></param>
+        /// <param name="allocState"></param>
+        /// <param name="readState"></param>
         public void ReadStart(AllocCallback allocCallback, ReadCallback readCallback,object allocState,object readState)
         {
             this.mAllocCallback = allocCallback;
@@ -33,22 +40,35 @@ namespace waxbill.Libuv
             UVIntrop.read_start(this, mOnAlloc, mOnRead);
         }
 
+        /// <summary>
+        /// 结束从流中读取数据
+        /// </summary>
         public void ReadStop()
         {
             UVIntrop.read_stop(this);
         } 
 
+        /// <summary>
+        /// 向流中写入数据
+        /// </summary>
+        /// <param name="datas"></param>
         public void Write(byte[] datas)
         {
             Write(datas,0, datas.Length);
         }
 
+        /// <summary>
+        /// 向流中写入数据
+        /// </summary>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
         public unsafe void Write(byte[] datas,Int32 offset, Int32 count)
         {
             fixed (byte* p = datas)
             {
                 UVIntrop.uv_buf_t[] mbuf = new UVIntrop.uv_buf_t[]{
-                    UVIntrop.buf_init((IntPtr)(p+offset), count)
+                    new UVIntrop.uv_buf_t((IntPtr)(p+offset), count)
                 };
                 
                 UVIntrop.try_write(this, mbuf, 1);
@@ -56,7 +76,7 @@ namespace waxbill.Libuv
         }
         
         /// <summary>
-        /// 写入数据
+        /// 向流中写入数据
         /// </summary>
         /// <param name="request"></param>
         /// <param name="callback"></param>
@@ -69,6 +89,12 @@ namespace waxbill.Libuv
         }
 
         #region UVCallback
+        /// <summary>
+        /// 分配内存回调
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="suggestedSize"></param>
+        /// <param name="buf"></param>
         private static void UVAllocCb(IntPtr handle, int suggestedSize, out UVIntrop.uv_buf_t buf)
         {
             UVStreamHandle target=FromIntPtr<UVStreamHandle>(handle);
@@ -87,6 +113,12 @@ namespace waxbill.Libuv
             }
         }
 
+        /// <summary>
+        /// 读取回调
+        /// </summary>
+        /// <param name="handle"></param>
+        /// <param name="nread"></param>
+        /// <param name="buf"></param>
         private unsafe static void UVReadCb(IntPtr handle, int nread, ref UVIntrop.uv_buf_t buf)
         {
             UVException ex;

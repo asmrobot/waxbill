@@ -20,20 +20,25 @@ namespace waxbill.Libuv
     public class UVIntrop
     {
         public static readonly bool IsWindows;
-        
+
         static UVIntrop()
         {
             IsWindows = System.Environment.OSVersion.Platform == PlatformID.Win32NT;
-            Initialize();
+#if NET45
+            LoadDL();
+#endif
         }
 
         public const Int32 UV_EOF = -4095;
 
-        private static void Initialize()
+        /// <summary>
+        /// 加载动态链接库
+        /// </summary>
+        private static void LoadDL()
         {
             string dir = AppDomain.CurrentDomain.BaseDirectory;
             string filename = string.Empty;
-#if NET45
+
             if (System.Environment.OSVersion.Platform == PlatformID.Win32NT)
             {
                 if (IntPtr.Size == 4)
@@ -54,73 +59,17 @@ namespace waxbill.Libuv
                 filename = Path.Combine(dir, "osx", "native", "libuv.dylib");
             }
 
-            NativeLibraryHelper.LoadLibrary(filename);
-#endif
-            //#else
-            //            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            //            {
-            //                if (RuntimeInformation.OSArchitecture == Architecture.X86)
-            //                {
-            //                    filename = Path.Combine(dir, "win-x86", "native", "libuv.dll");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
-            //                {
-            //                    filename = Path.Combine(dir, "win-x64",  "native","libuv.dll");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm || RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            //                {
-            //                    filename = Path.Combine(dir, "win-arm", "native", "libuv.dll");
-            //                }
-            //            }
-            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            //            {
-            //                if (RuntimeInformation.OSArchitecture == Architecture.Arm)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-arm", "native", "libuv.so");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-arm64",  "native","libuv.so");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-x64",  "native","libuv.so");
-            //                }
-            //            }
-            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            //            {
-            //                filename = Path.Combine(dir, "osx",  "native","libuv.dylib");
-            //            }
-            //            else
-            //            {
-            //                throw new Exception("unknow operation");
-            //            }
-            //            if (string.IsNullOrEmpty(filename))
-            //            {
-            //                throw new Exception("unknow process arch");
-            //            }
-            //            NativeLibraryHelper.LoadLibrary(filename);
-            //#endif
-
-
+            NativeFactory.LoadLibrary(filename);
         }
 
-        #region tools
+        #region Errors
         public static void ThrowIfErrored(int statusCode)
         {
             // Note: method is explicitly small so the success case is easily inlined
             if (statusCode < 0)
             {
-                ThrowError(statusCode);
+                throw GetError(statusCode);
             }
-        }
-
-        private static void ThrowError(int statusCode)
-        {
-            // Note: only has one throw block so it will marked as "Does not return" by the jit
-            // and not inlined into previous function, while also marking as a function
-            // that does not need cpu register prep to call (see: https://github.com/dotnet/coreclr/pull/6103)
-            throw GetError(statusCode);
         }
 
         public static void Check(int statusCode, out UVException error)
@@ -135,27 +84,33 @@ namespace waxbill.Libuv
         {
             // Note: method marked as NoInlining so it doesn't bloat either of the two preceeding functions
             // Check and ThrowError and alter their jit heuristics.
-            var errorName =err_name(statusCode);
-            var errorDescription =strerror(statusCode);
+            var errorName = err_name(statusCode);
+            var errorDescription = strerror(statusCode);
             return new UVException("Error " + statusCode + " " + errorName + " " + errorDescription, statusCode);
         }
-#endregion
-        
-#region Struct
+        #endregion
+
+        #region Struct
         [StructLayout(LayoutKind.Sequential)]
         public struct uv_req_t
         {
             public IntPtr data;
             public UVRequestType type;
         }
-        
-        public enum UV_RUN_MODE:Int32
+
+        /// <summary>
+        /// 事件循环模式
+        /// </summary>
+        public enum UV_RUN_MODE : Int32
         {
             UV_RUN_DEFAULT = 0,
             UV_RUN_ONCE,
             UV_RUN_NOWAIT
         }
 
+        /// <summary>
+        /// 缓存
+        /// </summary>
         public struct uv_buf_t
         {
             // this type represents a WSABUF struct on Windows
@@ -166,10 +121,10 @@ namespace waxbill.Libuv
             // names in this type don't have meaningful symbolic names. instead, they are
             // assigned in the correct order by the constructor at runtime
 
-            public readonly IntPtr _field0;
-            public readonly IntPtr _field1;
+            private readonly IntPtr _field0;
+            private readonly IntPtr _field1;
 
-            public uv_buf_t(IntPtr memory, int len, bool IsWindows)
+            public uv_buf_t(IntPtr memory, int len)
             {
                 if (IsWindows)
                 {
@@ -182,13 +137,30 @@ namespace waxbill.Libuv
                     _field1 = (IntPtr)len;
                 }
             }
-            
+
+            /// <summary>
+            /// 缓存大小
+            /// </summary>
+            public IntPtr Length
+            {
+                get
+                {
+                    return IsWindows ? _field0 : _field1;
+                }
+            }
+
+            public IntPtr Buffer
+            {
+                get
+                {
+                    return IsWindows ? _field1 : _field0;
+                }
+            }
         }
+        #endregion
 
-#endregion
 
-
-#region Functions
+        #region Functions
 
         public static void loop_init(UVLoopHandle handle)
         {
@@ -230,7 +202,7 @@ namespace waxbill.Libuv
             handle.Validate();
             ThrowIfErrored(uv_fileno(handle, ref socket));
         }
-        
+
         public static void close(UVHandle handle, uv_close_cb close_cb)
         {
             handle.Validate(closed: true);
@@ -249,7 +221,7 @@ namespace waxbill.Libuv
             ThrowIfErrored(uv_idle_init(loop, handle));
         }
 
-        public static void idle_start( UVIdleHandle handle,uv_idle_cb cb)
+        public static void idle_start(UVIdleHandle handle, uv_idle_cb cb)
         {
             handle.Validate();
             ThrowIfErrored(uv_idle_start(handle, cb));
@@ -297,7 +269,7 @@ namespace waxbill.Libuv
             handle.Validate();
             ThrowIfErrored(uv_tcp_nodelay(handle, enable ? 1 : 0));
         }
-        
+
         public static void listen(UVStreamHandle handle, int backlog, uv_connection_cb cb)
         {
             handle.Validate();
@@ -310,7 +282,7 @@ namespace waxbill.Libuv
             client.Validate();
             ThrowIfErrored(uv_accept(server, client));
         }
-        
+
 
         public static void read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb)
         {
@@ -395,48 +367,34 @@ namespace waxbill.Libuv
             return uv_now(loop);
         }
 
-        
+
         public static void tcp_getsockname(UVTCPHandle handle, out SockAddr addr, ref int namelen)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_getsockname(handle, out addr, ref namelen));
         }
 
-        
+
         public static void tcp_getpeername(UVTCPHandle handle, out SockAddr addr, ref int namelen)
         {
             handle.Validate();
             ThrowIfErrored(uv_tcp_getpeername(handle, out addr, ref namelen));
         }
-
-        public static uv_buf_t buf_init(IntPtr memory, int len)
-        {
-            return new uv_buf_t(memory, len, IsWindows);
-        }
-
-
+        
         /// <summary>
         /// 内存数据移动
         /// </summary>
         /// <param name="dest"></param>
         /// <param name="src"></param>
         /// <param name="size"></param>
-        /// <param name="isWindows"></param>
-        public static void memorymove( IntPtr src, IntPtr dest, Int32 size, bool isWindows)
+        public static void memorymove(IntPtr src, IntPtr dest, Int32 size)
         {
-            if (isWindows)
-            {
-                MoveMemory(dest, src, (uint)size);
-            }
-            else
-            {
-                memmove(dest, src, (uint)size);
-            }
+            NativeFactory.MoveMemory(dest, src, (uint)size);
         }
 
-#endregion
-        
-#region Unmanaged Functions
+        #endregion
+
+        #region Unmanaged Functions
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void uv_connect_cb(IntPtr req, int status);
 
@@ -466,9 +424,9 @@ namespace waxbill.Libuv
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void uv_idle_cb(IntPtr server);
-#endregion
+        #endregion
 
-#region P/Invoke
+        #region P/Invoke
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_loop_init(UVLoopHandle handle);
 
@@ -517,14 +475,14 @@ namespace waxbill.Libuv
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_tcp_nodelay(UVTCPHandle handle, int enable);
 
-        
+
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_listen(UVStreamHandle handle, int backlog, uv_connection_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
-        
+
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public extern static int uv_read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
@@ -563,7 +521,7 @@ namespace waxbill.Libuv
         public static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
+        public static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
@@ -573,7 +531,7 @@ namespace waxbill.Libuv
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         public static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
-        
+
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         unsafe public static extern long uv_now(UVLoopHandle loop);
 
@@ -595,17 +553,13 @@ namespace waxbill.Libuv
 
 
 
-        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory", CharSet = CharSet.Ansi)]
-        public extern static long MoveMemory(IntPtr dest, IntPtr src, uint size);
-
-
-        [DllImport("libm.so")]
-        public static extern void memmove(IntPtr dest, IntPtr src, uint length);
 
 
 
 
 
-#endregion
+
+
+        #endregion
     }
 }

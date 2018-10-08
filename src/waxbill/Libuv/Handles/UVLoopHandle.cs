@@ -42,9 +42,9 @@ namespace waxbill.Libuv
         {
             if (Interlocked.CompareExchange(ref this.mStateMutex, 1, 0) == 0)
             {
-                Thread thread = new Thread(StartThread);
-                thread.IsBackground = true;
-                thread.Start(callback);
+                Task.Run(() => {
+                    StartThread(callback);
+                });
             }            
         }
 

@@ -29,9 +29,7 @@ namespace waxbill
             mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
             mSendPool = new SendingPool();
         }
-
-
-
+        
         private ClientSession mSession;//会话
         private UVTCPHandle mTCPHandle;//tcp连接
         private Int32 mIsConnected = 0;
@@ -404,7 +402,7 @@ namespace waxbill
         /// 获取接收缓存
         /// </summary>
         /// <returns></returns>
-        protected internal override bool TryGetReceiveMemory(out IntPtr memory)
+        protected internal override bool TryGetReceiveBuffer(out IntPtr memory)
         {
             memory = IntPtr.Zero;
             try

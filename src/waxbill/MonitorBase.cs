@@ -53,7 +53,7 @@ namespace waxbill
         /// 获取接收缓存
         /// </summary>
         /// <returns></returns>
-        protected internal abstract bool TryGetReceiveMemory(out IntPtr memory);
+        protected internal abstract bool TryGetReceiveBuffer(out IntPtr memory);
 
         /// <summary>
         /// 释放接收缓存

@@ -134,6 +134,11 @@ namespace waxbill.Libuv
         //todo:重载各种write
 
         #region  Callback
+        /// <summary>
+        /// 连接回调
+        /// </summary>
+        /// <param name="server"></param>
+        /// <param name="status"></param>
         private static void UVConnectionCb(IntPtr server, Int32 status)
         {
             UVException error;

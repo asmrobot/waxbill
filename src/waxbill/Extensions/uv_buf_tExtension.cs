@@ -17,19 +17,12 @@ namespace waxbill.Extensions
         /// <returns></returns>
         public static PlatformBuf ToPlatformBuf(this uv_buf_t buf)
         {
-            if (IsWindows)
-            {
-                return new PlatformBuf(buf._field1, buf._field0);
-            }
-            else
-            {
-                return new PlatformBuf(buf._field0, buf._field1);
-            }
+            return new PlatformBuf(buf.Buffer, buf.Length);
         }
 
         public static uv_buf_t FromPlatformBuf(this PlatformBuf platformBuf)
         {
-            return new uv_buf_t(platformBuf.Buffer, platformBuf.Count.ToInt32(), UVIntrop.IsWindows);
+            return new uv_buf_t(platformBuf.Buffer, platformBuf.Count.ToInt32());
         }
 
 

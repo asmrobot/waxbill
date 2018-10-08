@@ -19,7 +19,7 @@ namespace waxbill.Sessions
         public long ConnectionID { get; private set; }//连接ID
 
         protected MonitorBase Monitor;
-        internal UVTCPHandle TcpHandle;//客户端socket
+        internal UVTCPHandle TcpHandle;//对方socket
         private Int32 mState = 0;//会话状态
         private Packet mPacket;//本包
         
@@ -454,9 +454,9 @@ namespace waxbill.Sessions
 
                 this.OnDisconnected(reason);
 
-                if (this.mReadDatas != IntPtr.Zero)
+                if (this.readBuffer != IntPtr.Zero)
                 {
-                    Marshal.FreeHGlobal(this.mReadDatas);
+                    Marshal.FreeHGlobal(this.readBuffer);
                 }
 
                 this.TcpHandle.Close();
@@ -493,8 +493,8 @@ namespace waxbill.Sessions
         #endregion
 
         #region handle
-        private IntPtr mReadDatas = IntPtr.Zero;
-        private Int32 mReadOffset = 0;
+        private IntPtr readBuffer = IntPtr.Zero;
+        private Int32 readOffset = 0;
 
         /// <summary>
         /// 分配内存
@@ -505,15 +505,15 @@ namespace waxbill.Sessions
         /// <returns></returns>
         internal UVIntrop.uv_buf_t AllocMemoryCallback(UVStreamHandle handle, Int32 suggsize, object state)
         {
-            if (mReadDatas == IntPtr.Zero)
+            if (readBuffer == IntPtr.Zero)
             {
-                if (!this.Monitor.TryGetReceiveMemory(out mReadDatas))
+                if (!this.Monitor.TryGetReceiveBuffer(out readBuffer))
                 {
-                    throw new ArgumentOutOfRangeException("allow bytes");
+                    throw new ArgumentOutOfRangeException("can't allow bytes");
                 }
             }
 
-            return new UVIntrop.uv_buf_t(mReadDatas + mReadOffset, this.Monitor.Option.ReceiveBufferSize - this.mReadOffset, UVIntrop.IsWindows);
+            return new UVIntrop.uv_buf_t(readBuffer + readOffset, this.Monitor.Option.ReceiveBufferSize - this.readOffset);
         }
 
         /// <summary>
@@ -540,25 +540,25 @@ namespace waxbill.Sessions
             }
 
             Int32 giveupCount = 0;
-            this.mReadOffset += nread;
+            this.readOffset += nread;
 
-            this.ReceiveCompleted(this.mReadDatas, this.mReadOffset, out giveupCount);
+            this.ReceiveCompleted(this.readBuffer, this.readOffset, out giveupCount);
             if (giveupCount > 0)
             {
-                if (giveupCount < this.mReadOffset)
+                if (giveupCount < this.readOffset)
                 {
                     //没读完
-                    this.mReadOffset = this.mReadOffset - giveupCount;
-                    if (this.mReadOffset >= this.Monitor.Option.ReceiveBufferSize)
+                    this.readOffset = this.readOffset - giveupCount;
+                    if (this.readOffset >= this.Monitor.Option.ReceiveBufferSize)
                     {
                         throw new ArgumentOutOfRangeException("数据没有读取,数据缓冲区已满");
                     }
-                    UVIntrop.memorymove(this.mReadDatas + giveupCount, this.mReadDatas, this.mReadOffset, UVIntrop.IsWindows);
+                    UVIntrop.memorymove(this.readBuffer + giveupCount, this.readBuffer, this.readOffset);
                 }
                 else
                 {
                     //读完
-                    this.mReadOffset = 0;
+                    this.readOffset = 0;
                 }
             }
         }

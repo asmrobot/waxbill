@@ -27,18 +27,24 @@ namespace waxbill.Libuv
         public UVWriteRequest() 
         {
             Int32 requestSize = UVIntrop.req_size(UVRequestType.WRITE);
-            var bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * QUEUE_SIZE;
+            Int32 bufferSize = Marshal.SizeOf(typeof(UVIntrop.uv_buf_t)) * QUEUE_SIZE;
             this.mPins = new GCHandle[QUEUE_SIZE];
             CreateMemory(requestSize + bufferSize);
             this.mBuffer = (UVIntrop.uv_buf_t*)(this.handle + requestSize);
         }
 
         #region 队列操作 
+        /// <summary>
+        /// 开始入队
+        /// </summary>
         public void StartEnqueue()
         {
             m_IsReadOnly = false;
         }
 
+        /// <summary>
+        /// 停止入队
+        /// </summary>
         public void StopEnqueue()
         {
             if (m_IsReadOnly)
@@ -60,6 +66,11 @@ namespace waxbill.Libuv
             }
         }
         
+        /// <summary>
+        /// 入队列
+        /// </summary>
+        /// <param name="item"></param>
+        /// <returns></returns>
         public bool Enqueue(ArraySegment<byte> item)
         {
             if (m_IsReadOnly)
@@ -86,6 +97,12 @@ namespace waxbill.Libuv
             return false;
         }
 
+        /// <summary>
+        /// 尝试入队
+        /// </summary>
+        /// <param name="item"></param>
+        /// <param name="conflict"></param>
+        /// <returns></returns>
         private unsafe bool TryEnqueue(ArraySegment<byte> item, out bool conflict)
         {
             conflict = false;
@@ -104,11 +121,16 @@ namespace waxbill.Libuv
             //添加
             var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
             mPins[currentCount]=gcHandle;
-            this.mBuffer[currentCount] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+            this.mBuffer[currentCount] = new UVIntrop.uv_buf_t(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
 
             return true;
         }
 
+        /// <summary>
+        /// 批量入队
+        /// </summary>
+        /// <param name="items"></param>
+        /// <returns></returns>
         public bool Enqueue(IList<ArraySegment<byte>> items)
         {
             if (m_IsReadOnly)
@@ -135,6 +157,12 @@ namespace waxbill.Libuv
             return false;
         }
 
+        /// <summary>
+        /// 尝试批量入队
+        /// </summary>
+        /// <param name="items"></param>
+        /// <param name="conflict"></param>
+        /// <returns></returns>
         private bool TryEnqueue(IList<ArraySegment<byte>> items, out bool conflict)
         {
             conflict = false;
@@ -155,7 +183,7 @@ namespace waxbill.Libuv
                 ArraySegment<byte> item = items[i];
                 var gcHandle = GCHandle.Alloc(item.Array, GCHandleType.Pinned);
                 mPins[oldCurrent+i] = gcHandle;
-                this.mBuffer[oldCurrent+i] = UVIntrop.buf_init(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
+                this.mBuffer[oldCurrent+i] = new UVIntrop.uv_buf_t(gcHandle.AddrOfPinnedObject() + item.Offset, item.Count);
             }
             return true;
         }
