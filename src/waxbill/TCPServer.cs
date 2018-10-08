@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Pools;
 using waxbill.Sessions;
 using waxbill.Utils;
 
@@ -24,7 +25,7 @@ namespace waxbill
         private ConcurrentDictionary<Int64, TSession> mSessions = new ConcurrentDictionary<Int64, TSession>();//在线会话
         private Timer mRecycleTimer = null;//异常会话回收定时器
         private Int32 IsRunning = 0;
-        private SendingPool mSendPool;//发送池
+        private SendingQueuePool mSendPool;//发送池
 
 
 
@@ -34,7 +35,7 @@ namespace waxbill
         public TCPServer(IProtocol protocol,TCPOption option)
             :base(protocol, option, new BufferManager(option.BufferSize, option.BufferIncemerCount))
         {
-            this.mSendPool = new SendingPool();
+            this.mSendPool = new SendingQueuePool();
             this.Listener = new TCPListener();
             this.Listener.OnNewConnected += OnNewConnected;
         }

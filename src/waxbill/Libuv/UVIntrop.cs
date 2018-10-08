@@ -59,10 +59,65 @@ namespace waxbill.Libuv
                 filename = Path.Combine(dir, "osx", "native", "libuv.dylib");
             }
 
+<<<<<<< HEAD
             NativeFactory.LoadLibrary(filename);
         }
 
         #region Errors
+=======
+            NativeLibraryHelper.LoadLibrary(filename);
+#endif
+            //#else
+            //            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            //            {
+            //                if (RuntimeInformation.OSArchitecture == Architecture.X86)
+            //                {
+            //                    filename = Path.Combine(dir, "win-x86", "native", "libuv.dll");
+            //                }
+            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
+            //                {
+            //                    filename = Path.Combine(dir, "win-x64",  "native","libuv.dll");
+            //                }
+            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm || RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            //                {
+            //                    filename = Path.Combine(dir, "win-arm", "native", "libuv.dll");
+            //                }
+            //            }
+            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            //            {
+            //                if (RuntimeInformation.OSArchitecture == Architecture.Arm)
+            //                {
+            //                    filename = Path.Combine(dir, "linux-arm", "native", "libuv.so");
+            //                }
+            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            //                {
+            //                    filename = Path.Combine(dir, "linux-arm64",  "native","libuv.so");
+            //                }
+            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
+            //                {
+            //                    filename = Path.Combine(dir, "linux-x64",  "native","libuv.so");
+            //                }
+            //            }
+            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            //            {
+            //                filename = Path.Combine(dir, "osx",  "native","libuv.dylib");
+            //            }
+            //            else
+            //            {
+            //                throw new Exception("unknow operation");
+            //            }
+            //            if (string.IsNullOrEmpty(filename))
+            //            {
+            //                throw new Exception("unknow process arch");
+            //            }
+            //            NativeLibraryHelper.LoadLibrary(filename);
+            //#endif
+
+
+        }
+
+        #region Utilitys
+>>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
         public static void ThrowIfErrored(int statusCode)
         {
             // Note: method is explicitly small so the success case is easily inlined
@@ -428,115 +483,129 @@ namespace waxbill.Libuv
 
         #region P/Invoke
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_loop_init(UVLoopHandle handle);
+        private static extern int uv_loop_init(UVLoopHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_loop_close(IntPtr a0);
+        private static extern int uv_loop_close(IntPtr a0);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_run(UVLoopHandle handle, int mode);
+        private static extern int uv_run(UVLoopHandle handle, int mode);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void uv_stop(UVLoopHandle handle);
+        private static extern void uv_stop(UVLoopHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void uv_ref(UVHandle handle);
+        private static extern void uv_ref(UVHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void uv_unref(UVHandle handle);
+        private static extern void uv_unref(UVHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_fileno(UVHandle handle, ref IntPtr socket);
+        private static extern int uv_fileno(UVHandle handle, ref IntPtr socket);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern void uv_close(IntPtr handle, uv_close_cb close_cb);
+        private static extern void uv_close(IntPtr handle, uv_close_cb close_cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_idle_init(UVLoopHandle loop, UVIdleHandle handle);
+        private static extern int uv_idle_init(UVLoopHandle loop, UVIdleHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_idle_start(UVIdleHandle handle, uv_idle_cb cb);
+        private static extern int uv_idle_start(UVIdleHandle handle, uv_idle_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_idle_stop(UVIdleHandle handle);
+        private static extern int uv_idle_stop(UVIdleHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uv_async_send")]
-        public extern static int uv_unsafe_async_send(IntPtr handle);
+        private extern static int uv_unsafe_async_send(IntPtr handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_init(UVLoopHandle loop, UVTCPHandle handle);
+        private static extern int uv_tcp_init(UVLoopHandle loop, UVTCPHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_bind(UVTCPHandle handle, ref SockAddr addr, int flags);
+        private static extern int uv_tcp_bind(UVTCPHandle handle, ref SockAddr addr, int flags);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_open(UVTCPHandle handle, IntPtr hSocket);
+        private static extern int uv_tcp_open(UVTCPHandle handle, IntPtr hSocket);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_nodelay(UVTCPHandle handle, int enable);
+        private static extern int uv_tcp_nodelay(UVTCPHandle handle, int enable);
 
 
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_listen(UVStreamHandle handle, int backlog, uv_connection_cb cb);
+        private static extern int uv_listen(UVStreamHandle handle, int backlog, uv_connection_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+<<<<<<< HEAD
         public static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
 
+=======
+        private static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
+        
+>>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public extern static int uv_read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
+        private extern static int uv_read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_read_stop(UVStreamHandle handle);
+        private static extern int uv_read_stop(UVStreamHandle handle);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_try_write(UVStreamHandle handle, uv_buf_t[] bufs, int nbufs);
+        private static extern int uv_try_write(UVStreamHandle handle, uv_buf_t[] bufs, int nbufs);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_write(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb);
+        private unsafe static extern int uv_write(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, uv_write_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern int uv_write2(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb);
+        private unsafe static extern int uv_write2(UVWriteRequest req, UVStreamHandle handle, uv_buf_t* bufs, int nbufs, UVStreamHandle sendHandle, uv_write_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public extern static IntPtr uv_err_name(int err);
+        private extern static IntPtr uv_err_name(int err);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern IntPtr uv_strerror(int err);
+        private static extern IntPtr uv_strerror(int err);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_loop_size();
+        private static extern int uv_loop_size();
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_handle_size(UVHandleType handleType);
+        private static extern int uv_handle_size(UVHandleType handleType);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_req_size(UVRequestType reqType);
+        private static extern int uv_req_size(UVRequestType reqType);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_ip4_addr(string ip, int port, out SockAddr addr);
+        private static extern int uv_ip4_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
+        private static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+<<<<<<< HEAD
         public static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb);
+=======
+        private static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
+>>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
+        private static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int uv_tcp_getpeername(UVTCPHandle handle, out SockAddr name, ref int namelen);
+        private static extern int uv_tcp_getpeername(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
+<<<<<<< HEAD
         public static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
 
+=======
+        private static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
+        
+>>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-        unsafe public static extern long uv_now(UVLoopHandle loop);
+        private unsafe static extern long uv_now(UVLoopHandle loop);
 
         [DllImport("WS2_32.dll", CallingConvention = CallingConvention.Winapi)]
-        unsafe public static extern int WSAIoctl(
+        private unsafe static extern int WSAIoctl(
             IntPtr socket,
             int dwIoControlCode,
             int* lpvInBuffer,
@@ -549,10 +618,11 @@ namespace waxbill.Libuv
         );
 
         [DllImport("WS2_32.dll", CallingConvention = CallingConvention.Winapi)]
-        public static extern int WSAGetLastError();
+        private static extern int WSAGetLastError();
 
 
 
+<<<<<<< HEAD
 
 
 
@@ -561,5 +631,15 @@ namespace waxbill.Libuv
 
 
         #endregion
+=======
+        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory", CharSet = CharSet.Ansi)]
+        private extern static long MoveMemory(IntPtr dest, IntPtr src, uint size);
+
+
+        [DllImport("libm.so")]
+        private static extern void memmove(IntPtr dest, IntPtr src, uint length);
+        
+#endregion
+>>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
     }
 }

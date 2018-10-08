@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using waxbill.Packets;
+using waxbill.Pools;
 using waxbill.Utils;
 namespace waxbill.Protocols
 {

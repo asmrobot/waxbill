@@ -6,49 +6,53 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace waxbill.Utils
+namespace waxbill.Pools
 {
+    /// <summary>
+    /// 池基类
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public abstract class PoolBase<T>
     {
-        private int mMinCount;
+        private int minCount;
         /// <summary>
-        /// 最小发送队列数
+        /// 池最小容量
         /// </summary>
         public int MinCount
         {
             get
             {
-                return mMinCount;
+                return minCount;
             }
         }
 
-        private int mMaxCount;
+        private int maxCount;
         /// <summary>
-        /// 最大发送队列数
+        /// 池最大容量
         /// </summary>
         public int MaxCount
         {
             get
             {
-                return mMaxCount;
+                return maxCount;
             }
         }
 
-        private int mCount;
+        private int count;
         
         /// <summary>
-        /// 目前发送队列数
+        /// 目前池容量
         /// </summary>
         public int Count
         {
             get
             {
-                return mCount;
+                return count;
             }
         }
 
         /// <summary>
-        /// 空闲队列数
+        /// 池空闲容量
         /// </summary>
         public int IdleCount
         {
@@ -59,7 +63,7 @@ namespace waxbill.Utils
         }
 
         private ConcurrentStack<T> mPool;
-        private List<T[]> mSourceCoutainer;
+        private List<T[]> mArrayContainer;
         private int m_Increase = 0;
 
 
@@ -71,9 +75,7 @@ namespace waxbill.Utils
         /// <param name="size"></param>
         public PoolBase(int minCount, int maxCount)
         {
-            this.mPool = new ConcurrentStack<T>();
-            this.mSourceCoutainer = new List<T[]>();
-            
+
             if (minCount < 1)
             {
                 throw new ArgumentOutOfRangeException("minCount不能小于1");
@@ -84,25 +86,26 @@ namespace waxbill.Utils
                 throw new ArgumentOutOfRangeException("限制maxCount时，其不能小于minCount");
             }
 
+            this.mPool = new ConcurrentStack<T>();
+            this.mArrayContainer = new List<T[]>();
 
-            this.mMinCount = minCount;
-            this.mMaxCount = maxCount;
+            this.minCount = minCount;
+            this.maxCount = maxCount;
             
-            //初始化
+            
             IncreaseCapity(minCount);
         }
 
        
         /// <summary>
-        /// 扩容数量
+        /// 增加
         /// </summary>
-        /// <param name="count">多少个队列</param>
-        /// <param name="size">每个队列大小</param>
+        /// <param name="count">要增加的数量</param>
         private bool IncreaseCapity(int count)
         {
-            if (this.mMaxCount > 0)
+            if (this.maxCount > 0)
             {
-                count = Math.Min(count, this.mMaxCount - this.Count);
+                count = Math.Min(count, this.maxCount - this.Count);
                 if (count <= 0)
                 {
                     return false;
@@ -110,14 +113,14 @@ namespace waxbill.Utils
             }
             
             T[] items = new T[count];
-            this.mSourceCoutainer.Add(items);
+            this.mArrayContainer.Add(items);
 
             for (int i = 0; i < count; i++)
             {
                 T item = CreateItem(i);
                 this.mPool.Push(item);
             }
-            mCount += count;
+            this.count += count;
             return true;
         }
 
@@ -163,7 +166,7 @@ namespace waxbill.Utils
                     continue;
                 }
 
-                bool result = IncreaseCapity(this.mMinCount);
+                bool result = IncreaseCapity(this.minCount);
                 m_Increase = 0;
                 if (!result)
                 {

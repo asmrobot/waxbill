@@ -14,7 +14,7 @@ namespace waxbill.Libuv
         
         public UVLoopHandle()
         {
-            CreateHandle(UVIntrop.loop_size());
+            CreateMemory(UVIntrop.loop_size());
             UVIntrop.loop_init(this);
         }
 

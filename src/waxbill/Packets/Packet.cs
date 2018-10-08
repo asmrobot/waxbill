@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using waxbill.Pools;
 using waxbill.Utils;
 
 namespace waxbill.Packets

@@ -12,12 +12,14 @@ using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
 using waxbill.Protocols;
+using waxbill.Pools;
+
 namespace waxbill
 {
     public class TCPClient:MonitorBase
     {
         private const Int32 DEFAULT_MILLISECONDS_TIMEOUT = 15000;
-        private static SendingPool mSendPool;
+        private static SendingQueuePool mSendPool;
         private static BufferManager mBufferManager;
         private readonly static TCPOption mOption;
         private static Int32 mConnectID = 0;
@@ -27,7 +29,7 @@ namespace waxbill
         {
             mOption = TCPOption.Define;
             mBufferManager = new BufferManager(mOption.BufferSize, mOption.BufferIncemerCount);
-            mSendPool = new SendingPool();
+            mSendPool = new SendingQueuePool();
         }
         
         private ClientSession mSession;//会话
