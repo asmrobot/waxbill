@@ -58,67 +58,11 @@ namespace waxbill.Libuv
             {
                 filename = Path.Combine(dir, "osx", "native", "libuv.dylib");
             }
-
-<<<<<<< HEAD
             NativeFactory.LoadLibrary(filename);
         }
+    #region Errors
 
-        #region Errors
-=======
-            NativeLibraryHelper.LoadLibrary(filename);
-#endif
-            //#else
-            //            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            //            {
-            //                if (RuntimeInformation.OSArchitecture == Architecture.X86)
-            //                {
-            //                    filename = Path.Combine(dir, "win-x86", "native", "libuv.dll");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
-            //                {
-            //                    filename = Path.Combine(dir, "win-x64",  "native","libuv.dll");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm || RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            //                {
-            //                    filename = Path.Combine(dir, "win-arm", "native", "libuv.dll");
-            //                }
-            //            }
-            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            //            {
-            //                if (RuntimeInformation.OSArchitecture == Architecture.Arm)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-arm", "native", "libuv.so");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-arm64",  "native","libuv.so");
-            //                }
-            //                else if (RuntimeInformation.OSArchitecture == Architecture.X64)
-            //                {
-            //                    filename = Path.Combine(dir, "linux-x64",  "native","libuv.so");
-            //                }
-            //            }
-            //            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            //            {
-            //                filename = Path.Combine(dir, "osx",  "native","libuv.dylib");
-            //            }
-            //            else
-            //            {
-            //                throw new Exception("unknow operation");
-            //            }
-            //            if (string.IsNullOrEmpty(filename))
-            //            {
-            //                throw new Exception("unknow process arch");
-            //            }
-            //            NativeLibraryHelper.LoadLibrary(filename);
-            //#endif
-
-
-        }
-
-        #region Utilitys
->>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
-        public static void ThrowIfErrored(int statusCode)
+    public static void ThrowIfErrored(int statusCode)
         {
             // Note: method is explicitly small so the success case is easily inlined
             if (statusCode < 0)
@@ -536,13 +480,7 @@ namespace waxbill.Libuv
         private static extern int uv_listen(UVStreamHandle handle, int backlog, uv_connection_cb cb);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-<<<<<<< HEAD
-        public static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
-
-=======
         private static extern int uv_accept(UVStreamHandle server, UVStreamHandle client);
-        
->>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private extern static int uv_read_start(UVStreamHandle handle, uv_alloc_cb alloc_cb, uv_read_cb read_cb);
@@ -581,11 +519,7 @@ namespace waxbill.Libuv
         private static extern int uv_ip6_addr(string ip, int port, out SockAddr addr);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-<<<<<<< HEAD
-        public static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket, ref SockAddr addr, uv_connect_cb cb);
-=======
         private static extern int uv_tcp_connect(UVConnectRquest connect, UVTCPHandle socket,ref SockAddr addr, uv_connect_cb cb);
->>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private static extern int uv_tcp_getsockname(UVTCPHandle handle, out SockAddr name, ref int namelen);
@@ -594,13 +528,8 @@ namespace waxbill.Libuv
         private static extern int uv_tcp_getpeername(UVTCPHandle handle, out SockAddr name, ref int namelen);
 
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
-<<<<<<< HEAD
-        public static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
-
-=======
         private static extern int uv_walk(UVLoopHandle loop, uv_walk_cb walk_cb, IntPtr arg);
-        
->>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
+
         [DllImport("libuv", CallingConvention = CallingConvention.Cdecl)]
         private unsafe static extern long uv_now(UVLoopHandle loop);
 
@@ -621,25 +550,7 @@ namespace waxbill.Libuv
         private static extern int WSAGetLastError();
 
 
-
-<<<<<<< HEAD
-
-
-
-
-
-
-
         #endregion
-=======
-        [DllImport("kernel32.dll", EntryPoint = "RtlMoveMemory", CharSet = CharSet.Ansi)]
-        private extern static long MoveMemory(IntPtr dest, IntPtr src, uint size);
 
-
-        [DllImport("libm.so")]
-        private static extern void memmove(IntPtr dest, IntPtr src, uint length);
-        
-#endregion
->>>>>>> 959fc1921487da47e57e157c581c0f88436d6545
     }
 }
