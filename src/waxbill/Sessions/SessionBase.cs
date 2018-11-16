@@ -2,601 +2,570 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using waxbill.Exceptions;
-using waxbill.Libuv;
 using waxbill.Packets;
+using waxbill.Pools;
 using waxbill.Utils;
-using waxbill.Extensions;
+
 
 namespace waxbill.Sessions
 {
+    
+
     public abstract class SessionBase
     {
-        public long ConnectionID { get; private set; }//连接ID
+        private Socket _Connector;
+        private SocketMonitor monitor;
+        private Packet mPacket;
+        private SocketAsyncEventArgs mReceiveSAE;
+        private SendingQueue mSendingQueue;
+        private SocketAsyncEventArgs mSendSAE;
+        private int mState;
 
-        protected MonitorBase Monitor;
-        internal UVTCPHandle TcpHandle;//对方socket
-        private Int32 mState = 0;//会话状态
-        private Packet mPacket;//本包
-        
-
-        private UVWriteRequest mSendQueue;//发送队列
-        private IPEndPoint mRemoteEndPoint;
-
-        /// <summary>
-        /// 远程地址
-        /// </summary>
-        public IPEndPoint RemoteEndPoint
+        public void Close(CloseReason reason)
         {
-            get
+            if (this.TrySetState(0x40))
             {
-                return mRemoteEndPoint;
+                SpinWait wait = new SpinWait();
+                while (true)
+                {
+                    if (!this.GetState(1))
+                    {
+                        break;
+                    }
+                    wait.SpinOnce();
+                }
+                this.RaiseDisconnect(reason);
+                try
+                {
+                    this._Connector.Shutdown(SocketShutdown.Both);
+                    this._Connector.Close();
+                    this._Connector = null;
+                }
+                catch (Exception exception)
+                {
+                    Trace.Error("关闭连接失败", exception);
+                }
+                this.FreeResource(reason);
             }
         }
 
-        internal void Init(Int64 connectionID, UVTCPHandle handle, MonitorBase monitor)
+        protected abstract void ConnectedCallback();
+        protected abstract void DisconnectedCallback(CloseReason reason);
+        private void FreeResource(CloseReason reason)
         {
-            this.ConnectionID = connectionID;
-            this.TcpHandle = handle;
-            this.Monitor = monitor;
-            this.mRemoteEndPoint = handle.RemoteEndPoint;
-            
-            if (!this.Monitor.TryGetSendQueue(out mSendQueue))
+            if (this.mPacket != null)
             {
-                this.Close(CloseReason.Exception);
-                Trace.Error("没有分配到发送queue", null);
+                this.mPacket.Reset();
             }
-            mSendQueue.StartEnqueue();
-
-            this.mPacket = monitor.CreatePacket();
+            if (this.mSendingQueue != null)
+            {
+                if (this.mSendingQueue.Count > 0)
+                {
+                    this.RaiseSended(this.mSendingQueue, false);
+                }
+                this.mSendingQueue.Clear();
+                this.monitor.SendingPool.Push(this.mSendingQueue);
+            }
+            this.mSendSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
+            this.mSendSAE.UserToken = null;
+            this.mSendSAE.SetBuffer(null, 0, 0);
+            this.mSendSAE = null;
+            this.mReceiveSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
+            this.mReceiveSAE.UserToken = null;
+            this.monitor.SocketEventArgsPool.RealseSocketAsyncEventArgs(this.mReceiveSAE);
+            this.mReceiveSAE = null;
+            this._Connector = null;
+            this.SetState(0x80);
         }
 
-        #region state
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="state"></param>
-        /// <returns></returns>
         public bool GetState(int state)
         {
-            return (mState & state) == state;
+            return ((this.mState & state) == state);
+        }
+
+        internal void Initialize(Socket client, SocketMonitor monitor)
+        {
+            if (client == null)
+            {
+                throw new ArgumentNullException("connector");
+            }
+            if (monitor == null)
+            {
+                throw new ArgumentNullException("monitor");
+            }
+            this.monitor = monitor;
+            this._Connector = client;
+            this.ConnectionID = monitor.GetNextConnectionID();
+            this.mSendSAE = new SocketAsyncEventArgs();
+            this.mSendSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
+            this.mReceiveSAE = this.monitor.SocketEventArgsPool.GetSocketAsyncEventArgs();
+            this.mReceiveSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
+            this.mPacket = new Packet(this.monitor.BufferManager);
+        }
+
+        private void InternalReceive()
+        {
+            if (!this.IsClosingOrClosed)
+            {
+                bool flag = true;
+                try
+                {
+                    flag = this._Connector.ReceiveAsync(this.mReceiveSAE);
+                }
+                catch (Exception exception)
+                {
+                    Trace.Error("接收消息时出现错误", exception);
+                    this.ReceiveEnd(CloseReason.InernalError);
+                }
+                if (!flag)
+                {
+                    this.SAE_ReceiveCompleted(this, this.mReceiveSAE);
+                }
+            }
+        }
+
+        private bool InternalSend(SendingQueue queue)
+        {
+            if (this.IsClosingOrClosed)
+            {
+                this.SendEnd(queue, CloseReason.Closeing);
+                return false;
+            }
+            bool flag = true;
+            try
+            {
+                if (queue.Count > 1)
+                {
+                    this.mSendSAE.BufferList = queue;
+                }
+                else
+                {
+                    ArraySegment<byte> segment = queue[0];
+                    this.mSendSAE.SetBuffer(segment.Array, segment.Offset, segment.Count);
+                }
+                this.mSendSAE.UserToken = queue;
+                flag = this._Connector.SendAsync(this.mSendSAE);
+            }
+            catch (Exception exception)
+            {
+                Trace.Error("发送出现错误", exception);
+                this.SendEnd(queue, CloseReason.Exception);
+                return false;
+            }
+            if (!flag)
+            {
+                this.SAE_SendCompleted(this, this.mSendSAE);
+            }
+            return true;
+        }
+
+        private bool PreSend()
+        {
+            SendingQueue queue2;
+            SendingQueue mSendingQueue = this.mSendingQueue;
+            if (mSendingQueue.Count <= 0)
+            {
+                return true;
+            }
+            if (!this.TrySetState(1))
+            {
+                return true;
+            }
+            if (!this.monitor.SendingPool.TryGet(out queue2))
+            {
+                this.SendEnd(null, CloseReason.InernalError);
+                Trace.Error("没有分配到发送queue", null);
+                return false;
+            }
+            queue2.StartQueue();
+            this.mSendingQueue = queue2;
+            mSendingQueue.StopQueue();
+            return this.InternalSend(mSendingQueue);
+        }
+
+        private void RaiseAccept()
+        {
+            try
+            {
+                this.ConnectedCallback();
+                this.monitor.RaiseOnConnectionEvent(this);
+            }
+            catch
+            {
+            }
+        }
+
+        private void RaiseDisconnect(CloseReason reason)
+        {
+            try
+            {
+                this.DisconnectedCallback(reason);
+                this.monitor.RaiseOnDisconnectedEvent(this, reason);
+            }
+            catch
+            {
+            }
+        }
+
+        private void RaiseReceive(Packet packet)
+        {
+            try
+            {
+                this.ReceiveCallback(packet);
+                this.monitor.RaiseOnReceiveEvent(this, packet);
+            }
+            catch (Exception exception)
+            {
+                Trace.Error(exception.Message, exception);
+            }
+        }
+
+        private void RaiseSended(SendingQueue packet, bool result)
+        {
+            try
+            {
+                this.SendedCallback(packet, result);
+                this.monitor.RaiseOnSendedEvent(this, packet, result);
+            }
+            catch
+            {
+            }
+        }
+
+        protected abstract void ReceiveCallback(Packet packet);
+        private void ReceiveCompleted(ArraySegment<byte> datas)
+        {
+            bool flag = false;
+            int readlen = 0;
+            try
+            {
+                flag = this.monitor._Protocol.TryToPacket(ref this.mPacket, datas, out readlen);
+            }
+            catch (Exception exception)
+            {
+                Trace.Error("解析信息时发生错误", exception);
+                this.ReceiveEnd(CloseReason.InernalError);
+            }
+            if (flag)
+            {
+                Packet oldPacket = this.mPacket;
+                this.mPacket = new Packet(this.monitor.BufferManager);
+                ThreadPool.QueueUserWorkItem(delegate (object obj) {
+                    try
+                    {
+                        this.RaiseReceive(oldPacket);
+                        this.ReceiveCompletedLoop(datas, readlen);
+                    }
+                    catch (Exception exception)
+                    {
+                        Trace.Error("处理信息时出现错误", exception);
+                        this.ReceiveEnd(CloseReason.Exception);
+                    }
+                    finally
+                    {
+                        oldPacket.Reset();
+                    }
+                });
+            }
+            else
+            {
+                this.ReceiveCompletedLoop(datas, readlen);
+            }
+        }
+
+        private void ReceiveCompletedLoop(ArraySegment<byte> datas, int readlen)
+        {
+            if ((readlen < 0) || (readlen > datas.Count))
+            {
+                throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
+            }
+            if ((readlen == 0) || (readlen == datas.Count))
+            {
+                this.InternalReceive();
+            }
+            else
+            {
+                this.ReceiveCompleted(new ArraySegment<byte>(datas.Array, datas.Offset + readlen, datas.Count - readlen));
+            }
+        }
+
+        private void ReceiveEnd(CloseReason reason)
+        {
+            this.RemoveState(2);
+            this.Close(reason);
         }
 
         public void RemoveState(int state)
         {
-            while (true)
+            int mState;
+            int num2;
+            do
             {
-                Int32 oldStatus = mState;
-                Int32 newStatus = oldStatus & (~state);
-                if (Interlocked.CompareExchange(ref mState, newStatus, oldStatus) == oldStatus)
-                {
-                    return;
-                }
+                mState = this.mState;
+                num2 = mState & ~state;
+            }
+            while (Interlocked.CompareExchange(ref this.mState, num2, mState) != mState);
+        }
+
+        private void SAE_ReceiveCompleted(object sender, SocketAsyncEventArgs e)
+        {
+            if (e.SocketError != SocketError.Success)
+            {
+                this.ReceiveEnd(CloseReason.Exception);
+            }
+            else if (e.BytesTransferred < 1)
+            {
+                this.ReceiveEnd(CloseReason.RemoteClose);
+            }
+            else
+            {
+                this.ReceiveCompleted(new ArraySegment<byte>(e.Buffer, e.Offset, e.BytesTransferred));
             }
         }
 
-        public void SetState(int state)
+        private void SAE_SendCompleted(object sender, SocketAsyncEventArgs e)
         {
-            SetState(state, false);
-        }
-
-        public bool SetState(int state, bool noClose)
-        {
-            while (true)
+            SendingQueue userToken = e.UserToken as SendingQueue;
+            if (userToken == null)
             {
-                Int32 oldState = mState;
-                if (noClose)
-                {
-                    if (oldState >= SessionState.Closeing)
-                    {
-                        return false;
-                    }
-                }
-                Int32 newState = mState | state;
-                if (Interlocked.CompareExchange(ref mState, newState, oldState) == oldState)
-                {
-                    return true;
-                }
+                Trace.Error("未知错误help!~");
+            }
+            else if (e.SocketError != SocketError.Success)
+            {
+                this.RaiseSended(userToken, false);
+                this.SendEnd(userToken, CloseReason.Exception);
+            }
+            else if (userToken.Sum<ArraySegment<byte>>((<>c.<>9__35_0 ?? (<>c.<>9__35_0 = new Func<ArraySegment<byte>, int>(<>c.<>9.<SAE_SendCompleted>b__35_0)))) <= e.BytesTransferred)
+            {
+                e.SetBuffer(null, 0, 0);
+                e.BufferList = null;
+                this.RaiseSended(userToken, true);
+                userToken.Clear();
+                this.monitor.SendingPool.Push(userToken);
+                this.RemoveState(1);
+                this.PreSend();
+            }
+            else
+            {
+                userToken.TrimByte(e.BytesTransferred);
+                this.InternalSend(userToken);
             }
         }
 
-        public bool TrySetState(int state)
-        {
-            while (true)
-            {
-                Int32 oldState = mState;
-                Int32 newState = oldState | state;
-                if (newState == mState)
-                {
-                    return false;
-                }
-                if (Interlocked.CompareExchange(ref mState, newState, oldState) == oldState)
-                {
-                    return true;
-                }
-            }
-        }
-
-
-        public bool IsClosingOrClosed
-        {
-            get { return mState >= SessionState.Closeing; }
-        }
-
-        public bool IsClosed
-        {
-            get { return mState >= SessionState.Closed; }
-        }
-        #endregion
-
-        #region send
-        /// <summary>
-        /// 加入到发送列表中
-        /// </summary>
-        /// <param name="datas"></param>
         public void Send(byte[] datas)
         {
-            Send(new ArraySegment<byte>(datas, 0, datas.Length));
-        }
-
-        /// <summary>
-        /// 加入到发送列表中
-        /// </summary>
-        /// <param name="datas"></param>
-        /// <param name="offset"></param>
-        /// <param name="count"></param>
-        public void Send(byte[] datas, int offset, int count)
-        {
-            Send(new ArraySegment<byte>(datas, offset, count));
+            this.Send(new ArraySegment<byte>(datas, 0, datas.Length));
         }
 
         public void Send(ArraySegment<byte> data)
         {
-            bool retry = false;
-            if (TrySend(data, out retry))
+            bool reTry = false;
+            if (this.TrySend(data, out reTry))
             {
                 return;
             }
-
-            if (!retry)
+            if (!reTry)
             {
                 return;
             }
-
             SpinWait wait = new SpinWait();
-            DateTime dt = DateTime.Now.AddMilliseconds(this.Monitor.Option.SendTimeout);
+            DateTime time = DateTime.Now.AddMilliseconds((double) this.monitor.Config.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
-                if (TrySend(data, out retry))
+                if (this.TrySend(data, out reTry) || (DateTime.Now >= time))
                 {
-                    break;
+                    return;
                 }
-
-                if (DateTime.Now >= dt)
+                if (!reTry)
                 {
-                    break;
-                }
-
-                if (!retry)
-                {
-                    continue;
                 }
             }
-        }
-
-        
-
-        private bool TrySend(ArraySegment<byte> data, out bool reTry)
-        {
-            reTry = false;
-            UVWriteRequest oldQueue = this.mSendQueue;
-            if (oldQueue == null)
-            {
-                return false;
-            }
-            
-            if (!oldQueue.Enqueue(data))
-            {
-                reTry = true;
-                return false;
-            }
-
-            return PreSend();
         }
 
         public void Send(IList<ArraySegment<byte>> datas)
         {
-            if (datas.Count > this.Monitor.Option.SendQueueSize)
+            if (datas.Count > this.monitor.SendingQueueSize)
             {
                 throw new ArgumentOutOfRangeException("发送内容大于缓存池");
             }
-
-            bool retry = false;
-            if (TrySend(datas, out retry))
+            bool reTry = false;
+            if (this.TrySend(datas, out reTry))
             {
                 return;
             }
-            if (!retry)
+            if (!reTry)
             {
                 return;
             }
-
             SpinWait wait = new SpinWait();
-            DateTime dt = DateTime.Now.AddMilliseconds(this.Monitor.Option.SendTimeout);
+            DateTime time = DateTime.Now.AddMilliseconds((double) this.monitor.Config.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
-                if (TrySend(datas, out retry))
+                if (this.TrySend(datas, out reTry) || (DateTime.Now >= time))
                 {
-                    break;
+                    return;
                 }
-
-                if (DateTime.Now >= dt)
+                if (!reTry)
                 {
-                    break;
-                }
-
-                if (!retry)
-                {
-                    continue;
                 }
             }
+        }
+
+        public void Send(byte[] datas, int offset, int size)
+        {
+            this.Send(new ArraySegment<byte>(datas, offset, size));
+        }
+
+        protected abstract void SendedCallback(SendingQueue packet, bool result);
+        private void SendEnd(SendingQueue queue, CloseReason reason)
+        {
+            if (queue != null)
+            {
+                queue.Clear();
+                this.monitor.SendingPool.Push(queue);
+            }
+            this.RemoveState(1);
+            this.Close(reason);
+        }
+
+        public void SetState(int state)
+        {
+            this.SetState(state, false);
+        }
+
+        public bool SetState(int state, bool noClose)
+        {
+            int mState;
+            int num2;
+            do
+            {
+                mState = this.mState;
+                if (noClose && (mState >= 0x40))
+                {
+                    return false;
+                }
+                num2 = this.mState | state;
+            }
+            while (Interlocked.CompareExchange(ref this.mState, num2, mState) != mState);
+            return true;
+        }
+
+        public void Start()
+        {
+            this.RaiseAccept();
+            if (!this.monitor.SendingPool.TryGet(out this.mSendingQueue))
+            {
+                Trace.Error("发送队列无法初始化");
+            }
+            else
+            {
+                this.mSendingQueue.StartQueue();
+                if (this.TrySetState(2))
+                {
+                    this.InternalReceive();
+                }
+            }
+        }
+
+        private bool TrySend(ArraySegment<byte> data, out bool reTry)
+        {
+            reTry = false;
+            SendingQueue mSendingQueue = this.mSendingQueue;
+            if (mSendingQueue == null)
+            {
+                return false;
+            }
+            if (!mSendingQueue.EnQueue(data))
+            {
+                reTry = true;
+                return false;
+            }
+            return this.PreSend();
         }
 
         private bool TrySend(IList<ArraySegment<byte>> datas, out bool reTry)
         {
             reTry = false;
-            UVWriteRequest oldQueue = this.mSendQueue;
-            if (oldQueue == null)
+            SendingQueue mSendingQueue = this.mSendingQueue;
+            if (mSendingQueue == null)
             {
-                //todo:是否关闭连接？
                 return false;
             }
-
-            if (!oldQueue.Enqueue(datas))
+            if (!mSendingQueue.EnQueue(datas))
             {
                 reTry = true;
                 return false;
             }
-            return PreSend();
+            return this.PreSend();
         }
 
-        private bool PreSend()
+        public bool TrySetState(int state)
         {
-            UVWriteRequest oldQueue = this.mSendQueue;
-            if (oldQueue==null||oldQueue.Count <= 0)
+            int mState;
+            int num2;
+            do
             {
-                return true;
+                mState = this.mState;
+                num2 = mState | state;
+                if (num2 == this.mState)
+                {
+                    return false;
+                }
             }
-            if (!TrySetState(SessionState.Sending))
-            {
-                return true;
-            }
-
-            UVWriteRequest newQueue;
-
-            if (!this.Monitor.TryGetSendQueue(out newQueue))
-            {
-                SendEnd(oldQueue, CloseReason.InernalError);
-                Trace.Error("没有分配到发送queue", null);
-                return false;
-            }
-
-            newQueue.StartEnqueue();
-            this.mSendQueue = newQueue;
-            oldQueue.StopEnqueue();
-
-            return InternalSend(oldQueue);
-        }
-
-        private bool InternalSend(UVWriteRequest oldQueue)
-        {
-            if (IsClosingOrClosed)
-            {
-                SendEnd(oldQueue, CloseReason.Closeing);
-                return false;
-            }
-
-            try
-            {
-                this.TcpHandle.Write(oldQueue,SendCompleted,null);
-            }
-            catch (Exception ex)
-            {
-                Trace.Error("发送出现错误", ex);
-                SendEnd(oldQueue, CloseReason.Exception);
-                return false;
-            }
-
+            while (Interlocked.CompareExchange(ref this.mState, num2, mState) != mState);
             return true;
         }
 
-        /// <summary>
-        /// SAE发送完成回调
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void SendCompleted(UVWriteRequest req, Int32 statue, UVException ex, object state)
+        public long ConnectionID { get; private set; }
+
+        public bool IsClosed
         {
-            IList<UVIntrop.uv_buf_t> reqList = req as IList<UVIntrop.uv_buf_t>;
-            if (ex != null)
+            get
             {
-                for (int i = 0; i < reqList.Count; i++)
-                {
-                    this.OnSended(reqList[i].ToPlatformBuf(), false);
-                }
-                SendEnd(req, CloseReason.Exception);
-                return;
-            }
-
-            //todo:发送下一包
-            for (int i = 0; i < reqList.Count; i++)
-            {
-                this.OnSended(reqList[i].ToPlatformBuf(), true);
-            }
-            req.Clear();
-            this.Monitor.ReleaseSendQueue(req);
-
-            RemoveState(SessionState.Sending);
-            PreSend();
-        }
-
-        /// <summary>
-        /// 发送中止
-        /// </summary>
-        /// <param name="queue"></param>
-        /// <param name="reason"></param>
-        private void SendEnd(UVWriteRequest queue, CloseReason reason)
-        {
-            if (queue != null)
-            {
-                queue.Clear();
-                this.Monitor.ReleaseSendQueue(queue);
-            }
-            RemoveState(SessionState.Sending);
-            this.Close(reason);
-        }
-        
-        #endregion
-
-
-
-
-
-        #region receive
-        /// <summary>
-        /// 消息接收完成
-        /// </summary>
-        /// <param name="connector"></param>
-        /// <param name="datas"></param>
-        /// <param name="callback"></param>
-        private void ReceiveCompleted(IntPtr memory, Int32 nread, out Int32 giveupCount)
-        {
-            bool result = false;
-            giveupCount = 0;
-            try
-            {
-                result = this.Monitor.Protocol.TryToPacket(this.mPacket, memory, nread, out giveupCount);
-            }
-            catch (Exception ex)
-            {
-                Trace.Error("解析信息时发生错误", ex);
-                ReceiveEnd(CloseReason.InernalError);
-            }
-
-            if (!result)
-            {
-                return;
-            }
-
-            if (giveupCount < 0 || giveupCount > nread)
-            {
-                throw new ArgumentOutOfRangeException("readlen", "readlen < 0 or > payload.Count.");
-            }
-
-            memory = IntPtr.Add(memory, giveupCount);
-            int readCount = 0;
-
-            //Packet oldPacket = this.mPacket;
-            //this.mPacket = new Packet(this.Monitor.BufferManager);
-            try
-            {
-                this.OnReceived(this.mPacket);
-                this.mPacket.Reset();
-
-            }
-            catch (Exception ex)
-            {
-                this.mPacket.Dispose();
-                Trace.Error("处理信息时出现错误", ex);
-                ReceiveEnd(CloseReason.Exception);
-                return;
-            }
-
-            if (giveupCount == nread)
-            {
-                return;
-            }
-            readCount = 0;
-            ReceiveCompleted(memory, nread - giveupCount, out readCount);
-            giveupCount += readCount;
-        }
-
-        /// <summary>
-        /// 消息接收中止
-        /// </summary>
-        private void ReceiveEnd(CloseReason reason, Exception exception = null)
-        {
-            RemoveState(SessionState.Receiveing);
-            this.Close(reason, exception);
-        }
-        #endregion
-
-        #region control
-        public void Close(CloseReason reason, Exception exception = null)
-        {
-            lock (this)
-            {
-                if (IsClosed)
-                {
-                    return;
-                }
-
-                if (!TrySetState(SessionState.Closeing))
-                {
-                    return;
-                }
-
-                this.OnDisconnected(reason);
-
-                if (this.readBuffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(this.readBuffer);
-                }
-
-                this.TcpHandle.Close();
-                this.FreeResource(reason);
+                return (this.mState >= 0x80);
             }
         }
 
-
-        private void FreeResource(CloseReason reason)
+        public bool IsClosingOrClosed
         {
-            //清空接收缓存
-            if (this.mPacket != null)
+            get
             {
-                this.mPacket.Dispose();
+                return (this.mState >= 0x40);
             }
-
-            //清空发送缓存
-            if (this.mSendQueue != null)
-            {
-                if (this.mSendQueue.Count > 0)
-                {
-                    IList<UVIntrop.uv_buf_t> reqList = this.mSendQueue as IList<UVIntrop.uv_buf_t>;
-                    for (int i = 0; i < reqList.Count; i++)
-                    {
-                        this.OnSended(reqList[i].ToPlatformBuf(), false);
-                    }
-                }
-                this.mSendQueue.Clear();
-                this.Monitor.ReleaseSendQueue(this.mSendQueue);
-                this.mSendQueue = null;
-            }
-            SetState(SessionState.Closed);
-        }
-        #endregion
-
-        #region handle
-        private IntPtr readBuffer = IntPtr.Zero;
-        private Int32 readOffset = 0;
-
-        /// <summary>
-        /// 分配内存
-        /// </summary>
-        /// <param name="handle"></param>
-        /// <param name="suggsize"></param>
-        /// <param name="state"></param>
-        /// <returns></returns>
-        internal UVIntrop.uv_buf_t AllocMemoryCallback(UVStreamHandle handle, Int32 suggsize, object state)
-        {
-            if (readBuffer == IntPtr.Zero)
-            {
-                if (!this.Monitor.TryGetReceiveBuffer(out readBuffer))
-                {
-                    throw new ArgumentOutOfRangeException("can't allow bytes");
-                }
-            }
-
-            return new UVIntrop.uv_buf_t(readBuffer + readOffset, this.Monitor.Option.ReceiveBufferSize - this.readOffset);
         }
 
-        /// <summary>
-        /// 读取回调
-        /// </summary>
-        /// <param name="client"></param>
-        /// <param name="nread"></param>
-        /// <param name="exception"></param>
-        /// <param name="buf"></param>
-        /// <param name="state"></param>
-        internal void ReadCallback(UVStreamHandle client, Int32 nread, UVException exception, ref UVIntrop.uv_buf_t buf, object state)
+        public IPEndPoint RemoteEndPoint
         {
-            if (exception != null)
+            get
             {
-                if (nread == UVIntrop.UV_EOF)
+                try
                 {
-                    ReceiveEnd(CloseReason.RemoteClose);
+                    return (this._Connector.RemoteEndPoint as IPEndPoint);
                 }
-                else
+                catch
                 {
-                    ReceiveEnd(CloseReason.Exception, exception);
-                }
-                return;
-            }
-
-            Int32 giveupCount = 0;
-            this.readOffset += nread;
-
-            this.ReceiveCompleted(this.readBuffer, this.readOffset, out giveupCount);
-            if (giveupCount > 0)
-            {
-                if (giveupCount < this.readOffset)
-                {
-                    //没读完
-                    this.readOffset = this.readOffset - giveupCount;
-                    if (this.readOffset >= this.Monitor.Option.ReceiveBufferSize)
-                    {
-                        throw new ArgumentOutOfRangeException("数据没有读取,数据缓冲区已满");
-                    }
-                    UVIntrop.memorymove(this.readBuffer + giveupCount, this.readBuffer, this.readOffset);
-                }
-                else
-                {
-                    //读完
-                    this.readOffset = 0;
+                    return null;
                 }
             }
         }
 
-        #endregion
-
-        #region Events Raise
-
-        internal void InnerTellConnected()
+        [Serializable, CompilerGenerated]
+        private sealed class <>c
         {
-            OnConnected();
-            this.TcpHandle.ReadStart(this.AllocMemoryCallback, this.ReadCallback, this, this);
+            public static readonly SocketSession.<>c <>9 = new SocketSession.<>c();
+            public static Func<ArraySegment<byte>, int> <>9__35_0;
+
+            internal int <SAE_SendCompleted>b__35_0(ArraySegment<byte> b)
+            {
+                return b.Count;
+            }
         }
-        /// <summary>
-        /// 连接
-        /// </summary>
-        protected abstract void OnConnected();
-
-        /// <summary>
-        /// 断开连接
-        /// </summary>
-        /// <param name="ex"></param>
-        /// <param name="connector"></param>
-        protected abstract void OnDisconnected(CloseReason reason);
-
-        /// <summary>
-        /// 发送成功
-        /// </summary>
-        /// <param name="connector"></param>
-        /// <param name="packet"></param>
-        /// <param name="result"></param>
-        protected abstract void OnSended(PlatformBuf packet, bool result);
-
-        /// <summary>
-        /// 收到数据时回调
-        /// </summary>
-        /// <param name="packet"></param>
-        protected abstract void OnReceived(Packet packet);
-        #endregion
     }
 }
+

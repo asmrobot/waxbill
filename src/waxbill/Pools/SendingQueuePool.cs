@@ -3,20 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using waxbill.Libuv;
 
 namespace waxbill.Pools
 {
     /// <summary>
     /// 发送队列池
     /// </summary>
-    public class SendingQueuePool : PoolBase<UVWriteRequest>
+    public class SendingQueuePool : PoolBase<SendingQueue>
     {
         public SendingQueuePool():base(3,0)
         {}
-        protected override UVWriteRequest CreateItem(int index)
+        protected override SendingQueue CreateItem(int index)
         {
-            UVWriteRequest request = new UVWriteRequest();
+            SendingQueue request = new SendingQueue();
             return request;
         }
     }
