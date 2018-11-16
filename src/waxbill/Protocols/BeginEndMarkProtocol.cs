@@ -32,7 +32,7 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe override bool ParseHeader(Packet packet,IntPtr datas)
+        protected override bool ParseHeader(Packet packet,IntPtr datas)
         {
             if (*(byte*)datas == mBeginChars)
             {
@@ -43,7 +43,7 @@ namespace waxbill.Protocols
         }
 
 
-        protected unsafe override bool ParseBody(Packet packet, IntPtr datas, int count, out int giveupCount)
+        protected override bool ParseBody(Packet packet, IntPtr datas, int count, out int giveupCount)
         {
             giveupCount = 0;
             if (count <= 0)

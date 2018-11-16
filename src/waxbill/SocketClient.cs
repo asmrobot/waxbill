@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
-using ZTImage.Log;
-using ZTImage.Net.Exceptions;
+using waxbill.Exceptions;
+
 
 namespace waxbill
 {
@@ -19,18 +19,18 @@ namespace waxbill
 
         public static void Send(string ip, int port, byte[] datas)
         {
-            Send(ip, port, datas, 0, datas.Length, <>c.<>9__0_0 ?? (<>c.<>9__0_0 = new Action<Socket>(<>c.<>9.<Send>b__0_0)));
+            Send(ip, port, datas, 0, datas.Length);
         }
 
         public static void Send(string ip, int port, ArraySegment<byte> data)
         {
-            Send(ip, port, data.Array, data.Offset, data.Count, <>c.<>9__2_0 ?? (<>c.<>9__2_0 = new Action<Socket>(<>c.<>9.<Send>b__2_0)));
+            Send(ip, port, data.Array, data.Offset, data.Count);
         }
 
         public static void Send(string ip, int port, IList<ArraySegment<byte>> datas)
         {
             byte[] buffer = combinDatas(datas);
-            Send(ip, port, buffer, 0, buffer.Length, <>c.<>9__3_0 ?? (<>c.<>9__3_0 = new Action<Socket>(<>c.<>9.<Send>b__3_0)));
+            Send(ip, port, buffer, 0, buffer.Length);
         }
 
         public static void Send(string ip, int port, byte[] datas, Action<Socket> receiveAction)
@@ -51,7 +51,7 @@ namespace waxbill
 
         public static void Send(string ip, int port, byte[] datas, int offset, int size)
         {
-            Send(ip, port, datas, offset, size, <>c.<>9__1_0 ?? (<>c.<>9__1_0 = new Action<Socket>(<>c.<>9.<Send>b__1_0)));
+            Send(ip, port, datas, offset, size, (socket)=>{ });
         }
 
         public static void Send(string ip, int port, byte[] datas, int offset, int size, Action<Socket> receiveAction)
@@ -63,7 +63,7 @@ namespace waxbill
             IPAddress address = null;
             if (!IPAddress.TryParse(ip, out address))
             {
-                throw new IPParseException();
+                throw new ArgumentOutOfRangeException("ip");
             }
             Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             try
@@ -86,7 +86,7 @@ namespace waxbill
                 catch (Exception exception2)
                 {
                     Trace.Error("调用接收函数出错", exception2);
-                    throw new CustomReceiveException();
+                    throw new Exception("");
                 }
             }
             try
@@ -98,32 +98,7 @@ namespace waxbill
             {
             }
         }
-
-        [Serializable, CompilerGenerated]
-        private sealed class <>c
-        {
-            public static readonly SocketClient.<>c <>9 = new SocketClient.<>c();
-            public static Action<Socket> <>9__0_0;
-            public static Action<Socket> <>9__1_0;
-            public static Action<Socket> <>9__2_0;
-            public static Action<Socket> <>9__3_0;
-
-            internal void <Send>b__0_0(Socket socket)
-            {
-            }
-
-            internal void <Send>b__1_0(Socket socket)
-            {
-            }
-
-            internal void <Send>b__2_0(Socket socket)
-            {
-            }
-
-            internal void <Send>b__3_0(Socket socket)
-            {
-            }
-        }
+        
     }
 }
 

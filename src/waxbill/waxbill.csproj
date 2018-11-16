@@ -18,7 +18,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <OutputPath>..\..\pkg-work\lib\</OutputPath>
+    <OutputPath>bin\</OutputPath>
   </PropertyGroup>
 
 </Project>

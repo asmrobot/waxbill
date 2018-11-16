@@ -15,8 +15,18 @@ namespace waxbill.Pools
         {}
         protected override SendingQueue CreateItem(int index)
         {
-            SendingQueue request = new SendingQueue();
-            return request;
+            //todo:添加批量生成缓存的方法
+            //SendingQueue request = new SendingQueue();
+            //return request;
+            return null;
+        }
+
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        public void Initialize(Int32 minSendingPoolSize, Int32 maxSendingPoolSize, Int32 sendingQueueSize)
+        {
+
         }
     }
 }

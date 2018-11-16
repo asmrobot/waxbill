@@ -10,17 +10,17 @@ namespace waxbill.Protocols
 {
     public abstract class ProtocolBase:IProtocol
     {
-        private Int32 mHeaderSize;
+        private Int32 headerSize;
         public Int32 HeaderSize
         {
             get
             {
-                return mHeaderSize;
+                return headerSize;
             }
         }
         public ProtocolBase(int headerSize)
         {
-            this.mHeaderSize = headerSize;
+            this.headerSize = headerSize;
         }
 
         /// <summary>
@@ -32,7 +32,7 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe abstract bool ParseHeader(Packet packet, IntPtr datas);
+        protected unsafe abstract bool ParseHeader(Packet packet, ArraySegment<byte> datas);
 
         /// <summary>
         /// 解析消息体
@@ -43,10 +43,11 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe abstract bool ParseBody(Packet packet, IntPtr datas, int count, out Int32 giveupCount);
+        protected unsafe abstract bool ParseBody(Packet packet, ArraySegment<byte> datas, out Int32 giveupCount);
 
-        public unsafe bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
+        public unsafe bool TryToPacket(Packet packet, ArraySegment<byte> datas,out int giveupCount)
         {
+            int count = datas.Count;
             giveupCount = 0;
             if (count <= 0)
             {
@@ -59,12 +60,12 @@ namespace waxbill.Protocols
                 return false;
             }
 
-            byte* memory = (byte*)datas;
+            
             if (!packet.IsStart)
             {
-                if (mHeaderSize >0)
+                if (headerSize >0)
                 {
-                    if (count < this.mHeaderSize)
+                    if (count < this.headerSize)
                     {
                         return false;
                     }
@@ -74,15 +75,15 @@ namespace waxbill.Protocols
                         giveupCount = count;
                         return false;
                     }
-                    giveupCount=this.mHeaderSize;
-                    datas = IntPtr.Add(datas, this.mHeaderSize);
-                    count -= this.mHeaderSize;
+                    giveupCount=this.headerSize;
+                    datas = new ArraySegment<byte>(datas.Array, datas.Offset + this.headerSize, datas.Count - this.headerSize);
+                    count -= this.headerSize;
                 }
                 packet.IsStart = true;
             }
 
             Int32 giveup = 0;
-            bool endResult = ParseBody(packet, datas, count, out giveup);
+            bool endResult = ParseBody(packet, datas, out giveup);
             if (giveup > count)
             {
                 giveupCount += count;

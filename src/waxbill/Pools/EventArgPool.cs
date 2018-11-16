@@ -9,7 +9,7 @@ namespace waxbill.Pools
 {
     public class EventArgPool: PoolBase<SocketAsyncEventArgs>
     {
-        public EventArgPool() : base(3, 0)
+        public EventArgPool(SocketConfiguration config) : base(3, 0)
         { }
         protected override SocketAsyncEventArgs CreateItem(int index)
         {

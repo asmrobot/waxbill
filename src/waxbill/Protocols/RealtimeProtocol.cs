@@ -21,15 +21,15 @@ namespace waxbill.Protocols
             return new Packet(buffer);
         }
 
-        public bool TryToPacket(Packet packet, IntPtr datas, int count, out int giveupCount)
+        public bool TryToPacket(Packet packet, ArraySegment<byte> datas,  out int giveupCount)
         {
-            giveupCount = count;
-            if (count <= 0)
+            giveupCount = datas.Count;
+            if (giveupCount <= 0)
             {
                 return true;
             }
             
-            packet.Write(datas, count);
+            packet.Write(datas);
             return true;
         }
 

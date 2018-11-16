@@ -14,23 +14,20 @@ namespace waxbill
 
     public abstract class SocketMonitor
     {
-        private long _ConnectionIncremer;
+        private OnConnectionEvent s;
+        private long connectionIncremer;
         internal BufferManager BufferManager;
         internal SocketConfiguration Config;
         internal SendingQueuePool SendingPool;
         internal EventArgPool SocketEventArgsPool;
 
-        [field: CompilerGenerated]
-        public event OnConnectionEvent OnConnection;
+        public OnConnectionEvent OnConnection;
 
-        [field: CompilerGenerated]
-        public event OnDisconnectedEvent OnDisconnected;
+        public OnDisconnectedEvent OnDisconnected;
 
-        [field: CompilerGenerated]
-        public event OnReceiveEvent OnReceive;
+        public OnReceiveEvent OnReceive;
 
-        [field: CompilerGenerated]
-        public event OnSendedEvent OnSended;
+        public OnSendedEvent OnSended;
 
         public SocketMonitor(IProtocol protocol, SocketConfiguration config)
         {
@@ -53,20 +50,22 @@ namespace waxbill
             this.SendingQueueSize = config.SendQueueSize;
             this.SendingPool = new SendingQueuePool();
             this.SendingPool.Initialize(this.MinSendingPoolSize, this.MaxSendingPoolSize, this.SendingQueueSize);
-            this.BufferManager = new BufferManager(config);
+            this.BufferManager = new BufferManager(config.BufferSize,config.BufferIncemerCount);
             this.SocketEventArgsPool = new EventArgPool(config);
         }
 
         internal long GetNextConnectionID()
         {
-            return Interlocked.Increment(ref this._ConnectionIncremer);
+            return Interlocked.Increment(ref this.connectionIncremer);
         }
 
         internal void RaiseOnConnectionEvent(SessionBase session)
         {
             if (this.OnConnection != null)
             {
+                
                 this.OnConnection(session);
+                
             }
         }
 

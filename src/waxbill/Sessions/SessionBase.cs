@@ -68,7 +68,7 @@ namespace waxbill.Sessions
                     this.RaiseSended(this.mSendingQueue, false);
                 }
                 this.mSendingQueue.Clear();
-                this.monitor.SendingPool.Push(this.mSendingQueue);
+                this.monitor.SendingPool.Release(this.mSendingQueue);
             }
             this.mSendSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
             this.mSendSAE.UserToken = null;
@@ -76,7 +76,7 @@ namespace waxbill.Sessions
             this.mSendSAE = null;
             this.mReceiveSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
             this.mReceiveSAE.UserToken = null;
-            this.monitor.SocketEventArgsPool.RealseSocketAsyncEventArgs(this.mReceiveSAE);
+            this.monitor.SocketEventArgsPool.Release(this.mReceiveSAE);
             this.mReceiveSAE = null;
             this._Connector = null;
             this.SetState(0x80);
@@ -102,7 +102,11 @@ namespace waxbill.Sessions
             this.ConnectionID = monitor.GetNextConnectionID();
             this.mSendSAE = new SocketAsyncEventArgs();
             this.mSendSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
-            this.mReceiveSAE = this.monitor.SocketEventArgsPool.GetSocketAsyncEventArgs();
+            if (!this.monitor.SocketEventArgsPool.TryGet(out this.mReceiveSAE))
+            {
+                throw new Exception("无法获取");
+            }
+
             this.mReceiveSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
             this.mPacket = new Packet(this.monitor.BufferManager);
         }
@@ -243,7 +247,7 @@ namespace waxbill.Sessions
             int readlen = 0;
             try
             {
-                flag = this.monitor._Protocol.TryToPacket(ref this.mPacket, datas, out readlen);
+                flag = this.monitor._Protocol.TryToPacket(this.mPacket, datas, out readlen);
             }
             catch (Exception exception)
             {
@@ -339,13 +343,14 @@ namespace waxbill.Sessions
                 this.RaiseSended(userToken, false);
                 this.SendEnd(userToken, CloseReason.Exception);
             }
-            else if (userToken.Sum<ArraySegment<byte>>((<>c.<>9__35_0 ?? (<>c.<>9__35_0 = new Func<ArraySegment<byte>, int>(<>c.<>9.<SAE_SendCompleted>b__35_0)))) <= e.BytesTransferred)
+            else if (userToken.Count <= e.BytesTransferred)
             {
+               
                 e.SetBuffer(null, 0, 0);
                 e.BufferList = null;
                 this.RaiseSended(userToken, true);
                 userToken.Clear();
-                this.monitor.SendingPool.Push(userToken);
+                this.monitor.SendingPool.Release(userToken);
                 this.RemoveState(1);
                 this.PreSend();
             }
@@ -428,7 +433,7 @@ namespace waxbill.Sessions
             if (queue != null)
             {
                 queue.Clear();
-                this.monitor.SendingPool.Push(queue);
+                this.monitor.SendingPool.Release(queue);
             }
             this.RemoveState(1);
             this.Close(reason);
@@ -554,18 +559,7 @@ namespace waxbill.Sessions
                 }
             }
         }
-
-        [Serializable, CompilerGenerated]
-        private sealed class <>c
-        {
-            public static readonly SocketSession.<>c <>9 = new SocketSession.<>c();
-            public static Func<ArraySegment<byte>, int> <>9__35_0;
-
-            internal int <SAE_SendCompleted>b__35_0(ArraySegment<byte> b)
-            {
-                return b.Count;
-            }
-        }
+        
     }
 }
 

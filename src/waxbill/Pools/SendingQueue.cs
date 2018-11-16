@@ -13,21 +13,23 @@ namespace waxbill.Pools
 
     public class SendingQueue : IList<ArraySegment<byte>>, ICollection<ArraySegment<byte>>, IEnumerable<ArraySegment<byte>>, IEnumerable
     {
-        private int m_Capity;
-        private int m_CurrentCount;
-        private ArraySegment<byte>[] m_Global;
-        private int m_InnerOffset;
-        private bool m_IsReadOnly;
-        private static readonly ArraySegment<byte> m_NULL;
-        private int m_Offset;
-        private int m_Updateing;
+        public static readonly ArraySegment<byte> m_NULL;
+
+        private int capity;
+        private int currentCount;
+        private ArraySegment<byte>[] global;
+        private int innerOffset;
+        private bool isReadOnly;
+        
+        private int offset;
+        private int updateing;
 
         public SendingQueue(ArraySegment<byte>[] source, int offset, int capity)
         {
-            this.m_Global = source;
-            this.m_Offset = offset;
-            this.m_Capity = capity;
-            this.m_InnerOffset = 0;
+            this.global = source;
+            this.offset = offset;
+            this.capity = capity;
+            this.innerOffset = 0;
         }
 
         public void Add(ArraySegment<byte> item)
@@ -37,12 +39,12 @@ namespace waxbill.Pools
 
         public void Clear()
         {
-            for (int i = 0; i < this.m_CurrentCount; i++)
+            for (int i = 0; i < this.currentCount; i++)
             {
-                this.m_Global[this.m_Offset + i] = m_NULL;
+                this.global[this.offset + i] = m_NULL;
             }
-            this.m_CurrentCount = 0;
-            this.m_InnerOffset = 0;
+            this.currentCount = 0;
+            this.innerOffset = 0;
         }
 
         public bool Contains(ArraySegment<byte> item)
@@ -60,15 +62,15 @@ namespace waxbill.Pools
 
         public bool EnQueue(ArraySegment<byte> item)
         {
-            if (!this.m_IsReadOnly)
+            if (!this.isReadOnly)
             {
-                Interlocked.Increment(ref this.m_Updateing);
-                while (!this.m_IsReadOnly)
+                Interlocked.Increment(ref this.updateing);
+                while (!this.isReadOnly)
                 {
                     bool conflict = false;
                     if (this.TryEnQueue(item, out conflict))
                     {
-                        Interlocked.Decrement(ref this.m_Updateing);
+                        Interlocked.Decrement(ref this.updateing);
                         return true;
                     }
                     if (!conflict)
@@ -76,22 +78,22 @@ namespace waxbill.Pools
                         break;
                     }
                 }
-                Interlocked.Decrement(ref this.m_Updateing);
+                Interlocked.Decrement(ref this.updateing);
             }
             return false;
         }
 
         public bool EnQueue(IList<ArraySegment<byte>> items)
         {
-            if (!this.m_IsReadOnly)
+            if (!this.isReadOnly)
             {
-                Interlocked.Increment(ref this.m_Updateing);
-                while (!this.m_IsReadOnly)
+                Interlocked.Increment(ref this.updateing);
+                while (!this.isReadOnly)
                 {
                     bool conflict = false;
                     if (this.TryEnQueue(items, out conflict))
                     {
-                        Interlocked.Decrement(ref this.m_Updateing);
+                        Interlocked.Decrement(ref this.updateing);
                         return true;
                     }
                     if (!conflict)
@@ -99,15 +101,18 @@ namespace waxbill.Pools
                         break;
                     }
                 }
-                Interlocked.Decrement(ref this.m_Updateing);
+                Interlocked.Decrement(ref this.updateing);
             }
             return false;
         }
 
-        [IteratorStateMachine(typeof(<GetEnumerator>d__31))]
+        
         public IEnumerator<ArraySegment<byte>> GetEnumerator()
         {
-            return new <GetEnumerator>d__31(0) { <>4__this = this };
+            for (int i = 0; i < currentCount; i++)
+            {
+                yield return this.global[offset + currentCount];
+            }
         }
 
         public int IndexOf(ArraySegment<byte> item)
@@ -132,19 +137,19 @@ namespace waxbill.Pools
 
         public void StartQueue()
         {
-            this.m_IsReadOnly = false;
+            this.isReadOnly = false;
         }
 
         public void StopQueue()
         {
-            if (!this.m_IsReadOnly)
+            if (!this.isReadOnly)
             {
-                this.m_IsReadOnly = true;
-                if (this.m_Updateing >= 0)
+                this.isReadOnly = true;
+                if (this.updateing >= 0)
                 {
                     SpinWait wait = new SpinWait();
                     wait.SpinOnce();
-                    while (this.m_Updateing > 0)
+                    while (this.updateing > 0)
                     {
                         wait.SpinOnce();
                     }
@@ -159,17 +164,17 @@ namespace waxbill.Pools
 
         public void TrimByte(int byteCount)
         {
-            int num = this.m_CurrentCount - this.m_InnerOffset;
+            int num = this.currentCount - this.innerOffset;
             int num2 = 0;
-            for (int i = this.m_InnerOffset; i < num; i++)
+            for (int i = this.innerOffset; i < num; i++)
             {
-                ArraySegment<byte> segment = this.m_Global[this.m_Offset + i];
+                ArraySegment<byte> segment = this.global[this.offset + i];
                 num2 += segment.Count;
                 if (num2 > byteCount)
                 {
-                    this.m_InnerOffset = i;
+                    this.innerOffset = i;
                     int count = num2 - byteCount;
-                    this.m_Global[this.m_Offset + i] = new ArraySegment<byte>(segment.Array, (segment.Offset + segment.Count) - count, count);
+                    this.global[this.offset + i] = new ArraySegment<byte>(segment.Array, (segment.Offset + segment.Count) - count, count);
                     return;
                 }
             }
@@ -178,36 +183,36 @@ namespace waxbill.Pools
         private bool TryEnQueue(ArraySegment<byte> item, out bool conflict)
         {
             conflict = false;
-            int currentCount = this.m_CurrentCount;
-            if (currentCount >= this.m_Capity)
+            int currentCount = this.currentCount;
+            if (currentCount >= this.capity)
             {
                 return false;
             }
-            if (Interlocked.CompareExchange(ref this.m_CurrentCount, currentCount + 1, currentCount) != currentCount)
+            if (Interlocked.CompareExchange(ref this.currentCount, currentCount + 1, currentCount) != currentCount)
             {
                 conflict = true;
                 return false;
             }
-            this.m_Global[this.m_Offset + currentCount] = item;
+            this.global[this.offset + currentCount] = item;
             return true;
         }
 
         private bool TryEnQueue(IList<ArraySegment<byte>> items, out bool conflict)
         {
             conflict = false;
-            int currentCount = this.m_CurrentCount;
-            if ((currentCount + items.Count) >= this.m_Capity)
+            int currentCount = this.currentCount;
+            if ((currentCount + items.Count) >= this.capity)
             {
                 return false;
             }
-            if (Interlocked.CompareExchange(ref this.m_CurrentCount, currentCount + items.Count, currentCount) != currentCount)
+            if (Interlocked.CompareExchange(ref this.currentCount, currentCount + items.Count, currentCount) != currentCount)
             {
                 conflict = true;
                 return false;
             }
             for (int i = 0; i < items.Count; i++)
             {
-                this.m_Global[(this.m_Offset + currentCount) + i] = items[i];
+                this.global[(this.offset + currentCount) + i] = items[i];
             }
             return true;
         }
@@ -216,7 +221,7 @@ namespace waxbill.Pools
         {
             get
             {
-                return (this.m_CurrentCount - this.m_InnerOffset);
+                return (this.currentCount - this.innerOffset);
             }
         }
 
@@ -224,7 +229,7 @@ namespace waxbill.Pools
         {
             get
             {
-                return this.m_IsReadOnly;
+                return this.isReadOnly;
             }
         }
 
@@ -236,85 +241,15 @@ namespace waxbill.Pools
                 {
                     throw new ArgumentOutOfRangeException("index 小于0");
                 }
-                int num = (this.m_Offset + this.m_InnerOffset) + index;
-                return this.m_Global[num];
+                int num = (this.offset + this.innerOffset) + index;
+                return this.global[num];
             }
             set
             {
                 throw new NotSupportedException();
             }
         }
-
-        [CompilerGenerated]
-        private sealed class <GetEnumerator>d__31 : IEnumerator<ArraySegment<byte>>, IDisposable, IEnumerator
-        {
-            private int <>1__state;
-            private ArraySegment<byte> <>2__current;
-            public SendingQueue <>4__this;
-            private int <i>5__1;
-
-            [DebuggerHidden]
-            public <GetEnumerator>d__31(int <>1__state)
-            {
-                this.<>1__state = <>1__state;
-            }
-
-            private bool MoveNext()
-            {
-                int num = this.<>1__state;
-                SendingQueue queue = this.<>4__this;
-                if (num == 0)
-                {
-                    this.<>1__state = -1;
-                    this.<i>5__1 = 0;
-                    while (this.<i>5__1 < queue.Count)
-                    {
-                        this.<>2__current = queue.m_Global[(queue.m_Offset + queue.m_InnerOffset) + this.<i>5__1];
-                        this.<>1__state = 1;
-                        return true;
-                    Label_0055:
-                        this.<>1__state = -1;
-                        int num2 = this.<i>5__1;
-                        this.<i>5__1 = num2 + 1;
-                    }
-                    return false;
-                }
-                if (num != 1)
-                {
-                    return false;
-                }
-                goto Label_0055;
-            }
-
-            [DebuggerHidden]
-            void IEnumerator.Reset()
-            {
-                throw new NotSupportedException();
-            }
-
-            [DebuggerHidden]
-            void IDisposable.Dispose()
-            {
-            }
-
-            ArraySegment<byte> IEnumerator<ArraySegment<byte>>.Current
-            {
-                [DebuggerHidden]
-                get
-                {
-                    return this.<>2__current;
-                }
-            }
-
-            object IEnumerator.Current
-            {
-                [DebuggerHidden]
-                get
-                {
-                    return this.<>2__current;
-                }
-            }
-        }
+        
     }
 }
 

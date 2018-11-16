@@ -19,7 +19,7 @@ namespace waxbill
         /// <param name="nread">本次可以最长读取的长度</param>
         /// <param name="giveupCount">丢弃长度</param>
         /// <returns>是否读完一条信息</returns>
-        bool TryToPacket(Packet packet,IntPtr datas,Int32 count, out int giveupCount);
+        bool TryToPacket(Packet packet,ArraySegment<byte> datas, out int giveupCount);
 
 
         /// <summary>
