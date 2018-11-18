@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using waxbill.Packets;
+using waxbill.Pools;
 using waxbill.Protocols;
 using waxbill.Sessions;
 
@@ -13,12 +14,12 @@ namespace waxbill.demo.Tests
     {
         public static void Start(Int32 port)
         {
-            TCPServer<TermiatorSession> server = new TCPServer<TermiatorSession>(new TerminatorProtocol());
+            SocketServer<TermiatorSession> server = new SocketServer<TermiatorSession>(new TerminatorProtocol());
             server.Start("0.0.0.0", port);
             Trace.Info("server is start");
         }
 
-        private class TermiatorSession : ServerSession
+        private class TermiatorSession : SessionBase
         {
             protected override void OnConnected()
             {
@@ -37,7 +38,7 @@ namespace waxbill.demo.Tests
                 this.Send(data);
             }
 
-            protected override void OnSended(PlatformBuf packet, bool result)
+            protected override void OnSended(SendingQueue packet, bool result)
             {
                 ZTImage.Log.Trace.Info("send ok");
             }

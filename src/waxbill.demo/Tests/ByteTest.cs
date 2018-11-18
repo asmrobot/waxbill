@@ -8,6 +8,7 @@ using waxbill.Sessions;
 using waxbill.Utils;
 using ZTImage.Log;
 using waxbill.Protocols;
+using waxbill.Pools;
 
 namespace waxbill.demo.Tests
 {
@@ -15,13 +16,13 @@ namespace waxbill.demo.Tests
     {
         public static void Start(Int32 port)
         {
-            TCPServer<ByteSession> server = new TCPServer<ByteSession>(new RealtimeProtocol());
+            SocketServer<ByteSession> server = new SocketServer<ByteSession>(new RealtimeProtocol());
+            
             server.Start("0.0.0.0", port);
             Trace.Info("server is start");
         }
-        private class ByteSession : ServerSession
+        private class ByteSession : SessionBase
         {
-
             protected override void OnConnected()
             {
                 Trace.Info("connection!远程地址为：" + this.RemoteEndPoint.ToString());
@@ -54,18 +55,18 @@ namespace waxbill.demo.Tests
                 return builder.ToString().TrimEnd(',');
             }
 
-            private unsafe string tostring(PlatformBuf buf)
+            private unsafe string tostring(SendingQueue buf)
             {
-                byte* b = (byte*)(buf.Buffer);
+                
                 StringBuilder builder = new StringBuilder();
-                for (int i = 0; i < buf.Count.ToInt32(); i++)
+                for (int i = 0; i < buf.Count; i++)
                 {
-                    builder.Append(b[i] + ",");
+                    builder.Append(buf[i] + ",");
                 }
                 return builder.ToString();
             }
 
-            protected override void OnSended(PlatformBuf packet, bool result)
+            protected override void OnSended(SendingQueue packet, bool result)
             {
                 Trace.Info("sended:" + tostring(packet));
             }

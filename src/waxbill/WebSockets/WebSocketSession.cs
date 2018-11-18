@@ -57,7 +57,7 @@ namespace waxbill.WebSockets
         { }
        
 
-        protected override void ReceiveCallback(Packet packet)
+        protected override void OnReceived(Packet packet)
         {
             byte[] datas = packet.Read();
             m_InnerStream.SetData(datas);

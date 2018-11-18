@@ -30,33 +30,32 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe override bool ParseHeader(Packet packet,IntPtr datas)
+        protected unsafe override bool ParseHeader(Packet packet,ArraySegment<byte> datas)
         {
             return true;
         }
 
 
-        protected unsafe override bool ParseBody(Packet packet, IntPtr datas, int count, out int giveupCount)
+        protected unsafe override bool ParseBody(Packet packet, ArraySegment<byte> datas, out int giveupCount)
         {
             giveupCount = 0;
-            if (count <= 0)
+            if (datas.Count <= 0)
             {
                 return false;
             }
-            byte* memory = (byte*)datas;
-            while (giveupCount < count&& *memory != this.mEndChars)
+            
+            while (giveupCount < datas.Count&& datas.Array[datas.Offset+giveupCount] != this.mEndChars)
             {
                 giveupCount++;
-                memory++;
             }
 
             bool result = false;
-            if (giveupCount < count)
+            if (giveupCount < datas.Count)
             {
                 giveupCount++;
                 result = true;                
             }
-            packet.Write(datas, giveupCount);
+            packet.Write(new ArraySegment<byte>(datas.Array,datas.Offset, giveupCount));
             return result;
         }
         

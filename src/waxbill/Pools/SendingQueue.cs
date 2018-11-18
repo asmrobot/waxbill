@@ -9,19 +9,21 @@ using System.Threading;
 
 namespace waxbill.Pools
 {
-    
 
-    public class SendingQueue : IList<ArraySegment<byte>>, ICollection<ArraySegment<byte>>, IEnumerable<ArraySegment<byte>>, IEnumerable
+
+    //public class SendingQueue : IList<ArraySegment<byte>>, ICollection<ArraySegment<byte>>, IEnumerable<ArraySegment<byte>>, IEnumerable
+    public class SendingQueue: IList<ArraySegment<byte>>
     {
-        public static readonly ArraySegment<byte> m_NULL;
+        public static readonly ArraySegment<byte> Empty=default(ArraySegment<byte>);
 
-        private int capity;
-        private int currentCount;
-        private ArraySegment<byte>[] global;
-        private int innerOffset;
         private bool isReadOnly;
-        
-        private int offset;
+
+        private ArraySegment<byte>[] global;//队列全局数组
+        private int offset;//队列开始偏移
+        private int capity;//队列大小
+
+        private int currentCount;
+        private int innerOffset;
         private int updateing;
 
         public SendingQueue(ArraySegment<byte>[] source, int offset, int capity)
@@ -37,11 +39,13 @@ namespace waxbill.Pools
             throw new NotSupportedException();
         }
 
+        
+
         public void Clear()
         {
             for (int i = 0; i < this.currentCount; i++)
             {
-                this.global[this.offset + i] = m_NULL;
+                this.global[this.offset + i] = Empty;
             }
             this.currentCount = 0;
             this.innerOffset = 0;
@@ -106,7 +110,7 @@ namespace waxbill.Pools
             return false;
         }
 
-        
+
         public IEnumerator<ArraySegment<byte>> GetEnumerator()
         {
             for (int i = 0; i < currentCount; i++)
@@ -157,10 +161,7 @@ namespace waxbill.Pools
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return this.GetEnumerator();
-        }
+       
 
         public void TrimByte(int byteCount)
         {
@@ -217,6 +218,11 @@ namespace waxbill.Pools
             return true;
         }
 
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
         public int Count
         {
             get
@@ -249,7 +255,7 @@ namespace waxbill.Pools
                 throw new NotSupportedException();
             }
         }
-        
+
     }
 }
 

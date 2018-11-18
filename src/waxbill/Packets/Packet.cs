@@ -171,11 +171,13 @@ namespace waxbill.Packets
             }
         }
 
+        
+
         /// <summary>
         /// 添加字节段
         /// </summary>
         /// <param name="bytes"></param>
-        internal void Write(ArraySegment<byte> bytes)
+        public void Write(ArraySegment<byte> bytes)
         {
             if (bytes!=default(ArraySegment<byte>)&&bytes.Count > 0)
             {

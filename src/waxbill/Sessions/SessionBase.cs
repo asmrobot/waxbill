@@ -38,7 +38,7 @@ namespace waxbill.Sessions
                     }
                     wait.SpinOnce();
                 }
-                this.RaiseDisconnect(reason);
+                this.RaiseDisconnected(reason);
                 try
                 {
                     this._Connector.Shutdown(SocketShutdown.Both);
@@ -53,8 +53,6 @@ namespace waxbill.Sessions
             }
         }
 
-        protected abstract void ConnectedCallback();
-        protected abstract void DisconnectedCallback(CloseReason reason);
         private void FreeResource(CloseReason reason)
         {
             if (this.mPacket != null)
@@ -191,56 +189,7 @@ namespace waxbill.Sessions
             return this.InternalSend(mSendingQueue);
         }
 
-        private void RaiseAccept()
-        {
-            try
-            {
-                this.ConnectedCallback();
-                this.monitor.RaiseOnConnectionEvent(this);
-            }
-            catch
-            {
-            }
-        }
-
-        private void RaiseDisconnect(CloseReason reason)
-        {
-            try
-            {
-                this.DisconnectedCallback(reason);
-                this.monitor.RaiseOnDisconnectedEvent(this, reason);
-            }
-            catch
-            {
-            }
-        }
-
-        private void RaiseReceive(Packet packet)
-        {
-            try
-            {
-                this.ReceiveCallback(packet);
-                this.monitor.RaiseOnReceiveEvent(this, packet);
-            }
-            catch (Exception exception)
-            {
-                Trace.Error(exception.Message, exception);
-            }
-        }
-
-        private void RaiseSended(SendingQueue packet, bool result)
-        {
-            try
-            {
-                this.SendedCallback(packet, result);
-                this.monitor.RaiseOnSendedEvent(this, packet, result);
-            }
-            catch
-            {
-            }
-        }
-
-        protected abstract void ReceiveCallback(Packet packet);
+        
         private void ReceiveCompleted(ArraySegment<byte> datas)
         {
             bool flag = false;
@@ -261,7 +210,7 @@ namespace waxbill.Sessions
                 ThreadPool.QueueUserWorkItem(delegate (object obj) {
                     try
                     {
-                        this.RaiseReceive(oldPacket);
+                        this.RaiseReceived(oldPacket);
                         this.ReceiveCompletedLoop(datas, readlen);
                     }
                     catch (Exception exception)
@@ -427,7 +376,7 @@ namespace waxbill.Sessions
             this.Send(new ArraySegment<byte>(datas, offset, size));
         }
 
-        protected abstract void SendedCallback(SendingQueue packet, bool result);
+        
         private void SendEnd(SendingQueue queue, CloseReason reason)
         {
             if (queue != null)
@@ -463,10 +412,10 @@ namespace waxbill.Sessions
 
         public void Start()
         {
-            this.RaiseAccept();
+            this.RaiseConnected();
             if (!this.monitor.SendingPool.TryGet(out this.mSendingQueue))
             {
-                Trace.Error("发送队列无法初始化");
+                Trace.Error("无法获取可用的发送池");
             }
             else
             {
@@ -559,7 +508,73 @@ namespace waxbill.Sessions
                 }
             }
         }
-        
+
+
+
+
+        #region Callback
+
+
+        private void RaiseConnected()
+        {
+            try
+            {
+                this.OnConnected();
+                this.monitor.RaiseOnConnectedEvent(this);
+            }
+            catch
+            {
+            }
+        }
+
+        private void RaiseDisconnected(CloseReason reason)
+        {
+            try
+            {
+                this.OnDisconnected(reason);
+                this.monitor.RaiseOnDisconnectedEvent(this, reason);
+            }
+            catch
+            {
+            }
+        }
+
+        private void RaiseReceived(Packet packet)
+        {
+            try
+            {
+                this.OnReceived(packet);
+                this.monitor.RaiseOnReceivedEvent(this, packet);
+            }
+            catch (Exception exception)
+            {
+                Trace.Error(exception.Message, exception);
+            }
+        }
+
+        private void RaiseSended(SendingQueue packet, bool result)
+        {
+            try
+            {
+                this.OnSended(packet, result);
+                this.monitor.RaiseOnSendedEvent(this, packet, result);
+            }
+            catch
+            {
+            }
+        }
+
+
+
+        protected abstract void OnConnected();
+
+        protected abstract void OnDisconnected(CloseReason reason);
+
+        protected abstract void OnSended(SendingQueue packet, bool result);
+
+
+        protected abstract void OnReceived(Packet packet);
+        #endregion
     }
 }
 

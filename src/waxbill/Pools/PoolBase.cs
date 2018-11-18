@@ -218,5 +218,7 @@ namespace waxbill.Pools
         /// <param name="index"></param>
         /// <returns></returns>
         protected abstract T CreateItem(Int32 index);
+
+        //protected abstract T[] CreateItems(Int32 suggestCount);
     }
 }

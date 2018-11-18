@@ -38,7 +38,7 @@ namespace waxbill.Protocols
         /// <param name="count"></param>
         /// <param name="giveupCount"></param>
         /// <returns></returns>
-        protected unsafe override bool ParseHeader(Packet _packet, IntPtr datas)
+        protected override bool ParseHeader(Packet _packet, ArraySegment<byte> datas)
         {
             ZTProtocolPacket packet = _packet as ZTProtocolPacket;
             if (packet == null)
@@ -46,39 +46,43 @@ namespace waxbill.Protocols
                 return false;
             }
 
-            byte* memory = (byte*)datas;
-            if (*memory != 0x0d || *(memory + 1) != 0x0a)
+            
+            if (datas.Array[datas.Offset] != 0x0d || datas.Array[datas.Offset+1] != 0x0a)
             {
                 return false;
             }
             
-            packet.ContentLength= NetworkBitConverter.ToInt32(*(memory+2),*(memory+3),*(memory+4),*(memory+5));
+            packet.ContentLength= NetworkBitConverter.ToInt32(
+                datas.Array[datas.Offset + 2],
+                datas.Array[datas.Offset + 3],
+                datas.Array[datas.Offset + 4],
+                datas.Array[datas.Offset + 5]);
             return true;
         }
 
 
-        protected unsafe override bool ParseBody(Packet _packet, IntPtr datas, int count, out Int32 giveupCount)
+        protected override bool ParseBody(Packet _packet, ArraySegment<byte> datas, out Int32 giveupCount)
         {
             ZTProtocolPacket packet = _packet as ZTProtocolPacket;
             if (packet == null)
             {
-                giveupCount = count;
+                giveupCount = datas.Count;
                 return false;
             }
             giveupCount = 0;
             bool result = false;
-            if ((count + packet.Count) >= packet.ContentLength)
+            if ((datas.Count + packet.Count) >= packet.ContentLength)
             {
                 giveupCount = packet.ContentLength - (Int32)packet.Count;
                 result = true;
             }
             else
             {
-                giveupCount = count;
+                giveupCount = datas.Count;
                 result = false;
             }
             //保存数据 
-            packet.Write(datas, giveupCount);
+            packet.Write(new ArraySegment<byte>(datas.Array,datas.Offset, giveupCount));
             return result;
         }
         

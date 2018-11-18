@@ -67,6 +67,22 @@ namespace waxbill
             return this.m_Session.Values;
         }
 
+
+        public void Start(string ip, Int32 port)
+        {
+            IPAddress address;
+            if (!IPAddress.TryParse(ip, out address))
+            {
+                throw new ArgumentOutOfRangeException("ip");
+            }
+            if (port <= 0 || port >= 65536)
+            {
+                throw new ArgumentOutOfRangeException("port");
+            }
+
+            Start(new IPEndPoint(address, port));
+        }
+
         public void Start(IPEndPoint endpoint)
         {
             this._Listeners = new SocketListener<TSession>(endpoint, (SocketServer<TSession>) this);

@@ -59,7 +59,7 @@ namespace waxbill
             return Interlocked.Increment(ref this.connectionIncremer);
         }
 
-        internal void RaiseOnConnectionEvent(SessionBase session)
+        internal void RaiseOnConnectedEvent(SessionBase session)
         {
             if (this.OnConnection != null)
             {
@@ -77,7 +77,7 @@ namespace waxbill
             }
         }
 
-        internal void RaiseOnReceiveEvent(SessionBase session, Packet collection)
+        internal void RaiseOnReceivedEvent(SessionBase session, Packet collection)
         {
             if (this.OnReceive != null)
             {
