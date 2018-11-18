@@ -59,7 +59,7 @@ namespace waxbill.Sessions
             {
                 this.mPacket.Reset();
             }
-            if (this.mSendingQueue != null)
+            if (this.mSendingQueue != SendingQueue.Null)
             {
                 if (this.mSendingQueue.Count > 0)
                 {
@@ -179,7 +179,7 @@ namespace waxbill.Sessions
             }
             if (!this.monitor.SendingPool.TryGet(out queue2))
             {
-                this.SendEnd(null, CloseReason.InernalError);
+                this.SendEnd(SendingQueue.Null, CloseReason.InernalError);
                 Trace.Error("没有分配到发送queue", null);
                 return false;
             }
@@ -282,31 +282,32 @@ namespace waxbill.Sessions
 
         private void SAE_SendCompleted(object sender, SocketAsyncEventArgs e)
         {
-            SendingQueue userToken = e.UserToken as SendingQueue;
-            if (userToken == null)
+            SendingQueue sendQueue = e.UserToken as SendingQueue;
+           
+            if (sendQueue == SendingQueue.Null)
             {
                 Trace.Error("未知错误help!~");
             }
             else if (e.SocketError != SocketError.Success)
             {
-                this.RaiseSended(userToken, false);
-                this.SendEnd(userToken, CloseReason.Exception);
+                this.RaiseSended(sendQueue, false);
+                this.SendEnd(sendQueue, CloseReason.Exception);
             }
-            else if (userToken.Count <= e.BytesTransferred)
+            else if (sendQueue.Count <= e.BytesTransferred)
             {
                
                 e.SetBuffer(null, 0, 0);
                 e.BufferList = null;
-                this.RaiseSended(userToken, true);
-                userToken.Clear();
-                this.monitor.SendingPool.Release(userToken);
+                this.RaiseSended(sendQueue, true);
+                sendQueue.Clear();
+                this.monitor.SendingPool.Release(sendQueue);
                 this.RemoveState(1);
                 this.PreSend();
             }
             else
             {
-                userToken.TrimByte(e.BytesTransferred);
-                this.InternalSend(userToken);
+                sendQueue.TrimByte(e.BytesTransferred);
+                this.InternalSend(sendQueue);
             }
         }
 
@@ -435,7 +436,7 @@ namespace waxbill.Sessions
             {
                 return false;
             }
-            if (!mSendingQueue.EnQueue(data))
+            if (!mSendingQueue.Enqueue(data))
             {
                 reTry = true;
                 return false;
@@ -451,7 +452,7 @@ namespace waxbill.Sessions
             {
                 return false;
             }
-            if (!mSendingQueue.EnQueue(datas))
+            if (!mSendingQueue.Enqueue(datas))
             {
                 reTry = true;
                 return false;

@@ -18,7 +18,7 @@ namespace waxbill.Pools
             //todo:添加批量生成缓存的方法
             //SendingQueue request = new SendingQueue();
             //return request;
-            return null;
+            return default(SendingQueue);
         }
 
         /// <summary>
