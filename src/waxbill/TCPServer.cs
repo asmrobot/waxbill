@@ -10,18 +10,18 @@ namespace waxbill
 {
     
 
-    public class SocketServer<TSession> : SocketMonitor where TSession: SessionBase, new()
+    public class TCPServer<TSession> : SocketMonitor where TSession: SessionBase, new()
     {
         private SocketListener<TSession> _Listeners;
         private Timer m_RecycleTimer;
         private ConcurrentDictionary<long, TSession> m_Session;
 
-        public SocketServer(IProtocol protocol) : base(protocol, SocketConfiguration.Default)
+        public TCPServer(IProtocol protocol) : base(protocol, SocketConfiguration.Default)
         {
             this.m_Session = new ConcurrentDictionary<long, TSession>();
         }
 
-        public SocketServer(IProtocol protocol, SocketConfiguration configuration) : base(protocol, configuration)
+        public TCPServer(IProtocol protocol, SocketConfiguration configuration) : base(protocol, configuration)
         {
             this.m_Session = new ConcurrentDictionary<long, TSession>();
         }
@@ -85,7 +85,7 @@ namespace waxbill
 
         public void Start(IPEndPoint endpoint)
         {
-            this._Listeners = new SocketListener<TSession>(endpoint, (SocketServer<TSession>) this);
+            this._Listeners = new SocketListener<TSession>(endpoint, (TCPServer<TSession>) this);
             this._Listeners.Start();
             if (base.Config.AutoRecycleSession)
             {

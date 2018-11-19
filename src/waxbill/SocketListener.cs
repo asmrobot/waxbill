@@ -11,9 +11,9 @@ namespace waxbill
         private IPEndPoint _EndPoint;
         private SocketAsyncEventArgs mSAE;
         private Socket mSocket;
-        private SocketServer<TSession> mSocketServer;
+        private TCPServer<TSession> mSocketServer;
 
-        internal SocketListener(IPEndPoint endpoint, SocketServer<TSession> server)
+        internal SocketListener(IPEndPoint endpoint, TCPServer<TSession> server)
         {
             Preconditions.ThrowIfNull(endpoint, "endpoint");
             this._EndPoint = endpoint;
