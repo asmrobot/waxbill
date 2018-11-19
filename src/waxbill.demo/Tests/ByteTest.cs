@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using waxbill.Packets;
 using waxbill.Sessions;
 using waxbill.Utils;
-using ZTImage.Log;
 using waxbill.Protocols;
 using waxbill.Pools;
 
@@ -34,12 +33,21 @@ namespace waxbill.demo.Tests
                 Trace.Info("disconnection");
             }
 
+            long total = 0;
             protected override void OnReceived(Packet packet)
             {
-                byte[] b = packet.Read();
+                //byte[] b = packet.Read();
+                //Trace.Info("receive:" + tostring(b));
+                //this.Send(b);
+                //Trace.Info("receive count:" + packet.Count.ToString());
 
-                Trace.Info("receive:" + tostring(b));
-                this.Send(b);
+                total += packet.Count;
+                if (total > 1000000000)
+                {
+                    Trace.Info(total.ToString());
+                    total = 0;
+                }
+
             }
 
 
