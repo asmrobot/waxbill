@@ -16,10 +16,6 @@ namespace waxbill
         private long connectionIncremer;        
         internal SocketConfiguration Config;
         
-        public OnConnectionEvent OnConnection;
-        public OnDisconnectedEvent OnDisconnected;
-        public OnReceiveEvent OnReceive;
-        public OnSendedEvent OnSended;
         
         internal SendingQueuePool SendingPool;
         internal EventArgPool SocketEventArgsPool;
@@ -50,38 +46,6 @@ namespace waxbill
         internal long GetNextConnectionID()
         {
             return Interlocked.Increment(ref this.connectionIncremer);
-        }
-
-        internal void RaiseOnConnectedEvent(SessionBase session)
-        {
-            if (this.OnConnection != null)
-            {
-                this.OnConnection(session);
-            }
-        }
-
-        internal void RaiseOnDisconnectedEvent(SessionBase session, CloseReason reason)
-        {
-            if (this.OnDisconnected != null)
-            {
-                this.OnDisconnected(session, reason);
-            }
-        }
-
-        internal void RaiseOnReceivedEvent(SessionBase session, Packet collection)
-        {
-            if (this.OnReceive != null)
-            {
-                this.OnReceive(session, collection);
-            }
-        }
-
-        internal void RaiseOnSendedEvent(SessionBase session, SendingQueue packet, bool result)
-        {
-            if (this.OnSended != null)
-            {
-                this.OnSended(session, packet, result);
-            }
         }
     }
 }

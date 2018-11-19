@@ -538,10 +538,11 @@ namespace waxbill.Sessions
             try
             {
                 this.OnConnected();
-                this.monitor.RaiseOnConnectedEvent(this);
+                //this.monitor.RaiseOnConnectedEvent(this);
             }
-            catch
+            catch (Exception exception)
             {
+                Trace.Error(exception.Message, exception);
             }
         }
 
@@ -550,10 +551,11 @@ namespace waxbill.Sessions
             try
             {
                 this.OnDisconnected(reason);
-                this.monitor.RaiseOnDisconnectedEvent(this, reason);
+                //this.monitor.RaiseOnDisconnectedEvent(this, reason);
             }
-            catch
+            catch (Exception exception)
             {
+                Trace.Error(exception.Message, exception);
             }
         }
 
@@ -562,7 +564,7 @@ namespace waxbill.Sessions
             try
             {
                 this.OnReceived(packet);
-                this.monitor.RaiseOnReceivedEvent(this, packet);
+                //this.monitor.RaiseOnReceivedEvent(this, packet);
             }
             catch (Exception exception)
             {
@@ -575,10 +577,11 @@ namespace waxbill.Sessions
             try
             {
                 this.OnSended(packet, result);
-                this.monitor.RaiseOnSendedEvent(this, packet, result);
+                //this.monitor.RaiseOnSendedEvent(this, packet, result);
             }
-            catch
+            catch (Exception exception)
             {
+                Trace.Error(exception.Message, exception);
             }
         }
 
