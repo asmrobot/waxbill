@@ -11,22 +11,39 @@ namespace waxbill.Pools
     /// </summary>
     public class SendingQueuePool : PoolBase<SendingQueue>
     {
-        public SendingQueuePool():base(3,0)
-        {}
-        protected override SendingQueue CreateItem(int index)
+        private readonly Int32 queueSize;
+        public Int32 QueueSize
         {
-            //todo:添加批量生成缓存的方法
-            //SendingQueue request = new SendingQueue();
-            //return request;
-            return default(SendingQueue);
+            get
+            {
+                return queueSize;
+            }
         }
 
-        /// <summary>
-        /// 初始化
-        /// </summary>
-        public void Initialize(Int32 minSendingPoolSize, Int32 maxSendingPoolSize, Int32 sendingQueueSize)
+        public SendingQueuePool(Int32 queueSize, Int32 increaseNumber,Int32 max) :base(increaseNumber,max)
         {
+            this.queueSize = queueSize;
+        }
 
+        private List<ArraySegment<byte>[]> global = new List<ArraySegment<byte>[]>();
+
+        protected override SendingQueue[] CreateItems(int suggestCount)
+        {
+            if (suggestCount <= 0)
+            {
+                throw new ArgumentOutOfRangeException("suggestcount<=0");
+            }
+            ArraySegment<byte>[] globalItem = new ArraySegment<byte>[suggestCount * this.queueSize];
+            this.global.Add(globalItem);
+
+            SendingQueue[] items = new SendingQueue[suggestCount];
+            SendingQueue queue;
+            for (int i = 0; i < suggestCount; i++)
+            {
+                queue = new SendingQueue(globalItem, i * this.queueSize, this.queueSize);
+                items[i] = queue;
+            }
+            return items;
         }
     }
 }

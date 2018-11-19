@@ -10,47 +10,118 @@
         static SocketConfiguration()
         {
             SocketConfiguration configuration1 = new SocketConfiguration {
-                BufferSize = 0x2000,
-                BufferIncemerCount = 0x3e8,
-                ReceiveBufferSize = 0xa000,
-                MaxMessageSize = 0x989680,
-                MinSendingPoolSize = 0x100,
-                MaxSendingPoolSize = 0x30d40,
-                SendQueueSize = 6,
-                SendTimeout = 0x1388,
+
                 AutoRecycleSession = true,
-                RecycleSessionFrequency = 0x1388,
-                MaxSocketPoolSize = 100,
-                MaxBlockSize = 500
+                RecycleSecond = 30000,
+                SendTimeout = 10000,
+                
+                MaxBlockSize = 500,
+
+                IncreasesOfEventArgPool = 10,
+                MaxOfClient = 0,
+
+                BufferSizeOfReceiveBufferPool = 1024,//每个接收缓冲区的大小
+                IncreasesOfReceiveBufferPool = 10,
+                MaxOfReceiveBufferPool = 0,
+
+
+                BufferSizeOfPacketBufferPool = 1024,
+                IncreasesOfPacketBufferPool = 1000,
+                MaxOfPacketBufferPool=0,
+
+                IncreasesOfSendingQueuePool = 1000,
+                MaxOfSendingQueuePool = 0,
+                SizeOfSendQueue = 6,
             };
             Default = configuration1;
         }
 
+        /// <summary>
+        /// 是否自动回收会话
+        /// </summary>
         public bool AutoRecycleSession { get; set; }
 
-        public int BufferIncemerCount { get; set; }
+        /// <summary>
+        /// 回收秒数，毫秒
+        /// </summary>
+        public int RecycleSecond { get; set; }
 
-        public int BufferSize { get; set; }
-
+        /// <summary>
+        /// Socket监听时最长等待队列
+        /// </summary>
         public int MaxBlockSize { get; set; }
-
-        public int MaxMessageSize { get; set; }
-
-        public int MaxReceivePoolSize { get; set; }
-
-        public int MaxSendingPoolSize { get; set; }
-
-        public int MaxSocketPoolSize { get; set; }
-
-        public int MinSendingPoolSize { get; set; }
-
-        public int ReceiveBufferSize { get; set; }
-
-        public int RecycleSessionFrequency { get; set; }
-
-        public int SendQueueSize { get; set; }
-
+        
+        /// <summary>
+        /// 发送超时时长
+        /// </summary>
         public int SendTimeout { get; set; }
+
+        /// <summary>
+        /// 最大客户数
+        /// </summary>
+        public int MaxOfClient { get; set; }
+
+
+        /// <summary>
+        /// SocketAsyncEventArgsbn每次建议增加量
+        /// </summary>
+        public Int32 IncreasesOfEventArgPool { get; set; }
+
+        
+
+
+        #region receive
+        /// <summary>
+        /// 接收池最大数量
+        /// </summary>
+        public int MaxOfReceiveBufferPool { get; set; }
+
+        /// <summary>
+        /// 每次增加量
+        /// </summary>
+        public Int32 IncreasesOfReceiveBufferPool { get; set; }
+
+        /// <summary>
+        /// 每个接收缓存的大小
+        /// </summary>
+        public int BufferSizeOfReceiveBufferPool { get; set; }
+
+        #endregion
+
+        #region packet
+        /// <summary>
+        /// 包池最大数量
+        /// </summary>
+        public Int32 MaxOfPacketBufferPool { get; set; }
+
+        /// <summary>
+        /// 包池增量
+        /// </summary>
+        public Int32 IncreasesOfPacketBufferPool { get; set; }
+
+        /// <summary>
+        /// 包池单项大小
+        /// </summary>
+        public int BufferSizeOfPacketBufferPool { get; set; }
+        #endregion
+
+
+        #region send
+        /// <summary>
+        /// 发送队列池每次建议增加数量 
+        /// </summary>
+        public int IncreasesOfSendingQueuePool { get; set; }
+
+        /// <summary>
+        /// 发送队列池最大发送队列数量
+        /// </summary>
+        public int MaxOfSendingQueuePool { get; set; }
+
+        /// <summary>
+        /// 发送队列大小
+        /// </summary>
+        public int SizeOfSendQueue { get; set; }
+        #endregion
     }
 }
 

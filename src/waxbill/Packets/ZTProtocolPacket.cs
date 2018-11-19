@@ -10,7 +10,7 @@ namespace waxbill.Packets
 {
     public class ZTProtocolPacket:Packet
     {
-        public ZTProtocolPacket(BufferManager buffer) : base(buffer)
+        public ZTProtocolPacket(PacketBufferPool buffer) : base(buffer)
         {}
 
 

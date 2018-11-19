@@ -59,7 +59,6 @@ namespace waxbill.Protocols
                 giveupCount = count;
                 return false;
             }
-
             
             if (!packet.IsStart)
             {
@@ -98,7 +97,7 @@ namespace waxbill.Protocols
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        public virtual Packet CreatePacket(BufferManager buffer)
+        public virtual Packet CreatePacket(PacketBufferPool buffer)
         {
             return new Packet(buffer);
         }

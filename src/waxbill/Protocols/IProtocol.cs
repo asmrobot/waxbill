@@ -27,7 +27,7 @@ namespace waxbill
         /// </summary>
         /// <param name="buffer"></param>
         /// <returns></returns>
-        Packet CreatePacket(BufferManager buffer);
+        Packet CreatePacket(PacketBufferPool buffer);
 
     }
 }

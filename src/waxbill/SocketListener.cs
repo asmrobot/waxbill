@@ -2,10 +2,11 @@
 using System.Net;
 using System.Net.Sockets;
 using waxbill.Sessions;
+using waxbill.Utils;
 
 namespace waxbill
 {
-    public class SocketListener<TSession> where TSession: SessionBase, new()
+    internal class SocketListener<TSession> where TSession: SessionBase, new()
     {
         private IPEndPoint _EndPoint;
         private SocketAsyncEventArgs mSAE;
@@ -14,10 +15,7 @@ namespace waxbill
 
         internal SocketListener(IPEndPoint endpoint, SocketServer<TSession> server)
         {
-            if (endpoint == null)
-            {
-                throw new ArgumentNullException("endpoint");
-            }
+            Preconditions.ThrowIfNull(endpoint, "endpoint");
             this._EndPoint = endpoint;
             this.mSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             this.mSAE = new SocketAsyncEventArgs();

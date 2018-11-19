@@ -86,7 +86,7 @@ namespace waxbill.Protocols
             return result;
         }
         
-        public override Packet CreatePacket(BufferManager buffer)
+        public override Packet CreatePacket(PacketBufferPool buffer)
         {
             return new ZTProtocolPacket(buffer);
         }

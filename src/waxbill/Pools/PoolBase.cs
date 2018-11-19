@@ -14,32 +14,35 @@ namespace waxbill.Pools
     /// <typeparam name="T"></typeparam>
     public abstract class PoolBase<T>
     {
-        private int minCount;
+
+        public const Int32 SUGGEST_INCREASE_NUMBER_DEFAULT = 10;//默认建议每次增加数
+
+        private int suggestIncrease;//建议增量
         /// <summary>
-        /// 池最小容量
+        /// 每次增加量
         /// </summary>
-        public int MinCount
+        public int Increases
         {
             get
             {
-                return minCount;
+                return suggestIncrease;
             }
         }
 
-        private int maxCount;
+        private int max;
         /// <summary>
         /// 池最大容量
         /// </summary>
-        public int MaxCount
+        public int Max
         {
             get
             {
-                return maxCount;
+                return max;
             }
         }
 
         private int count;
-        
+
         /// <summary>
         /// 目前池容量
         /// </summary>
@@ -64,139 +67,139 @@ namespace waxbill.Pools
 
         private ConcurrentStack<T> mPool;
         private List<T[]> mArrayContainer;
-        private int m_Increase = 0;
+        private int increase = 0;
 
 
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="minCount">最小数量</param>
-        /// <param name="maxCount">最大数量（小于等于0为不限）</param>
+        /// <param name="suggestIncrease">建议增加数量</param>
+        /// <param name="max">最大数量（小于等于0为不限）</param>
         /// <param name="size"></param>
-        public PoolBase(int minCount, int maxCount)
+        public PoolBase(int suggestIncrease, int max)
         {
-
-            if (minCount < 1)
+            if (suggestIncrease <= 0)
             {
-                throw new ArgumentOutOfRangeException("minCount不能小于1");
+                suggestIncrease = SUGGEST_INCREASE_NUMBER_DEFAULT;
             }
 
-            if (maxCount > 0 && (maxCount < minCount))
+            if (max <= 0)
             {
-                throw new ArgumentOutOfRangeException("限制maxCount时，其不能小于minCount");
+                max = Int32.MaxValue;
             }
 
             this.mPool = new ConcurrentStack<T>();
             this.mArrayContainer = new List<T[]>();
 
-            this.minCount = minCount;
-            this.maxCount = maxCount;
-            
-            
-            IncreaseCapity(minCount);
+            this.suggestIncrease = suggestIncrease;
+            this.max = max;
         }
 
-       
+
         /// <summary>
         /// 增加
         /// </summary>
         /// <param name="count">要增加的数量</param>
-        private bool IncreaseCapity(int count)
+        private bool IncreaseCapity()
         {
-            if (this.maxCount > 0)
+            Int32 count = Math.Min(this.Increases, this.max - this.Count);
+            if (count <= 0)
             {
-                count = Math.Min(count, this.maxCount - this.Count);
-                if (count <= 0)
-                {
-                    return false;
-                }
+                return false;
             }
-            
-            T[] items = new T[count];
+
+            T[] items = CreateItems(count);
+            if (items == null || items.Length <= 0)
+            {
+                throw new Exception("pool can't allow");
+            }
             this.mArrayContainer.Add(items);
 
-            for (int i = 0; i < count; i++)
+            for (int i = 0; i < items.Length; i++)
             {
-                T item = CreateItem(i);
-                this.mPool.Push(item);
+                this.mPool.Push(items[i]);
             }
             this.count += count;
             return true;
         }
-
+        
         /// <summary>
         /// 尝试获取
         /// </summary>
-        /// <param name="queue"></param>
+        /// <param name="val"></param>
         /// <returns></returns>
-        public bool TryGet(out T queue)
+        public virtual bool TryGet(out T val)
         {
-            if (this.mPool.TryPop(out queue))
-            {
-                return true;
-            }
+            val = default(T);
+            //todo:remove
+            //if (this.mPool.TryPop(out val))
+            //{
+            //    return true;
+            //}
 
             while (true)
             {
                 if (this.mPool.Count > 0)
                 {
-                    if (this.mPool.TryPop(out queue))
+                    if (this.mPool.TryPop(out val))
                     {
                         return true;
                     }
                     continue;
                 }
 
-                int increase = m_Increase;
+                int increase = this.increase;
                 if (increase == 1)
                 {
-                    if (TryGetWithWait(out queue, 100))
+                    if (TryGet(out val, 100))
                     {
                         return true;
                     }
                     continue;
                 }
 
-                if (Interlocked.CompareExchange(ref m_Increase, 1, increase) != increase)
+                if (Interlocked.CompareExchange(ref this.increase, 1, increase) != increase)
                 {
-                    if (TryGetWithWait(out queue, 100))
+                    if (TryGet(out val, 100))
                     {
                         return true;
                     }
                     continue;
                 }
 
-                bool result = IncreaseCapity(this.minCount);
-                m_Increase = 0;
+                bool result = IncreaseCapity();
+                this.increase = 0;
                 if (!result)
                 {
                     return false;
                 }
-                if (this.mPool.TryPop(out queue))
-                {
-                    return true;
-                }
+
+                //todo:remove
+                //if (this.mPool.TryPop(out val))
+                //{
+                //    return true;
+                //}
             }
         }
 
         /// <summary>
-        /// 尝试获取等待自旋ticks次后超时
+        /// 尝试获取自旋tryCounter次后超时
         /// </summary>
-        /// <param name="queue"></param>
-        /// <param name="ticks"></param>
+        /// <param name="val">获取值</param>
+        /// <param name="tryCounter">尝试次数</param>
         /// <returns></returns>
-        private bool TryGetWithWait(out T queue, int ticks)
+        private bool TryGet(out T val, int tryCounter)
         {
             SpinWait wait = new SpinWait();
             do
             {
                 wait.SpinOnce();
-                if (this.mPool.TryPop(out queue))
+                if (this.mPool.TryPop(out val))
                 {
                     return true;
                 }
 
-                if (wait.Count >= ticks)
+                if (wait.Count >= tryCounter)
                 {
                     return false;
                 }
@@ -204,21 +207,20 @@ namespace waxbill.Pools
         }
 
         /// <summary>
-        /// 返回项
+        /// 释放
         /// </summary>
-        /// <param name="queue"></param>
-        public void Release(T queue)
+        /// <param name="val"></param>
+        public virtual void Release(T val)
         {
-            this.mPool.Push(queue);
+            this.mPool.Push(val);
         }
+
 
         /// <summary>
         /// 创建项
         /// </summary>
-        /// <param name="index"></param>
+        /// <param name="suggestCount"></param>
         /// <returns></returns>
-        protected abstract T CreateItem(Int32 index);
-
-        //protected abstract T[] CreateItems(Int32 suggestCount);
+        protected abstract T[] CreateItems(Int32 suggestCount);
     }
 }

@@ -16,7 +16,7 @@ namespace waxbill.Protocols
     {
         public static readonly RealtimeProtocol Define = new RealtimeProtocol();
 
-        public Packet CreatePacket(BufferManager buffer)
+        public Packet CreatePacket(PacketBufferPool buffer)
         {
             return new Packet(buffer);
         }

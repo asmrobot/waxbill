@@ -49,7 +49,7 @@ namespace waxbill
             {
                 this.m_Session.TryRemove(list[i], out local);
             }
-            this.m_RecycleTimer.Change(base.Config.RecycleSessionFrequency, -1);
+            this.m_RecycleTimer.Change(base.Config.RecycleSecond, -1);
         }
 
         public TSession GetSession(Func<TSession, bool> predicate)
@@ -90,7 +90,7 @@ namespace waxbill
             if (base.Config.AutoRecycleSession)
             {
                 this.m_RecycleTimer = new System.Threading.Timer(new TimerCallback(this.AutoRecycleSessionThread), null, -1, -1);
-                this.m_RecycleTimer.Change(base.Config.RecycleSessionFrequency, -1);
+                this.m_RecycleTimer.Change(base.Config.RecycleSecond, -1);
             }
         }
 

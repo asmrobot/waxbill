@@ -71,11 +71,20 @@ namespace waxbill.Sessions
             this.mSendSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
             this.mSendSAE.UserToken = null;
             this.mSendSAE.SetBuffer(null, 0, 0);
+            this.monitor.SocketEventArgsPool.Release(this.mSendSAE);
             this.mSendSAE = null;
+
+
+            
+
             this.mReceiveSAE.Completed -= new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
             this.mReceiveSAE.UserToken = null;
+            this.monitor.ReceiveBufferPool.Release(new ArraySegment<byte>(this.mReceiveSAE.Buffer,this.mReceiveSAE.Offset,this.mReceiveSAE.Count));
+            this.mReceiveSAE.SetBuffer(null, 0, 0);
             this.monitor.SocketEventArgsPool.Release(this.mReceiveSAE);
             this.mReceiveSAE = null;
+
+
             this._Connector = null;
             this.SetState(0x80);
         }
@@ -87,26 +96,34 @@ namespace waxbill.Sessions
 
         internal void Initialize(Socket client, SocketMonitor monitor)
         {
-            if (client == null)
-            {
-                throw new ArgumentNullException("connector");
-            }
-            if (monitor == null)
-            {
-                throw new ArgumentNullException("monitor");
-            }
+            Preconditions.ThrowIfNull(client, "client");
+            Preconditions.ThrowIfNull(monitor, "monitor");
+
             this.monitor = monitor;
             this._Connector = client;
             this.ConnectionID = monitor.GetNextConnectionID();
-            this.mSendSAE = new SocketAsyncEventArgs();
+            
+            //set send SAE
+            if (!this.monitor.SocketEventArgsPool.TryGet(out this.mSendSAE))
+            {
+                throw new Exception("无法获取接收SocketAsyncEventArgs对象");
+            }
             this.mSendSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_SendCompleted);
+
+            //set receive SAE
             if (!this.monitor.SocketEventArgsPool.TryGet(out this.mReceiveSAE))
             {
-                throw new Exception("无法获取");
+                throw new Exception("无法获取接收SocketAsyncEventArgs对象");
             }
+            ArraySegment<byte> receiveBuffer;
+            if (!this.monitor.ReceiveBufferPool.TryGet(out receiveBuffer))
+            {
+                throw new Exception("无法获取发送Buffer");
+            }
+            this.mReceiveSAE.SetBuffer(receiveBuffer.Array, receiveBuffer.Offset, receiveBuffer.Count);
+            this.mReceiveSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted); 
 
-            this.mReceiveSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted);
-            this.mPacket = new Packet(this.monitor.BufferManager);
+            this.mPacket = new Packet(this.monitor.PacketBufferPool);
         }
 
         private void InternalReceive()
@@ -196,7 +213,7 @@ namespace waxbill.Sessions
             int readlen = 0;
             try
             {
-                flag = this.monitor._Protocol.TryToPacket(this.mPacket, datas, out readlen);
+                flag = this.monitor.Protocol.TryToPacket(this.mPacket, datas, out readlen);
             }
             catch (Exception exception)
             {
@@ -206,7 +223,7 @@ namespace waxbill.Sessions
             if (flag)
             {
                 Packet oldPacket = this.mPacket;
-                this.mPacket = new Packet(this.monitor.BufferManager);
+                this.mPacket = new Packet(this.monitor.PacketBufferPool);
                 ThreadPool.QueueUserWorkItem(delegate (object obj) {
                     try
                     {
@@ -344,7 +361,7 @@ namespace waxbill.Sessions
 
         public void Send(IList<ArraySegment<byte>> datas)
         {
-            if (datas.Count > this.monitor.SendingQueueSize)
+            if (datas.Count >this.mSendingQueue.Capacity)
             {
                 throw new ArgumentOutOfRangeException("发送内容大于缓存池");
             }

@@ -21,5 +21,9 @@
     <OutputPath>bin\</OutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Pools\BufferManager.cs" />
+  </ItemGroup>
+
 </Project>
 

@@ -10,48 +10,41 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    
-
     public abstract class SocketMonitor
     {
         private OnConnectionEvent s;
-        private long connectionIncremer;
-        internal BufferManager BufferManager;
+        private long connectionIncremer;        
         internal SocketConfiguration Config;
+        
+        public OnConnectionEvent OnConnection;
+        public OnDisconnectedEvent OnDisconnected;
+        public OnReceiveEvent OnReceive;
+        public OnSendedEvent OnSended;
+        
         internal SendingQueuePool SendingPool;
         internal EventArgPool SocketEventArgsPool;
+        internal ReceiveBufferPool ReceiveBufferPool;
+        internal PacketBufferPool PacketBufferPool;
 
-        public OnConnectionEvent OnConnection;
 
-        public OnDisconnectedEvent OnDisconnected;
 
-        public OnReceiveEvent OnReceive;
+        public IProtocol Protocol { get; set; }
 
-        public OnSendedEvent OnSended;
+        public int BufferSize { get; private set; }
+
+
 
         public SocketMonitor(IProtocol protocol, SocketConfiguration config)
         {
-            if (protocol == null)
-            {
-                throw new ArgumentNullException("protocol");
-            }
-            if (config == null)
-            {
-                throw new ArgumentNullException("config");
-            }
-            if (config.BufferSize <= 0)
-            {
-                throw new ArgumentNullException("buffersize");
-            }
+            Preconditions.ThrowIfNull(protocol, "protocol");
+            Preconditions.ThrowIfNull(config, "config");
+
+            this.Protocol = protocol;
             this.Config = config;
-            this._Protocol = protocol;
-            this.MinSendingPoolSize = config.MinSendingPoolSize;
-            this.MaxSendingPoolSize = config.MaxSendingPoolSize;
-            this.SendingQueueSize = config.SendQueueSize;
-            this.SendingPool = new SendingQueuePool();
-            this.SendingPool.Initialize(this.MinSendingPoolSize, this.MaxSendingPoolSize, this.SendingQueueSize);
-            this.BufferManager = new BufferManager(config.BufferSize,config.BufferIncemerCount);
-            this.SocketEventArgsPool = new EventArgPool(config);
+            this.SendingPool = new SendingQueuePool(config.SizeOfSendQueue,config.IncreasesOfSendingQueuePool, config.MaxOfSendingQueuePool);
+            this.SocketEventArgsPool = new EventArgPool(config.IncreasesOfEventArgPool,config.MaxOfClient<=0?0:config.MaxOfClient*2);
+            this.ReceiveBufferPool = new ReceiveBufferPool(config.BufferSizeOfReceiveBufferPool,config.IncreasesOfReceiveBufferPool,config.MaxOfReceiveBufferPool);
+            this.PacketBufferPool = new PacketBufferPool(config.BufferSizeOfPacketBufferPool, config.IncreasesOfPacketBufferPool,config.MaxOfPacketBufferPool);
         }
 
         internal long GetNextConnectionID()
@@ -63,9 +56,7 @@ namespace waxbill
         {
             if (this.OnConnection != null)
             {
-                
                 this.OnConnection(session);
-                
             }
         }
 
@@ -92,16 +83,6 @@ namespace waxbill
                 this.OnSended(session, packet, result);
             }
         }
-
-        internal IProtocol _Protocol { get; set; }
-
-        public int BufferSize { get; private set; }
-
-        public int MaxSendingPoolSize { get; private set; }
-
-        public int MinSendingPoolSize { get; set; }
-
-        public int SendingQueueSize { get; private set; }
     }
 }
 

@@ -7,7 +7,7 @@ using waxbill.Exceptions;
 
 namespace waxbill.Utils
 {
-    public class Validate
+    public class Preconditions
     {
         /// <summary>
         /// Null抛出异常
@@ -118,5 +118,8 @@ namespace waxbill.Utils
                 throw new ConfigException(message);
             }
         }
+
+
+        
     }
 }
