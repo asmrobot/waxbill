@@ -10,7 +10,7 @@ namespace waxbill
 {
     
 
-    public class SocketClient
+    public class TCPClient
     {
         private static byte[] combinDatas(IList<ArraySegment<byte>> datas)
         {
