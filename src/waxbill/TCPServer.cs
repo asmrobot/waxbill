@@ -17,6 +17,8 @@ namespace waxbill
         private Timer m_RecycleTimer;
         private ConcurrentDictionary<long, TSession> m_Session;
 
+        public Int32 Port { get; private set; }
+
         public TCPServer(IProtocol protocol) : this(protocol, TCPOption.SERVER_DEFAULT)
         {}
 
@@ -88,6 +90,7 @@ namespace waxbill
 
         public void Start(IPEndPoint endpoint)
         {
+            this.Port = endpoint.Port;
             this._Listeners = new SocketListener<TSession>(endpoint, (TCPServer<TSession>) this);
             this._Listeners.Start();
             if (base.Option.AutoRecycleSession)

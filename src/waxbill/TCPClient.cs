@@ -24,22 +24,22 @@ namespace waxbill
         /// <summary>
         /// 连接
         /// </summary>
-        public Action<SessionBase> OnConnected { get; set; }
+        public Action<TCPClient,SessionBase> OnConnected { get; set; }
 
         /// <summary>
         /// 断开连接
         /// </summary>
-        public Action<SessionBase,CloseReason> OnDisconnected { get; set; }
+        public Action<TCPClient, SessionBase,CloseReason> OnDisconnected { get; set; }
 
         /// <summary>
         /// 发送
         /// </summary>
-        public Action<SessionBase,SendingQueue, Boolean> OnSended { get; set; }
+        public Action<TCPClient, SessionBase,SendingQueue, Boolean> OnSended { get; set; }
 
         /// <summary>
         /// 接收
         /// </summary>
-        public Action<SessionBase,Packet> OnReceived { get; set; }
+        public Action<TCPClient, SessionBase,Packet> OnReceived { get; set; }
 
 
 
@@ -113,7 +113,7 @@ namespace waxbill
         {
             if (this.OnConnected != null)
             {
-                this.OnConnected(session);
+                this.OnConnected(this,session);
             }
         }
 
@@ -121,7 +121,7 @@ namespace waxbill
         {
             if (this.OnDisconnected != null)
             {
-                this.OnDisconnected(session,reason);
+                this.OnDisconnected(this,session,reason);
             }
         }
 
@@ -129,7 +129,7 @@ namespace waxbill
         {
             if (this.OnReceived != null)
             {
-                this.OnReceived(session,packet);
+                this.OnReceived(this,session,packet);
             }
         }
 
@@ -137,7 +137,7 @@ namespace waxbill
         {
             if (this.OnSended != null)
             {
-                this.OnSended(session,queue,result);
+                this.OnSended(this,session,queue,result);
             }
         }
        
@@ -242,17 +242,17 @@ namespace waxbill
             TCPClient client = new TCPClient(RealtimeProtocol.Define);
             ManualResetEvent mre = new ManualResetEvent(false);
             
-            client.OnConnected += (session) =>
+            client.OnConnected += (tcp,session) =>
             {
                 session.Send(datas, offset, count);
             };
 
-            client.OnDisconnected += (session, reason) =>
+            client.OnDisconnected += (tcp,session, reason) =>
             {
                 closeReason = reason;
                 mre.Set();
             };
-            client.OnReceived += (session, packet) =>
+            client.OnReceived += (tcp,session, packet) =>
             {
                 retDatas = packet.Read();
                 client.OnDisconnected = null;
@@ -345,17 +345,17 @@ namespace waxbill
             CloseReason closeReason = CloseReason.Default;
             TCPClient client = new TCPClient(RealtimeProtocol.Define);
             ManualResetEvent mre = new ManualResetEvent(false);
-            client.OnConnected += (session) =>
+            client.OnConnected += (tcp,session) =>
             {
                 session.Send(datas, offset, count);
             };
-            client.OnDisconnected += (session, reason) =>
+            client.OnDisconnected += (tcp,session, reason) =>
             {
                 closeReason = reason;
                 mre.Set();
             };
 
-            client.OnSended += (session, queue, result) => {
+            client.OnSended += (tcp,session, queue, result) => {
                 mre.Set();
             };
 

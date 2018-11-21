@@ -123,8 +123,8 @@ namespace waxbill.Sessions
             }
             this.receiveSAE.SetBuffer(receiveBuffer.Array, receiveBuffer.Offset, receiveBuffer.Count);
             this.receiveSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.SAE_ReceiveCompleted); 
-
-            this.packet = new Packet(this.Monitor.PacketBufferPool);
+            
+            this.packet = this.Monitor.Protocol.CreatePacket(this.Monitor.PacketBufferPool);
         }
 
         private void InternalReceive()
@@ -224,7 +224,7 @@ namespace waxbill.Sessions
             if (flag)
             {
                 Packet oldPacket = this.packet;
-                this.packet = new Packet(this.Monitor.PacketBufferPool);
+                this.packet = this.Monitor.Protocol.CreatePacket(this.Monitor.PacketBufferPool);
                 ThreadPool.QueueUserWorkItem(delegate (object obj) {
                     try
                     {
