@@ -8,19 +8,19 @@ namespace waxbill
 {
     internal class SocketListener<TSession> where TSession: SessionBase, new()
     {
-        private IPEndPoint _EndPoint;
-        private SocketAsyncEventArgs mSAE;
-        private Socket mSocket;
-        private TCPServer<TSession> mSocketServer;
+        private IPEndPoint mineEnndPoint;
+        private SocketAsyncEventArgs connectSAE;
+        private Socket socket;
+        private TCPServer<TSession> tcpServer;
 
         internal SocketListener(IPEndPoint endpoint, TCPServer<TSession> server)
         {
             Preconditions.ThrowIfNull(endpoint, "endpoint");
-            this._EndPoint = endpoint;
-            this.mSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.mSAE = new SocketAsyncEventArgs();
-            this.mSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.AcceptComplete);
-            this.mSocketServer = server;
+            this.mineEnndPoint = endpoint;
+            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            this.connectSAE = new SocketAsyncEventArgs();
+            this.connectSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.AcceptComplete);
+            this.tcpServer = server;
         }
 
         private void AcceptComplete(object sender, SocketAsyncEventArgs e)
@@ -34,20 +34,20 @@ namespace waxbill
             if (acceptSocket != null)
             {
                 TSession session = Activator.CreateInstance<TSession>();
-                session.Initialize(acceptSocket, this.mSocketServer);
-                this.mSocketServer.Accept(session);
+                session.Initialize(acceptSocket, this.tcpServer);
+                this.tcpServer.Accept(session);
             }
             this.InternalAccept();
         }
 
         private void InternalAccept()
         {
-            if (this.mSocket != null)
+            if (this.socket != null)
             {
                 bool flag = true;
                 try
                 {
-                    flag = this.mSocket.AcceptAsync(this.mSAE);
+                    flag = this.socket.AcceptAsync(this.connectSAE);
                 }
                 catch (Exception exception)
                 {
@@ -56,24 +56,24 @@ namespace waxbill
                 }
                 if (!flag)
                 {
-                    this.AcceptComplete(this, this.mSAE);
+                    this.AcceptComplete(this, this.connectSAE);
                 }
             }
         }
 
         public void Start()
         {
-            this.mSocket.Bind(this._EndPoint);
-            this.mSocket.Listen(this.mSocketServer.Config.MaxBlockSize);
+            this.socket.Bind(this.mineEnndPoint);
+            this.socket.Listen(this.tcpServer.Option.MaxBlockSize);
             this.InternalAccept();
         }
 
         public void Stop()
         {
-            if (this.mSocket != null)
+            if (this.socket != null)
             {
-                this.mSocket.Close();
-                this.mSocket = null;
+                this.socket.Close();
+                this.socket = null;
             }
         }
     }

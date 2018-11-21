@@ -3,18 +3,29 @@
     using System;
     using System.Runtime.CompilerServices;
 
-    public class SocketConfiguration
+    public class TCPOption
     {
-        public static readonly SocketConfiguration Default;
+        /// <summary>
+        /// 默认服务器配置
+        /// </summary>
+        public static readonly TCPOption SERVER_DEFAULT;
 
-        static SocketConfiguration()
+        /// <summary>
+        /// 默认客户端配置
+        /// </summary>
+        public static readonly TCPOption CLIENT_DEFAULT;
+
+
+        static TCPOption()
         {
-            SocketConfiguration configuration1 = new SocketConfiguration {
+            
+            SERVER_DEFAULT = new TCPOption
+            {
 
                 AutoRecycleSession = true,
                 RecycleSecond = 30000,
                 SendTimeout = 10000,
-                
+
                 MaxBlockSize = 500,
 
                 IncreasesOfEventArgPool = 10,
@@ -27,13 +38,37 @@
 
                 BufferSizeOfPacketBufferPool = 1024,
                 IncreasesOfPacketBufferPool = 1000,
-                MaxOfPacketBufferPool=0,
+                MaxOfPacketBufferPool = 0,
 
                 IncreasesOfSendingQueuePool = 1000,
                 MaxOfSendingQueuePool = 0,
                 SizeOfSendQueue = 6,
             };
-            Default = configuration1;
+
+            CLIENT_DEFAULT = new TCPOption
+            {
+                AutoRecycleSession = true,
+                RecycleSecond = 30000,
+                SendTimeout = 10000,
+
+                MaxBlockSize = 500,
+
+                IncreasesOfEventArgPool = 10,
+                MaxOfClient = 0,
+
+                BufferSizeOfReceiveBufferPool = 1024,//每个接收缓冲区的大小
+                IncreasesOfReceiveBufferPool = 10,
+                MaxOfReceiveBufferPool = 0,
+
+
+                BufferSizeOfPacketBufferPool = 1024,
+                IncreasesOfPacketBufferPool = 1000,
+                MaxOfPacketBufferPool = 0,
+
+                IncreasesOfSendingQueuePool = 1000,
+                MaxOfSendingQueuePool = 0,
+                SizeOfSendQueue = 6,
+            };
         }
 
         /// <summary>
@@ -52,7 +87,7 @@
         public int MaxBlockSize { get; set; }
         
         /// <summary>
-        /// 发送超时时长
+        /// 发送超时时长(毫秒)
         /// </summary>
         public int SendTimeout { get; set; }
 

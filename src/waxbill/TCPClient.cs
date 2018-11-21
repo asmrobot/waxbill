@@ -2,16 +2,380 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
+using System.Threading;
+using waxbill.Client;
 using waxbill.Exceptions;
-
+using waxbill.Packets;
+using waxbill.Pools;
+using waxbill.Protocols;
+using waxbill.Sessions;
+using waxbill.Utils;
 
 namespace waxbill
 {
     
 
-    public class TCPClient
+    public class TCPClient:SocketMonitor
     {
+        private ClientInnerSession session;//会话
+        private Socket socket;//tcp连接
+        private Int32 isConnected = 0;
+
+        /// <summary>
+        /// 连接
+        /// </summary>
+        public Action<SessionBase> OnConnected { get; set; }
+
+        /// <summary>
+        /// 断开连接
+        /// </summary>
+        public Action<SessionBase,CloseReason> OnDisconnected { get; set; }
+
+        /// <summary>
+        /// 发送
+        /// </summary>
+        public Action<SessionBase,SendingQueue, Boolean> OnSended { get; set; }
+
+        /// <summary>
+        /// 接收
+        /// </summary>
+        public Action<SessionBase,Packet> OnReceived { get; set; }
+
+
+
+
+        public TCPClient(IProtocol protocol):base(protocol,TCPOption.CLIENT_DEFAULT,ClientPoolProvider.Instance)
+        {
+            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        }
+        
+        /// <summary>
+        /// 连接
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        public void Connect(string ip, Int32 port)
+        {
+            Preconditions.ThrowIfZeroOrMinus(port,"port");
+            IPAddress address;
+            if (!IPAddress.TryParse(ip, out address))
+            {
+                throw new ArgumentOutOfRangeException("ip");
+            }
+            
+            if (Interlocked.CompareExchange(ref this.isConnected, 1, 0) == 0)
+            {
+                try
+                {
+                    this.socket.Connect(new IPEndPoint(address, port));
+                    this.session = new ClientInnerSession(RaiseConnected,RaiseDisconnected, RaiseSended, RaiseReceived);
+                    this.session.Initialize(this.socket, this);
+                    this.session.Start();
+                }
+                catch (Exception ex)
+                {
+                    FreeResource();
+                    throw ex;
+                }
+            }
+            else
+            {
+                throw new Exception("重复连接");
+            }
+        }
+
+
+        /// <summary>
+        /// 断开连接
+        /// </summary>
+        public void Disconnect()
+        {
+            if (Interlocked.CompareExchange(ref this.isConnected, 0, 1) == 1)
+            {
+                this.socket.Shutdown(SocketShutdown.Both);
+                FreeResource();
+            }
+        }
+
+
+        /// <summary>
+        /// 释放资源
+        /// </summary>
+        private void FreeResource()
+        {
+
+        }
+
+
+
+
+        private void RaiseConnected(SessionBase session)
+        {
+            if (this.OnConnected != null)
+            {
+                this.OnConnected(session);
+            }
+        }
+
+        private void RaiseDisconnected(SessionBase session,CloseReason reason)
+        {
+            if (this.OnDisconnected != null)
+            {
+                this.OnDisconnected(session,reason);
+            }
+        }
+
+        private void RaiseReceived(SessionBase session,Packet packet)
+        {
+            if (this.OnReceived != null)
+            {
+                this.OnReceived(session,packet);
+            }
+        }
+
+        private void RaiseSended(SessionBase session,SendingQueue queue, bool result)
+        {
+            if (this.OnSended != null)
+            {
+                this.OnSended(session,queue,result);
+            }
+        }
+       
+        #region Sends
+        /// <summary>
+        /// 加入到发送列表中
+        /// </summary>
+        /// <param name="datas"></param>
+        public void Send(byte[] datas)
+        {
+            this.session.Send(datas);
+        }
+
+        /// <summary>
+        /// 加入到发送列表中
+        /// </summary>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        public void Send(byte[] datas, int offset, int size)
+        {
+            this.session.Send(datas, offset, size);
+        }
+
+        public void Send(ArraySegment<byte> data)
+        {
+            this.session.Send(data);
+        }
+
+        public void Send(IList<ArraySegment<byte>> datas)
+        {
+            this.session.Send(datas);
+        }
+        #endregion
+
+        
+
+        #region Syncs
+        /// <summary>
+        /// 同步发送接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas)
+        {
+            return SendAndReceive(ip, port, datas, 0, datas.Length, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas, int offset, int size)
+        {
+            return SendAndReceive(ip, port, datas, offset, size, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="data"></param>
+        public static byte[] SendAndReceive(string ip, Int32 port, ArraySegment<byte> data)
+        {
+            return SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送与接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas, int offset, int count, Int32 millisecondsTimeout)
+        {
+            Preconditions.ThrowIfNullOrWhite(ip, "ip");
+            Preconditions.ThrowIfZeroOrMinus(port, "port");
+            Preconditions.ThrowIfNull(datas, "datas");
+
+            if (offset + count > datas.Length)
+            {
+                throw new ArgumentOutOfRangeException("offset+size>datas.length");
+            }
+
+            if (count <= 0)
+            {
+                return new byte[0];
+            }
+
+            byte[] retDatas = null;
+            CloseReason closeReason = CloseReason.Default;
+            TCPClient client = new TCPClient(RealtimeProtocol.Define);
+            ManualResetEvent mre = new ManualResetEvent(false);
+            
+            client.OnConnected += (session) =>
+            {
+                session.Send(datas, offset, count);
+            };
+
+            client.OnDisconnected += (session, reason) =>
+            {
+                closeReason = reason;
+                mre.Set();
+            };
+            client.OnReceived += (session, packet) =>
+            {
+                retDatas = packet.Read();
+                client.OnDisconnected = null;
+                mre.Set();
+            };
+
+            client.Connect(ip, port);
+            if (!mre.WaitOne(millisecondsTimeout))
+            {
+                throw new TimeoutException("send or receive timeout");
+            }
+
+            mre.Close();
+            client.Disconnect();
+            if (closeReason ==CloseReason.Exception)
+            {
+                throw new Exception("不正常的关闭");
+            }
+
+
+            if (retDatas == null)
+            {
+                throw new Exception("连接关闭");
+            }
+
+            return retDatas;
+        }
+
+        /// <summary>
+        /// 同步发送接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        public static void SendOnly(string ip, Int32 port, byte[] datas)
+        {
+            SendAndReceive(ip, port, datas, 0, datas.Length, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="size"></param>
+        public static void SendOnly(string ip, Int32 port, byte[] datas, int offset, int size)
+        {
+            SendAndReceive(ip, port, datas, offset, size, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="data"></param>
+        public static void SendOnly(string ip, Int32 port, ArraySegment<byte> data)
+        {
+            SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOption.CLIENT_DEFAULT.SendTimeout);
+        }
+
+        /// <summary>
+        /// 同步发送与接收
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
+        /// <param name="datas"></param>
+        /// <param name="offset"></param>
+        /// <param name="count"></param>
+        /// <param name="millisecondsTimeout"></param>
+        /// <returns></returns>
+        public static void SendOnly(string ip, Int32 port, byte[] datas, int offset, int count, Int32 millisecondsTimeout)
+        {
+            Preconditions.ThrowIfNullOrWhite(ip, "ip");
+            Preconditions.ThrowIfZeroOrMinus(port, "port");
+            Preconditions.ThrowIfNull(datas, "datas");
+
+            if (offset + count > datas.Length)
+            {
+                throw new ArgumentOutOfRangeException("offset+size>datas.length");
+            }
+
+            if (count <= 0)
+            {
+                return;
+            }
+
+            CloseReason closeReason = CloseReason.Default;
+            TCPClient client = new TCPClient(RealtimeProtocol.Define);
+            ManualResetEvent mre = new ManualResetEvent(false);
+            client.OnConnected += (session) =>
+            {
+                session.Send(datas, offset, count);
+            };
+            client.OnDisconnected += (session, reason) =>
+            {
+                closeReason = reason;
+                mre.Set();
+            };
+
+            client.OnSended += (session, queue, result) => {
+                mre.Set();
+            };
+
+            client.Connect(ip, port);
+            if (!mre.WaitOne(millisecondsTimeout))
+            {
+                throw new TimeoutException("send or receive timeout");
+            }
+
+            mre.Close();
+            client.Disconnect();
+            if (closeReason ==CloseReason.Exception)
+            {
+                //连不上
+                throw new Exception("连接失败") ;
+            }
+        }
+        #endregion
+        
+        #region static method
         private static byte[] combinDatas(IList<ArraySegment<byte>> datas)
         {
             return new byte[0];
@@ -98,7 +462,7 @@ namespace waxbill
             {
             }
         }
-        
+        #endregion
     }
 }
 

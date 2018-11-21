@@ -4,28 +4,31 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading;
+using waxbill.Pools;
 using waxbill.Sessions;
 
 namespace waxbill
 {
     
 
-    public class TCPServer<TSession> : SocketMonitor where TSession: SessionBase, new()
+    public class TCPServer<TSession> : SocketMonitor where TSession: SessionBase,new()
     {
         private SocketListener<TSession> _Listeners;
         private Timer m_RecycleTimer;
         private ConcurrentDictionary<long, TSession> m_Session;
 
-        public TCPServer(IProtocol protocol) : base(protocol, SocketConfiguration.Default)
+        public TCPServer(IProtocol protocol) : this(protocol, TCPOption.SERVER_DEFAULT)
+        {}
+
+        public TCPServer(IProtocol protocol, TCPOption option) : base(protocol, option,new PoolProvider(option))
         {
             this.m_Session = new ConcurrentDictionary<long, TSession>();
         }
 
-        public TCPServer(IProtocol protocol, SocketConfiguration configuration) : base(protocol, configuration)
-        {
-            this.m_Session = new ConcurrentDictionary<long, TSession>();
-        }
-
+        /// <summary>
+        /// 接入一个会话
+        /// </summary>
+        /// <param name="session"></param>
         internal void Accept(TSession session)
         {
             if (this.m_Session.TryAdd(session.ConnectionID, session))
@@ -49,7 +52,7 @@ namespace waxbill
             {
                 this.m_Session.TryRemove(list[i], out local);
             }
-            this.m_RecycleTimer.Change(base.Config.RecycleSecond, -1);
+            this.m_RecycleTimer.Change(base.Option.RecycleSecond, -1);
         }
 
         public TSession GetSession(Func<TSession, bool> predicate)
@@ -87,10 +90,10 @@ namespace waxbill
         {
             this._Listeners = new SocketListener<TSession>(endpoint, (TCPServer<TSession>) this);
             this._Listeners.Start();
-            if (base.Config.AutoRecycleSession)
+            if (base.Option.AutoRecycleSession)
             {
                 this.m_RecycleTimer = new System.Threading.Timer(new TimerCallback(this.AutoRecycleSessionThread), null, -1, -1);
-                this.m_RecycleTimer.Change(base.Config.RecycleSecond, -1);
+                this.m_RecycleTimer.Change(base.Option.RecycleSecond, -1);
             }
         }
 
@@ -99,7 +102,7 @@ namespace waxbill
             this._Listeners.Stop();
             foreach (KeyValuePair<long, TSession> pair in this.m_Session)
             {
-                pair.Value.Close(CloseReason.Shutdown);
+                pair.Value.Close(CloseReason.Default);
             }
         }
     }

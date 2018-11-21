@@ -14,7 +14,7 @@ namespace waxbill.demo.Tests
     {
         public static void Start(Int32 port)
         {
-            SocketServer<TermiatorSession> server = new SocketServer<TermiatorSession>(new TerminatorProtocol());
+            TCPServer<TermiatorSession> server = new TCPServer<TermiatorSession>(new TerminatorProtocol());
             server.Start("0.0.0.0", port);
             Trace.Info("server is start");
         }

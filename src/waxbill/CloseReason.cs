@@ -6,13 +6,10 @@ namespace waxbill
 
     public enum CloseReason
     {
-        Closeing,
-        InernalError,
+        Default,
         RemoteClose,
-        Shutdown,
-        Unknow,
         Exception,
-        ProtocolError
+        Unknow,
     }
 }
 

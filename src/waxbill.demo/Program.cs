@@ -19,13 +19,13 @@ namespace waxbill.demo
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
             ZTImage.Log.Trace.EnableListener(ZTImage.Log.NLog.Instance);
             Trace.SetMessageWriter(ZTImage.Log.Trace.Error, ZTImage.Log.Trace.Info);
-            //TerminatorTest.Start(7888);
+            
             Int32 first0 = GC.CollectionCount(0);
             Int32 first1 = GC.CollectionCount(1);
             Int32 first2 = GC.CollectionCount(2);
 
-
-            ByteTest.Start(7888);
+            TerminatorTest.Start(7888);
+            //ByteTest.Start(7888);
             Int32 last0 = first0;
             Int32 last1 = first1;
             Int32 last2 = first2;

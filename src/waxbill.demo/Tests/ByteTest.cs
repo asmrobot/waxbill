@@ -15,7 +15,7 @@ namespace waxbill.demo.Tests
     {
         public static void Start(Int32 port)
         {
-            SocketServer<ByteSession> server = new SocketServer<ByteSession>(new RealtimeProtocol());
+            TCPServer<ByteSession> server = new TCPServer<ByteSession>(new RealtimeProtocol());
             
             server.Start("0.0.0.0", port);
             Trace.Info("server is start");

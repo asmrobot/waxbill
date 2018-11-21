@@ -100,7 +100,7 @@ namespace waxbill.WebSockets
                 {
                     if (!handshake(m_Stream))
                     {
-                        this.Close(CloseReason.ProtocolError);
+                        this.Close(CloseReason.Exception);
                         return;
                     }
                 }
@@ -188,13 +188,13 @@ namespace waxbill.WebSockets
 
             if (string.IsNullOrEmpty(content))
             {
-                this.Close(CloseReason.ProtocolError);
+                this.Close(CloseReason.Exception);
                 return false;
             }
             string[] headers = content.Split(new string[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
             if (headers.Length < 4)
             {
-                this.Close(CloseReason.ProtocolError);
+                this.Close(CloseReason.Exception);
                 return false;
             }
             Dictionary<string, string> header_dic = new Dictionary<string, string>();
@@ -214,14 +214,14 @@ namespace waxbill.WebSockets
             if (!header_dic.ContainsKey("Connection") || !header_dic.ContainsKey("Upgrade"))
             {
                 Trace.Error("据手不包含Connections");
-                this.Close(CloseReason.ProtocolError);
+                this.Close(CloseReason.Exception);
                 return false;
             }
 
             if (!header_dic.ContainsKey("Sec-WebSocket-Key"))
             {
                 Trace.Error("据手不包含KEY");
-                this.Close(CloseReason.ProtocolError);
+                this.Close(CloseReason.Exception);
                 return false;
             }
 

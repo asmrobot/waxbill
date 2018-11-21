@@ -139,7 +139,7 @@ namespace waxbill.Sessions
                 catch (Exception exception)
                 {
                     Trace.Error("接收消息时出现错误", exception);
-                    this.ReceiveEnd(CloseReason.InernalError);
+                    this.ReceiveEnd(CloseReason.Exception);
                 }
                 if (!flag)
                 {
@@ -152,7 +152,7 @@ namespace waxbill.Sessions
         {
             if (this.IsClosingOrClosed)
             {
-                this.SendEnd(queue, CloseReason.Closeing);
+                this.SendEnd(queue, CloseReason.Default);
                 return false;
             }
             bool flag = true;
@@ -197,7 +197,7 @@ namespace waxbill.Sessions
             }
             if (!this.Monitor.SendingPool.TryGet(out queue2))
             {
-                this.SendEnd(SendingQueue.Null, CloseReason.InernalError);
+                this.SendEnd(SendingQueue.Null, CloseReason.Exception);
                 Trace.Error("没有分配到发送queue", null);
                 return false;
             }
@@ -219,7 +219,7 @@ namespace waxbill.Sessions
             catch (Exception exception)
             {
                 Trace.Error("解析信息时发生错误", exception);
-                this.ReceiveEnd(CloseReason.InernalError);
+                this.ReceiveEnd(CloseReason.Exception);
             }
             if (flag)
             {
@@ -264,7 +264,7 @@ namespace waxbill.Sessions
             }
         }
 
-        private void ReceiveEnd(CloseReason reason)
+        private void ReceiveEnd(CloseReason reason,Exception exception=null)
         {
             this.RemoveState(2);
             this.Close(reason);
@@ -346,7 +346,7 @@ namespace waxbill.Sessions
                 return;
             }
             SpinWait wait = new SpinWait();
-            DateTime time = DateTime.Now.AddMilliseconds((double) this.Monitor.Config.SendTimeout);
+            DateTime time = DateTime.Now.AddMilliseconds((double) this.Monitor.Option.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
@@ -376,7 +376,7 @@ namespace waxbill.Sessions
                 return;
             }
             SpinWait wait = new SpinWait();
-            DateTime time = DateTime.Now.AddMilliseconds((double) this.Monitor.Config.SendTimeout);
+            DateTime time = DateTime.Now.AddMilliseconds((double) this.Monitor.Option.SendTimeout);
             while (true)
             {
                 wait.SpinOnce();
