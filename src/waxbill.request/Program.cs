@@ -42,23 +42,23 @@ namespace waxbill.request
         {
             byte[] datas = new byte[1000];
             TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
-            client.OnConnected += new Action<SessionBase>((session) => {
+            client.OnConnected += new Action<TCPClient,SessionBase>((c,session) => {
                 Console.WriteLine("connected");
             });
 
 
-            client.OnDisconnected += new Action<SessionBase,CloseReason>((session,reason) => {
+            client.OnDisconnected += new Action<TCPClient,SessionBase,CloseReason>((c,session,reason) => {
                 Console.WriteLine("disconnected:"+reason.ToString());
             });
 
 
-            client.OnSended += new Action<SessionBase,SendingQueue,Boolean>((session,queue,result) => {
+            client.OnSended += new Action<TCPClient,SessionBase,SendingQueue,Boolean>((c,session,queue,result) => {
                 Console.WriteLine("send:"+result.ToString());
             });
 
 
 
-            client.OnReceived += new Action<SessionBase,Packet>((session,packet) => {
+            client.OnReceived += new Action<TCPClient,SessionBase,Packet>((c,session,packet) => {
                 Console.WriteLine("receive");
             });
 
