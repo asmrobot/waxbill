@@ -17,7 +17,7 @@ namespace waxbill.Pools
         public PacketBufferPool PacketBufferPool;
 
 
-        public PoolProvider(TCPOption config)
+        public PoolProvider(TCPOptions config)
         {
             this.SendingPool = new SendingQueuePool(config.SizeOfSendQueue, config.IncreasesOfSendingQueuePool, config.MaxOfSendingQueuePool);
             this.SocketEventArgsPool = new EventArgPool(config.IncreasesOfEventArgPool, config.MaxOfClient <= 0 ? 0 : config.MaxOfClient * 2);

@@ -12,14 +12,14 @@ namespace waxbill.Client
     /// <summary>
     /// TCPClient使用的Session
     /// </summary>
-    internal class ClientInnerSession : SessionBase
+    internal class ClientInnerSession : Session
     {
-        private Action<SessionBase> connectedCallback;
-        private Action<SessionBase, CloseReason> disconnectedCallback;
-        private Action<SessionBase, SendingQueue, Boolean> sendedCallback;
-        private Action<SessionBase, Packet> receivedCallback;
+        private Action<Session> connectedCallback;
+        private Action<Session, CloseReason> disconnectedCallback;
+        private Action<Session, SendingQueue, Boolean> sendedCallback;
+        private Action<Session, Packet> receivedCallback;
 
-        public ClientInnerSession(Action<SessionBase> connectedCallback, Action<SessionBase, CloseReason> disconnectedCallback, Action<SessionBase,SendingQueue, Boolean> sendedCallback, Action<SessionBase,Packet> receivedCallback)
+        public ClientInnerSession(Action<Session> connectedCallback, Action<Session, CloseReason> disconnectedCallback, Action<Session,SendingQueue, Boolean> sendedCallback, Action<Session,Packet> receivedCallback)
         {
             this.connectedCallback = connectedCallback;
             this.disconnectedCallback = disconnectedCallback;

@@ -3,23 +3,24 @@
     using System;
     using System.Runtime.CompilerServices;
 
-    public class TCPOption
+    public class TCPOptions
+
     {
         /// <summary>
         /// 默认服务器配置
         /// </summary>
-        public static readonly TCPOption SERVER_DEFAULT;
+        public static readonly TCPOptions SERVER_DEFAULT;
 
         /// <summary>
         /// 默认客户端配置
         /// </summary>
-        public static readonly TCPOption CLIENT_DEFAULT;
+        public static readonly TCPOptions CLIENT_DEFAULT;
 
 
-        static TCPOption()
+        static TCPOptions()
         {
             
-            SERVER_DEFAULT = new TCPOption
+            SERVER_DEFAULT = new TCPOptions
             {
 
                 AutoRecycleSession = true,
@@ -45,7 +46,7 @@
                 SizeOfSendQueue = 6,
             };
 
-            CLIENT_DEFAULT = new TCPOption
+            CLIENT_DEFAULT = new TCPOptions
             {
                 AutoRecycleSession = true,
                 RecycleSecond = 30000,

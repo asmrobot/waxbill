@@ -76,9 +76,9 @@ namespace waxbill
 
         public PoolProvider PoolProvider { get; private set; }
 
-        public TCPOption Option { get; private set; }
+        public TCPOptions Option { get; private set; }
 
-        public SocketMonitor(IProtocol protocol, TCPOption config, PoolProvider poolProvider)
+        public SocketMonitor(IProtocol protocol, TCPOptions config, PoolProvider poolProvider)
         {
             Preconditions.ThrowIfNull(protocol, "protocol");
             Preconditions.ThrowIfNull(config, "config");

@@ -12,7 +12,7 @@ namespace waxbill.Client
     /// </summary>
     public class ClientPoolProvider:PoolProvider
     {
-        private ClientPoolProvider():base(TCPOption.CLIENT_DEFAULT)
+        private ClientPoolProvider():base(TCPOptions.CLIENT_DEFAULT)
         {}
 
 

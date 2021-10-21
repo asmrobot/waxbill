@@ -8,12 +8,9 @@ namespace waxbill
 {
     public class SessionState
     {
-        public const Int32 Sending = 1;
-        public const Int32 Receiveing = 2;
-        public const Int32 Normal = 4;
-
-
-        public const Int32 Closeing = 64;
-        public const Int32 Closed = 128;
+        public const Int32 CLOSED = 0x80;
+        public const Int32 CLOSING = 0x40;
+        public const Int32 RECEIVEING = 0x02;
+        public const Int32 SENDING = 0x01;
     }
 }

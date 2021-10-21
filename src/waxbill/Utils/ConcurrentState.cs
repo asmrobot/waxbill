@@ -13,15 +13,12 @@ namespace waxbill.Utils
     public struct ConcurrentState
     {
         public Int32 Value;
+        private readonly Int32 _defaultValue;
 
         public ConcurrentState(Int32 current)
         {
+            this._defaultValue = current;
             Value = current;
-        }
-
-        public void SetState(int state)
-        {
-            this.SetState(state, -1);
         }
 
         /// <summary>
@@ -29,44 +26,38 @@ namespace waxbill.Utils
         /// </summary>
         /// <param name="state">要设置的状态值</param>
         /// <param name="careState">是否在意某状态，,-1为不在意任何状态,其它值为在意。在意某状态时如果存在某状态则不设置状态</param>
-        /// <returns></returns>
+        /// <returns>true:为本线程设置成功的，false:非本线程设置成功的或存在在意状态</returns>
         public bool SetState(int state, Int32 careState)
         {
-            int sourceState;
-            int num2;
+            int currentState;
+            int newState;
             do
             {
-                sourceState = this.Value;
-                if (careState>-1 && ((sourceState&careState)==careState))
+                currentState = this.Value;
+                //在意状态
+                if (careState>-1 && ((currentState&careState)==careState))
                 {
                     return false;
                 }
-                num2 = this.Value | state;
+                //已经设置,并不是自已设置的
+                if ((currentState & state) == state)
+                {
+                    return true;
+                }
+                newState = currentState | state;
             }
-            while (Interlocked.CompareExchange(ref this.Value, num2, sourceState) != sourceState);
+            while (Interlocked.CompareExchange(ref this.Value, newState, currentState) != currentState);
             return true;
         }
 
         /// <summary>
-        /// 尝试设置某状态
+        /// 设置某状态,并返回是否是自已设置成功的
         /// </summary>
         /// <param name="state"></param>
         /// <returns></returns>
-        public bool TrySetState(int state)
+        public bool SetState(int state)
         {
-            int mState;
-            int num2;
-            do
-            {
-                mState = this.Value;
-                num2 = mState | state;
-                if (num2 == this.Value)
-                {
-                    return false;
-                }
-            }
-            while (Interlocked.CompareExchange(ref this.Value, num2, mState) != mState);
-            return true;
+            return SetState(state, -1);
         }
 
         /// <summary>
@@ -75,14 +66,14 @@ namespace waxbill.Utils
         /// <param name="state"></param>
         public void RemoveState(int state)
         {
-            int mState;
-            int num2;
+            int currentState;
+            int newState;
             do
             {
-                mState = this.Value;
-                num2 = mState & ~state;
+                currentState = this.Value;
+                newState = currentState & ~state;
             }
-            while (Interlocked.CompareExchange(ref this.Value, num2, mState) != mState);
+            while (Interlocked.CompareExchange(ref this.Value, newState, currentState) != currentState);
         }
 
         /// <summary>
@@ -93,6 +84,15 @@ namespace waxbill.Utils
         public bool GetState(int state)
         {
             return ((this.Value & state) == state);
+        }
+
+        /// <summary>
+        /// 重置
+        /// </summary>
+        /// <returns></returns>
+        public void Reset()
+        {
+            this.Value = _defaultValue;
         }
 
 

@@ -6,10 +6,10 @@ using waxbill.Utils;
 
 namespace waxbill
 {
-    internal class SocketListener<TSession> where TSession: SessionBase, new()
+    internal class SocketListener<TSession> where TSession: Session, new()
     {
         private IPEndPoint mineEnndPoint;
-        private SocketAsyncEventArgs connectSAE;
+        private SocketAsyncEventArgs connectSAEA;
         private Socket socket;
         private TCPServer<TSession> tcpServer;
 
@@ -18,8 +18,8 @@ namespace waxbill
             Preconditions.ThrowIfNull(endpoint, "endpoint");
             this.mineEnndPoint = endpoint;
             this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            this.connectSAE = new SocketAsyncEventArgs();
-            this.connectSAE.Completed += new EventHandler<SocketAsyncEventArgs>(this.AcceptComplete);
+            this.connectSAEA = new SocketAsyncEventArgs();
+            this.connectSAEA.Completed += new EventHandler<SocketAsyncEventArgs>(this.AcceptComplete);
             this.tcpServer = server;
         }
 
@@ -47,7 +47,7 @@ namespace waxbill
                 bool flag = true;
                 try
                 {
-                    flag = this.socket.AcceptAsync(this.connectSAE);
+                    flag = this.socket.AcceptAsync(this.connectSAEA);
                 }
                 catch (Exception exception)
                 {
@@ -56,7 +56,7 @@ namespace waxbill
                 }
                 if (!flag)
                 {
-                    this.AcceptComplete(this, this.connectSAE);
+                    this.AcceptComplete(this, this.connectSAEA);
                 }
             }
         }

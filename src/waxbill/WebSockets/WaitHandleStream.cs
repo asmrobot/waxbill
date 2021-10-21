@@ -10,7 +10,7 @@ namespace waxbill.WebSockets
 
     internal class WaitHandleStream : Stream
     {
-        private SessionBase session;
+        private Session session;
         private bool m_Readable = true;
         private bool m_Writeable = true;
         private ManualResetEvent m_WaitHandle = new ManualResetEvent(false);
@@ -20,7 +20,7 @@ namespace waxbill.WebSockets
         private CancellationToken m_CancelToken;
         
 
-        public WaitHandleStream(SessionBase session,CancellationToken cancelToken)
+        public WaitHandleStream(Session session,CancellationToken cancelToken)
         {
             if (session == null)
             {

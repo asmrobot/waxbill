@@ -17,36 +17,43 @@ namespace waxbill
 
     public class TCPClient:SocketMonitor
     {
+        private ConcurrentState _state=new ConcurrentState ();
         private ClientInnerSession session;//会话
         private Socket socket;//tcp连接
         private Int32 isConnected = 0;
 
+        
+        private const Int32 STATE_STARTED = 0x02;
+        private const Int32 STATE_CLOSEING = 0x80;
+
+
+
         /// <summary>
         /// 连接
         /// </summary>
-        public Action<TCPClient,SessionBase> OnConnected { get; set; }
+        public Action<TCPClient, Session> OnConnected { get; set; }
 
         /// <summary>
         /// 断开连接
         /// </summary>
-        public Action<TCPClient, SessionBase,CloseReason> OnDisconnected { get; set; }
+        public Action<TCPClient, Session, CloseReason> OnDisconnected { get; set; }
 
         /// <summary>
         /// 发送
         /// </summary>
-        public Action<TCPClient, SessionBase,SendingQueue, Boolean> OnSended { get; set; }
+        public Action<TCPClient, Session, SendingQueue, Boolean> OnSended { get; set; }
 
         /// <summary>
         /// 接收
         /// </summary>
-        public Action<TCPClient, SessionBase,Packet> OnReceived { get; set; }
+        public Action<TCPClient, Session, Packet> OnReceived { get; set; }
 
 
 
 
-        public TCPClient(IProtocol protocol):base(protocol,TCPOption.CLIENT_DEFAULT,ClientPoolProvider.Instance)
+        public TCPClient(IProtocol protocol):base(protocol,TCPOptions.CLIENT_DEFAULT,ClientPoolProvider.Instance)
         {
-            this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            
         }
         
         /// <summary>
@@ -62,26 +69,26 @@ namespace waxbill
             {
                 throw new ArgumentOutOfRangeException("ip");
             }
-            
-            if (Interlocked.CompareExchange(ref this.isConnected, 1, 0) == 0)
+
+            if (!_state.SetState(STATE_STARTED))
             {
-                try
-                {
-                    this.socket.Connect(new IPEndPoint(address, port));
-                    this.session = new ClientInnerSession(RaiseConnected,RaiseDisconnected, RaiseSended, RaiseReceived);
-                    this.session.Initialize(this.socket, this);
-                    this.session.Start();
-                }
-                catch (Exception ex)
-                {
-                    FreeResource();
-                    throw ex;
-                }
+                return;
             }
-            else
+
+            try
             {
-                throw new Exception("重复连接");
+                this.socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                this.socket.Connect(new IPEndPoint(address, port));
+                this.session = new ClientInnerSession(RaiseConnected, RaiseDisconnected, RaiseSended, RaiseReceived);
+                this.session.Initialize(this.socket, this);
+                this.session.Start();
             }
+            catch (Exception ex)
+            {
+                FreeResource();
+                throw ex;
+            }
+
         }
 
 
@@ -90,26 +97,29 @@ namespace waxbill
         /// </summary>
         public void Disconnect()
         {
-            if (Interlocked.CompareExchange(ref this.isConnected, 0, 1) == 1)
+            if (!_state.GetState(STATE_STARTED))
             {
-                this.socket.Shutdown(SocketShutdown.Both);
-                FreeResource();
+                return;
+            }
+            if (_state.SetState(STATE_CLOSEING))
+            {
+                this.session.Close(CloseReason.Default);
             }
         }
 
 
-        /// <summary>
-        /// 释放资源
-        /// </summary>
         private void FreeResource()
         {
-
+            this.socket.Shutdown(SocketShutdown.Both);
+            this.socket = null;
+            this.session = null;
+            _state.RemoveState(STATE_STARTED);
+            _state.RemoveState(STATE_CLOSEING);
         }
 
 
 
-
-        private void RaiseConnected(SessionBase session)
+        private void RaiseConnected(Session session)
         {
             if (this.OnConnected != null)
             {
@@ -117,15 +127,16 @@ namespace waxbill
             }
         }
 
-        private void RaiseDisconnected(SessionBase session,CloseReason reason)
+        private void RaiseDisconnected(Session session,CloseReason reason)
         {
+            FreeResource();
             if (this.OnDisconnected != null)
             {
                 this.OnDisconnected(this,session,reason);
             }
         }
 
-        private void RaiseReceived(SessionBase session,Packet packet)
+        private void RaiseReceived(Session session,Packet packet)
         {
             if (this.OnReceived != null)
             {
@@ -133,7 +144,7 @@ namespace waxbill
             }
         }
 
-        private void RaiseSended(SessionBase session,SendingQueue queue, bool result)
+        private void RaiseSended(Session session,SendingQueue queue, bool result)
         {
             if (this.OnSended != null)
             {
@@ -173,8 +184,6 @@ namespace waxbill
         }
         #endregion
 
-        
-
         #region Syncs
         /// <summary>
         /// 同步发送接收
@@ -184,7 +193,7 @@ namespace waxbill
         /// <param name="datas"></param>
         public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas)
         {
-            return SendAndReceive(ip, port, datas, 0, datas.Length, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            return SendAndReceive(ip, port, datas, 0, datas.Length, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>
@@ -197,7 +206,7 @@ namespace waxbill
         /// <param name="size"></param>
         public static byte[] SendAndReceive(string ip, Int32 port, byte[] datas, int offset, int size)
         {
-            return SendAndReceive(ip, port, datas, offset, size, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            return SendAndReceive(ip, port, datas, offset, size, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>
@@ -208,7 +217,7 @@ namespace waxbill
         /// <param name="data"></param>
         public static byte[] SendAndReceive(string ip, Int32 port, ArraySegment<byte> data)
         {
-            return SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            return SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>
@@ -289,7 +298,7 @@ namespace waxbill
         /// <param name="datas"></param>
         public static void SendOnly(string ip, Int32 port, byte[] datas)
         {
-            SendAndReceive(ip, port, datas, 0, datas.Length, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            SendAndReceive(ip, port, datas, 0, datas.Length, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>
@@ -302,7 +311,7 @@ namespace waxbill
         /// <param name="size"></param>
         public static void SendOnly(string ip, Int32 port, byte[] datas, int offset, int size)
         {
-            SendAndReceive(ip, port, datas, offset, size, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            SendAndReceive(ip, port, datas, offset, size, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>
@@ -313,7 +322,7 @@ namespace waxbill
         /// <param name="data"></param>
         public static void SendOnly(string ip, Int32 port, ArraySegment<byte> data)
         {
-            SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOption.CLIENT_DEFAULT.SendTimeout);
+            SendAndReceive(ip, port, data.Array, data.Offset, data.Count, TCPOptions.CLIENT_DEFAULT.SendTimeout);
         }
 
         /// <summary>

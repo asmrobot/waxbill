@@ -11,20 +11,20 @@ namespace waxbill
 {
     
 
-    public class TCPServer<TSession> : SocketMonitor where TSession: SessionBase,new()
+    public class TCPServer<TSession> : SocketMonitor where TSession: Session,new()
     {
         private SocketListener<TSession> _Listeners;
-        private Timer m_RecycleTimer;
-        private ConcurrentDictionary<long, TSession> m_Session;
+        private Timer _RecycleTimer;
+        private ConcurrentDictionary<long, TSession> _Sessions;
 
         public Int32 Port { get; private set; }
 
-        public TCPServer(IProtocol protocol) : this(protocol, TCPOption.SERVER_DEFAULT)
+        public TCPServer(IProtocol protocol) : this(protocol, TCPOptions.SERVER_DEFAULT)
         {}
 
-        public TCPServer(IProtocol protocol, TCPOption option) : base(protocol, option,new PoolProvider(option))
+        public TCPServer(IProtocol protocol, TCPOptions option) : base(protocol, option,new PoolProvider(option))
         {
-            this.m_Session = new ConcurrentDictionary<long, TSession>();
+            this._Sessions = new ConcurrentDictionary<long, TSession>();
         }
 
         /// <summary>
@@ -33,7 +33,7 @@ namespace waxbill
         /// <param name="session"></param>
         internal void Accept(TSession session)
         {
-            if (this.m_Session.TryAdd(session.ConnectionID, session))
+            if (this._Sessions.TryAdd(session.ConnectionID, session))
             {
                 session.Start();
             }
@@ -42,7 +42,7 @@ namespace waxbill
         private void AutoRecycleSessionThread(object state)
         {
             List<long> list = new List<long>();
-            foreach (KeyValuePair<long, TSession> pair in this.m_Session)
+            foreach (KeyValuePair<long, TSession> pair in this._Sessions)
             {
                 if (pair.Value.IsClosed)
                 {
@@ -52,27 +52,31 @@ namespace waxbill
             TSession local = default(TSession);
             for (int i = 0; i < list.Count; i++)
             {
-                this.m_Session.TryRemove(list[i], out local);
+                this._Sessions.TryRemove(list[i], out local);
             }
-            this.m_RecycleTimer.Change(base.Option.RecycleSecond, -1);
+            this._RecycleTimer.Change(base.Option.RecycleSecond, -1);
         }
 
         public TSession GetSession(Func<TSession, bool> predicate)
         {
-            return this.m_Session.Values.FirstOrDefault<TSession>(predicate);
+            return this._Sessions.Values.FirstOrDefault<TSession>(predicate);
         }
 
         public TSession GetSession(long sessionID)
         {
-            return this.m_Session.Values.FirstOrDefault<TSession>(item => (item.ConnectionID == sessionID));
+            return this._Sessions.Values.FirstOrDefault<TSession>(item => (item.ConnectionID == sessionID));
         }
 
         public ICollection<TSession> GetSessions()
         {
-            return this.m_Session.Values;
+            return this._Sessions.Values;
         }
 
-
+        /// <summary>
+        /// 启动服务器
+        /// </summary>
+        /// <param name="ip"></param>
+        /// <param name="port"></param>
         public void Start(string ip, Int32 port)
         {
             IPAddress address;
@@ -91,19 +95,19 @@ namespace waxbill
         public void Start(IPEndPoint endpoint)
         {
             this.Port = endpoint.Port;
-            this._Listeners = new SocketListener<TSession>(endpoint, (TCPServer<TSession>) this);
+            this._Listeners = new SocketListener<TSession>(endpoint,this);
             this._Listeners.Start();
-            if (base.Option.AutoRecycleSession)
+            if (Option.AutoRecycleSession)
             {
-                this.m_RecycleTimer = new System.Threading.Timer(new TimerCallback(this.AutoRecycleSessionThread), null, -1, -1);
-                this.m_RecycleTimer.Change(base.Option.RecycleSecond, -1);
+                _RecycleTimer = new Timer(this.AutoRecycleSessionThread, null, Timeout.Infinite,Timeout.Infinite);
+                _RecycleTimer.Change(Option.RecycleSecond, -1);
             }
         }
 
         public void Stop()
         {
             this._Listeners.Stop();
-            foreach (KeyValuePair<long, TSession> pair in this.m_Session)
+            foreach (KeyValuePair<long, TSession> pair in this._Sessions)
             {
                 pair.Value.Close(CloseReason.Default);
             }
