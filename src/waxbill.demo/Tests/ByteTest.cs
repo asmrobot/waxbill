@@ -20,7 +20,7 @@ namespace waxbill.demo.Tests
             server.Start("0.0.0.0", port);
             Trace.Info("server is start");
         }
-        private class ByteSession : SessionBase
+        private class ByteSession : Session
         {
             protected override void OnConnected()
             {

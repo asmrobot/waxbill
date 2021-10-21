@@ -19,7 +19,7 @@ namespace waxbill.demo.Tests
             Trace.Info("server is start");
         }
 
-        private class TermiatorSession : SessionBase
+        private class TermiatorSession : Session
         {
             protected override void OnConnected()
             {

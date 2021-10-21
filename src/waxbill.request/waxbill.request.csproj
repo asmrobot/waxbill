@@ -8,7 +8,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>waxbill.request</RootNamespace>
     <AssemblyName>waxbill.request</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -52,6 +52,9 @@
       <Project>{3cdf3caf-24af-4442-8e04-bf15c1a3d34b}</Project>
       <Name>waxbill</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

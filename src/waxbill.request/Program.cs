@@ -8,6 +8,7 @@ using System.IO;
 using waxbill.Sessions;
 using waxbill.Pools;
 using waxbill.Packets;
+using waxbill.Protocols;
 
 namespace waxbill.request
 {
@@ -41,26 +42,30 @@ namespace waxbill.request
         public static void WaxbillSend()
         {
             byte[] datas = new byte[1000];
-            TCPClient client = new TCPClient(waxbill.Protocols.RealtimeProtocol.Define);
-            client.OnConnected += new Action<TCPClient,SessionBase>((c,session) => {
+            TCPClient client = new TCPClient(RealtimeProtocol.Define);
+
+            client.OnConnected += new Action<TCPClient,Session>((c,session) => {
                 Console.WriteLine("connected");
             });
 
 
-            client.OnDisconnected += new Action<TCPClient,SessionBase,CloseReason>((c,session,reason) => {
+            client.OnDisconnected += new Action<TCPClient,Session,CloseReason>((c,session,reason) => {
                 Console.WriteLine("disconnected:"+reason.ToString());
             });
 
 
-            client.OnSended += new Action<TCPClient,SessionBase,SendingQueue,Boolean>((c,session,queue,result) => {
+            client.OnSended += new Action<TCPClient,Session,SendingQueue,Boolean>((c,session,queue,result) => {
                 Console.WriteLine("send:"+result.ToString());
             });
 
 
 
-            client.OnReceived += new Action<TCPClient,SessionBase,Packet>((c,session,packet) => {
+            client.OnReceived += new Action<TCPClient,Session,Packet>((c,session,packet) => {
+                
                 Console.WriteLine("receive");
             });
+
+            
 
 
             client.Connect("127.0.0.1", 7888);
